@@ -184,6 +184,51 @@ const transactionSchema = new mongoose.Schema({
 
 const Transaction = mongoose.model('Transaction', transactionSchema);
 
+// Employee Schema - for employee management
+const employeeSchema = new mongoose.Schema({
+    employeeId: { type: String, required: true, unique: true },
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    name: { type: String, required: true },
+    email: String,
+    phone: String,
+    department: String,
+    position: String,
+    joinDate: { type: Date, default: Date.now },
+    isActive: { type: Boolean, default: true },
+    faceDescriptor: [Number], // Store face encoding data
+    profilePhoto: String, // Base64 encoded image
+    createdAt: { type: Date, default: Date.now },
+    createdBy: {
+        userId: String,
+        userName: String,
+        role: String
+    }
+});
+
+const Employee = mongoose.model('Employee', employeeSchema);
+
+// Attendance Schema - for daily attendance tracking
+const attendanceSchema = new mongoose.Schema({
+    attendanceId: { type: String, required: true, unique: true },
+    employeeId: { type: String, required: true },
+    employeeName: { type: String, required: true },
+    date: { type: String, required: true }, // YYYY-MM-DD format
+    checkIn: Date,
+    checkOut: Date,
+    status: { type: String, enum: ['P', 'A', 'L', 'H'], default: 'A' }, // P=Present, A=Absent, L=Late, H=Holiday
+    workingHours: Number,
+    notes: String,
+    faceMatchConfidence: Number, // Face recognition confidence score
+    location: String,
+    createdAt: { type: Date, default: Date.now }
+});
+
+// Ensure unique attendance per employee per day
+attendanceSchema.index({ employeeId: 1, date: 1 }, { unique: true });
+
+const Attendance = mongoose.model('Attendance', attendanceSchema);
+
 // API Routes
 
 // Get all fabrics
@@ -770,6 +815,218 @@ app.get('/api/transactions/stats', async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// Employee API Routes
+
+// Get all employees
+app.get('/api/employees', async (req, res) => {
+    try {
+        const employees = await Employee.find({ isActive: true }).sort({ createdAt: -1 });
+        // Remove password and faceDescriptor from response
+        const sanitizedEmployees = employees.map(emp => {
+            const { password, faceDescriptor, ...employee } = emp.toObject();
+            return employee;
+        });
+        res.json(sanitizedEmployees);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Register new employee
+app.post('/api/employees', async (req, res) => {
+    try {
+        const count = await Employee.countDocuments();
+        const employeeId = `EMP${String(count + 1).padStart(4, '0')}`;
+        
+        const employeeData = {
+            ...req.body,
+            employeeId
+        };
+        
+        const employee = new Employee(employeeData);
+        await employee.save();
+        
+        // Remove sensitive data from response
+        const { password, faceDescriptor, ...responseData } = employee.toObject();
+        res.status(201).json(responseData);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Update employee
+app.put('/api/employees/:id', async (req, res) => {
+    try {
+        const employee = await Employee.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!employee) {
+            return res.status(404).json({ error: 'Employee not found' });
+        }
+        const { password, faceDescriptor, ...responseData } = employee.toObject();
+        res.json(responseData);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Delete employee (soft delete)
+app.delete('/api/employees/:id', async (req, res) => {
+    try {
+        const employee = await Employee.findByIdAndUpdate(
+            req.params.id, 
+            { isActive: false }, 
+            { new: true }
+        );
+        if (!employee) {
+            return res.status(404).json({ error: 'Employee not found' });
+        }
+        res.json({ message: 'Employee deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Employee login authentication
+app.post('/api/employees/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const employee = await Employee.findOne({ username, isActive: true });
+        
+        if (!employee || employee.password !== password) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+        
+        const { password: pwd, faceDescriptor, ...employeeData } = employee.toObject();
+        res.json(employeeData);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Attendance API Routes
+
+// Get all attendance records
+app.get('/api/attendance', async (req, res) => {
+    try {
+        const { date, employeeId, month, year, limit = 50, page = 1 } = req.query;
+        
+        const query = {};
+        if (date) query.date = date;
+        if (employeeId) query.employeeId = employeeId;
+        if (month && year) {
+            const monthStr = String(month).padStart(2, '0');
+            query.date = { $regex: `^${year}-${monthStr}` };
+        }
+        
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        
+        const attendance = await Attendance.find(query)
+            .sort({ date: -1, createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit));
+            
+        const total = await Attendance.countDocuments(query);
+        
+        res.json({
+            attendance,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages: Math.ceil(total / parseInt(limit)),
+                totalRecords: total,
+                limit: parseInt(limit)
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Mark attendance (check-in/check-out)
+app.post('/api/attendance', async (req, res) => {
+    try {
+        const { employeeId, employeeName, type, faceMatchConfidence, location, notes } = req.body;
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        
+        let attendance = await Attendance.findOne({ employeeId, date: today });
+        
+        if (!attendance) {
+            // Create new attendance record
+            const count = await Attendance.countDocuments();
+            const attendanceId = `ATT${String(count + 1).padStart(6, '0')}`;
+            
+            attendance = new Attendance({
+                attendanceId,
+                employeeId,
+                employeeName,
+                date: today,
+                checkIn: type === 'checkin' ? new Date() : null,
+                checkOut: type === 'checkout' ? new Date() : null,
+                status: 'P',
+                faceMatchConfidence,
+                location,
+                notes
+            });
+        } else {
+            // Update existing record
+            if (type === 'checkin' && !attendance.checkIn) {
+                attendance.checkIn = new Date();
+                attendance.status = 'P';
+            } else if (type === 'checkout' && attendance.checkIn && !attendance.checkOut) {
+                attendance.checkOut = new Date();
+                // Calculate working hours
+                const timeDiff = attendance.checkOut.getTime() - attendance.checkIn.getTime();
+                attendance.workingHours = Math.round((timeDiff / (1000 * 60 * 60)) * 100) / 100;
+            }
+            
+            if (faceMatchConfidence) attendance.faceMatchConfidence = faceMatchConfidence;
+            if (location) attendance.location = location;
+            if (notes) attendance.notes = notes;
+        }
+        
+        await attendance.save();
+        res.status(201).json(attendance);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Get attendance statistics
+app.get('/api/attendance/stats', async (req, res) => {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const currentMonth = today.substring(0, 7); // YYYY-MM
+        
+        const totalEmployees = await Employee.countDocuments({ isActive: true });
+        const todayPresent = await Attendance.countDocuments({ date: today, status: 'P' });
+        const todayAbsent = totalEmployees - todayPresent;
+        const monthlyAttendance = await Attendance.countDocuments({ 
+            date: { $regex: `^${currentMonth}` }, 
+            status: 'P' 
+        });
+        
+        res.json({
+            totalEmployees,
+            todayPresent,
+            todayAbsent,
+            monthlyAttendance
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Update attendance status manually (admin only)
+app.put('/api/attendance/:id', async (req, res) => {
+    try {
+        const attendance = await Attendance.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!attendance) {
+            return res.status(404).json({ error: 'Attendance record not found' });
+        }
+        res.json(attendance);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
     }
 });
 

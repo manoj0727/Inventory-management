@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Dashboard - Inventory Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: white;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .stat-present .stat-value { color: #28a745; }
+        .stat-absent .stat-value { color: #dc3545; }
+        .stat-total .stat-value { color: #667eea; }
+        .stat-monthly .stat-value { color: #6f42c1; }
+        
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .filters h3 {
+            margin-bottom: 15px;
+        }
+        
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn-apply {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-reset {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-export {
+            background: #28a745;
+            color: white;
+        }
+        
+        .attendance-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .attendance-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .attendance-table th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .attendance-table td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .attendance-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-p {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-a {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-l {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-h {
+            background: #cce5ff;
+            color: #004085;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        .pagination button:hover {
+            background: #f8f9fa;
+        }
+        
+        .pagination button.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: #ddd;
+        }
+        
+        .confidence-score {
+            font-size: 11px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        @media (max-width: 768px) {
+            .attendance-table {
+                overflow-x: auto;
+            }
+            
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-calendar-check"></i> Attendance Dashboard</h1>
+            <p>Monitor daily attendance and track employee presence</p>
+        </div>
+        
+        <!-- Statistics Cards -->
+        <div class="stats-container">
+            <div class="stat-card stat-total">
+                <div class="stat-value" id="totalEmployees">0</div>
+                <div class="stat-label">Total Employees</div>
+            </div>
+            <div class="stat-card stat-present">
+                <div class="stat-value" id="todayPresent">0</div>
+                <div class="stat-label">Present Today</div>
+            </div>
+            <div class="stat-card stat-absent">
+                <div class="stat-value" id="todayAbsent">0</div>
+                <div class="stat-label">Absent Today</div>
+            </div>
+            <div class="stat-card stat-monthly">
+                <div class="stat-value" id="monthlyAttendance">0</div>
+                <div class="stat-label">Monthly Total</div>
+            </div>
+        </div>
+        
+        <!-- Filters -->
+        <div class="filters">
+            <h3>Filter Attendance Records</h3>
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label>Employee</label>
+                    <select id="employeeFilter">
+                        <option value="">All Employees</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Date</label>
+                    <input type="date" id="dateFilter">
+                </div>
+                <div class="filter-group">
+                    <label>Month</label>
+                    <input type="month" id="monthFilter">
+                </div>
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="P">Present</option>
+                        <option value="A">Absent</option>
+                        <option value="L">Late</option>
+                        <option value="H">Holiday</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button class="btn btn-apply" onclick="applyFilters()">Apply Filters</button>
+                <button class="btn btn-reset" onclick="resetFilters()">Reset</button>
+                <button class="btn btn-export" onclick="exportAttendance()">Export CSV</button>
+            </div>
+        </div>
+        
+        <!-- Attendance Table -->
+        <div class="attendance-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Employee</th>
+                        <th>Check In</th>
+                        <th>Check Out</th>
+                        <th>Working Hours</th>
+                        <th>Status</th>
+                        <th>Face Match</th>
+                        <th>Location</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceBody">
+                    <tr>
+                        <td colspan="9">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                <p>Loading attendance records...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="pagination" id="pagination">
+            <!-- Pagination buttons will be added here -->
+        </div>
+    </div>
+    
+    <script src="/js/auth.js"></script>
+    <script>
+        const API_URL = 'http://localhost:3001/api';
+        let currentPage = 1;
+        let totalPages = 1;
+        let allAttendance = [];
+        let employees = [];
+        
+        // Protect the page - admin only
+        protectPage(['admin']);
+        
+        // Load page data
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+            loadEmployees();
+            loadAttendance();
+            setDefaultDate();
+        });
+        
+        // Set default date to today
+        function setDefaultDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateFilter').value = today;
+        }
+        
+        // Load attendance statistics
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/attendance/stats`);
+                const stats = await response.json();
+                
+                document.getElementById('totalEmployees').textContent = stats.totalEmployees || 0;
+                document.getElementById('todayPresent').textContent = stats.todayPresent || 0;
+                document.getElementById('todayAbsent').textContent = stats.todayAbsent || 0;
+                document.getElementById('monthlyAttendance').textContent = stats.monthlyAttendance || 0;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+        
+        // Load employees for filter
+        async function loadEmployees() {
+            try {
+                const response = await fetch(`${API_URL}/employees`);
+                employees = await response.json();
+                
+                const select = document.getElementById('employeeFilter');
+                select.innerHTML = '<option value="">All Employees</option>';
+                
+                employees.forEach(emp => {
+                    const option = document.createElement('option');
+                    option.value = emp.employeeId;
+                    option.textContent = `${emp.name} (${emp.employeeId})`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading employees:', error);
+            }
+        }
+        
+        // Load attendance records
+        async function loadAttendance(page = 1) {
+            try {
+                const urlParams = new URLSearchParams({
+                    page: page,
+                    limit: 20
+                });
+                
+                // Add filters if set
+                const employeeFilter = document.getElementById('employeeFilter').value;
+                const dateFilter = document.getElementById('dateFilter').value;
+                const monthFilter = document.getElementById('monthFilter').value;
+                const statusFilter = document.getElementById('statusFilter').value;
+                
+                if (employeeFilter) urlParams.append('employeeId', employeeFilter);
+                if (dateFilter) urlParams.append('date', dateFilter);
+                if (statusFilter) urlParams.append('status', statusFilter);
+                
+                if (monthFilter && !dateFilter) {
+                    const [year, month] = monthFilter.split('-');
+                    urlParams.append('year', year);
+                    urlParams.append('month', month);
+                }
+                
+                const response = await fetch(`${API_URL}/attendance?${urlParams}`);
+                const data = await response.json();
+                
+                allAttendance = data.attendance || [];
+                currentPage = data.pagination?.currentPage || 1;
+                totalPages = data.pagination?.totalPages || 1;
+                
+                renderAttendance(allAttendance);
+                renderPagination();
+            } catch (error) {
+                console.error('Error loading attendance:', error);
+                showEmptyState('Error loading attendance records');
+            }
+        }
+        
+        // Render attendance table
+        function renderAttendance(attendance) {
+            const tbody = document.getElementById('attendanceBody');
+            
+            if (attendance.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <i class="fas fa-calendar-times"></i>
+                                <h3>No attendance records found</h3>
+                                <p>No records match your current filters</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = attendance.map(record => `
+                <tr>
+                    <td><strong>${formatDate(record.date)}</strong></td>
+                    <td>
+                        <strong>${record.employeeName}</strong><br>
+                        <small style="color: #666;">${record.employeeId}</small>
+                    </td>
+                    <td>${record.checkIn ? formatTime(record.checkIn) : '-'}</td>
+                    <td>${record.checkOut ? formatTime(record.checkOut) : '-'}</td>
+                    <td>${record.workingHours ? record.workingHours.toFixed(2) + 'h' : '-'}</td>
+                    <td>
+                        <span class="status-badge status-${record.status.toLowerCase()}">
+                            ${getStatusText(record.status)}
+                        </span>
+                    </td>
+                    <td>
+                        ${record.faceMatchConfidence ? 
+                            `<div class="confidence-score">${(record.faceMatchConfidence * 100).toFixed(1)}%</div>` : 
+                            '-'
+                        }
+                    </td>
+                    <td>${record.location || '-'}</td>
+                    <td>
+                        <button class="btn btn-sm" onclick="editAttendance('${record._id}')" style="font-size: 12px; padding: 4px 8px;">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // Render pagination
+        function renderPagination() {
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+            
+            let paginationHTML = '';
+            
+            // Previous button
+            if (currentPage > 1) {
+                paginationHTML += `<button onclick="loadAttendance(${currentPage - 1})">Previous</button>`;
+            }
+            
+            // Page numbers
+            for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                const pageNum = i <= 3 ? i : totalPages - (5 - i);
+                paginationHTML += `<button class="${pageNum === currentPage ? 'active' : ''}" onclick="loadAttendance(${pageNum})">${pageNum}</button>`;
+            }
+            
+            // Next button
+            if (currentPage < totalPages) {
+                paginationHTML += `<button onclick="loadAttendance(${currentPage + 1})">Next</button>`;
+            }
+            
+            pagination.innerHTML = paginationHTML;
+        }
+        
+        // Apply filters
+        function applyFilters() {
+            currentPage = 1;
+            loadAttendance(1);
+        }
+        
+        // Reset filters
+        function resetFilters() {
+            document.getElementById('employeeFilter').value = '';
+            document.getElementById('dateFilter').value = '';
+            document.getElementById('monthFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            
+            currentPage = 1;
+            loadAttendance(1);
+        }
+        
+        // Export attendance to CSV
+        function exportAttendance() {
+            if (allAttendance.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            
+            const csvContent = [
+                ['Date', 'Employee ID', 'Employee Name', 'Check In', 'Check Out', 'Working Hours', 'Status', 'Face Match %', 'Location'],
+                ...allAttendance.map(record => [
+                    record.date,
+                    record.employeeId,
+                    record.employeeName,
+                    record.checkIn ? new Date(record.checkIn).toLocaleTimeString() : '',
+                    record.checkOut ? new Date(record.checkOut).toLocaleTimeString() : '',
+                    record.workingHours || '',
+                    getStatusText(record.status),
+                    record.faceMatchConfidence ? (record.faceMatchConfidence * 100).toFixed(1) + '%' : '',
+                    record.location || ''
+                ])
+            ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `attendance-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+        
+        // Edit attendance (placeholder)
+        function editAttendance(id) {
+            alert('Edit attendance functionality will be implemented in the next update');
+        }
+        
+        // Show empty state
+        function showEmptyState(message) {
+            const tbody = document.getElementById('attendanceBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9">
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>Error</h3>
+                            <p>${message}</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        // Helper functions
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        }
+        
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function getStatusText(status) {
+            const statusMap = {
+                'P': 'Present',
+                'A': 'Absent',
+                'L': 'Late',
+                'H': 'Holiday'
+            };
+            return statusMap[status] || status;
+        }
+    </script>
+</body>
+</html>
