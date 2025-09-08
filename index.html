@@ -66,27 +66,149 @@
             color: #6b7280;
         }
         
+        /* Mobile Menu Button */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 10001;
+            background: #ffffff;
+            border: none;
+            border-radius: 8px;
+            width: 44px;
+            height: 44px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        /* Hide mobile menu button when sidebar is open */
+        .sidebar.active + .mobile-menu-btn {
+            display: none;
+        }
+        
+        /* Desktop/Mobile visibility helpers */
+        .desktop-only {
+            display: inline-flex;
+        }
+        
+        .mobile-only {
+            display: none;
+        }
+        
+        /* Sidebar close button for mobile */
+        .sidebar-close-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid #e5e7eb;
+            background: #ffffff;
+            border-radius: 8px;
+            color: #6b7280;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-close-btn:hover {
+            background: #f9fafb;
+            color: #ef4444;
+            border-color: #ef4444;
+        }
+        
+        .mobile-menu-btn:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .mobile-menu-btn i {
+            font-size: 18px;
+            color: #374151;
+        }
+        
+        /* Mobile overlay */
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9998;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .mobile-overlay.active {
+            opacity: 1;
+        }
+        
         /* Mobile responsive */
         @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: flex;
+            }
+            
+            .mobile-overlay {
+                display: block;
+            }
+            
+            .desktop-only {
+                display: none;
+            }
+            
+            .mobile-only {
+                display: inline-flex;
+            }
+            
             .main-content-empty {
                 margin-left: 0;
-                padding: 20px;
+                padding: 80px 20px 20px 20px;
             }
             
             .sidebar.collapsed ~ .main-content-empty {
                 margin-left: 0;
+            }
+            
+            .empty-state {
+                margin-top: 40px;
+            }
+        }
+        
+        /* Smaller mobile devices */
+        @media (max-width: 480px) {
+            .main-content-empty {
+                padding: 60px 16px 16px 16px;
+            }
+            
+            .empty-state h2 {
+                font-size: 20px;
+            }
+            
+            .empty-state p {
+                font-size: 14px;
             }
         }
     </style>
 </head>
 <body>
     <div class="dashboard-container">
+        <!-- Mobile Overlay -->
+        <div class="mobile-overlay" id="mobile-overlay" onclick="closeSidebar()"></div>
+        
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <h2>QR Inventory</h2>
-                <button class="sidebar-collapse-btn" onclick="collapseSidebar()" title="Collapse Menu">
+                <button class="sidebar-collapse-btn desktop-only" onclick="collapseSidebar()" title="Collapse Menu">
                     <i class="fas fa-bars"></i>
+                </button>
+                <button class="sidebar-close-btn mobile-only" onclick="closeSidebar()" title="Close Menu">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
             
@@ -139,6 +261,11 @@
                 </ul>
             </nav>
         </aside>
+        
+        <!-- Mobile Menu Button -->
+        <button class="mobile-menu-btn" onclick="toggleSidebar()" id="mobile-menu-btn">
+            <i class="fas fa-bars"></i>
+        </button>
 
         <!-- Empty Main Content -->
         <main class="main-content-empty">
@@ -157,10 +284,25 @@
             sidebar.classList.toggle('collapsed');
         }
         
-        // Toggle sidebar for mobile
+        // Toggle sidebar for mobile (only opens, doesn't close)
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('active');
+            const overlay = document.getElementById('mobile-overlay');
+            
+            // Only open the sidebar, don't toggle
+            sidebar.classList.add('active');
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // Close sidebar
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
         }
         
         // Show section functionality (placeholder)
@@ -182,6 +324,11 @@
                 }
             }
             
+            // Close sidebar on mobile after selection
+            if (window.innerWidth <= 768) {
+                closeSidebar();
+            }
+            
             // Update empty state text
             const emptyState = document.querySelector('.empty-state p');
             if (emptyState) {
@@ -191,23 +338,48 @@
             console.log(`Navigation clicked: ${sectionName}`);
         }
         
-        // Mobile sidebar close on click outside
-        document.addEventListener('click', function(event) {
-            const sidebar = document.getElementById('sidebar');
-            const isClickInsideSidebar = sidebar.contains(event.target);
-            
-            if (!isClickInsideSidebar && window.innerWidth <= 768) {
-                sidebar.classList.remove('active');
-            }
-        });
-        
         // Handle window resize
         window.addEventListener('resize', function() {
             const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            
             if (window.innerWidth > 768) {
                 sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
             }
         });
+        
+        // Touch support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        document.addEventListener('touchstart', function(event) {
+            touchStartX = event.changedTouches[0].screenX;
+        });
+        
+        document.addEventListener('touchend', function(event) {
+            touchEndX = event.changedTouches[0].screenX;
+            handleSwipe();
+        });
+        
+        function handleSwipe() {
+            if (window.innerWidth <= 768) {
+                const sidebar = document.getElementById('sidebar');
+                
+                // Swipe right to open sidebar (from left edge)
+                if (touchEndX - touchStartX > 100 && touchStartX < 50) {
+                    sidebar.classList.add('active');
+                    document.getElementById('mobile-overlay').classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+                
+                // Swipe left to close sidebar
+                if (touchStartX - touchEndX > 100 && sidebar.classList.contains('active')) {
+                    closeSidebar();
+                }
+            }
+        }
     </script>
 </body>
 </html>
