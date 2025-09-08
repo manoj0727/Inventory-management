@@ -5,7 +5,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
@@ -119,6 +119,42 @@ const productSchema = new mongoose.Schema({
 });
 
 const Product = mongoose.model('Product', productSchema);
+
+// Manufacturing Schema - for tracking manufactured products
+const manufacturingSchema = new mongoose.Schema({
+    manufacturingId: { type: String, required: true, unique: true },
+    productId: { type: String, required: true }, // Reference to cut product
+    productType: { type: String, required: true }, // Shirt, Pant, Kurta, Bikini, etc.
+    productName: { type: String, required: true },
+    size: { type: String, required: true }, // S, M, L, XL, XXL, Custom, etc.
+    customSizeDetails: { type: String }, // Additional details for custom sizes
+    quantity: { type: Number, required: true, default: 1 },
+    color: { type: String, required: true },
+    fabricType: { type: String, required: true },
+    fabricId: { type: String, required: true }, // Original fabric ID
+    tailorName: { type: String, required: true },
+    qrCode: { type: String }, // QR code data URL
+    manufacturingDate: { type: Date, default: Date.now },
+    completionDate: { type: Date },
+    qualityCheck: {
+        checked: { type: Boolean, default: false },
+        checkedBy: { type: String },
+        checkedDate: { type: Date },
+        rating: { type: Number }, // 1-5
+        notes: { type: String }
+    },
+    notes: { type: String },
+    images: [{ type: String }], // URLs to product images
+    createdBy: {
+        userId: { type: String },
+        userName: { type: String },
+        role: { type: String }
+    },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+
+const Manufacturing = mongoose.model('Manufacturing', manufacturingSchema);
 
 // API Routes
 
@@ -400,6 +436,126 @@ app.get('/api/products/stats/summary', async (req, res) => {
             totalProducts,
             productsByStatus,
             productsByType
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Manufacturing API Routes
+
+// Get all manufactured products
+app.get('/api/manufacturing', async (req, res) => {
+    try {
+        const products = await Manufacturing.find().sort({ createdAt: -1 });
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get manufactured product by ID
+app.get('/api/manufacturing/:id', async (req, res) => {
+    try {
+        const product = await Manufacturing.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({ error: 'Manufactured product not found' });
+        }
+        res.json(product);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Create new manufactured product
+app.post('/api/manufacturing', async (req, res) => {
+    try {
+        // Generate unique manufacturing ID
+        const count = await Manufacturing.countDocuments();
+        const manufacturingId = `MFG${String(count + 1).padStart(5, '0')}`;
+        
+        const manufacturingData = {
+            ...req.body,
+            manufacturingId,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        };
+        
+        // Calculate profit if prices are provided
+        if (manufacturingData.price?.manufacturingCost && manufacturingData.price?.sellingPrice) {
+            manufacturingData.price.profit = manufacturingData.price.sellingPrice - manufacturingData.price.manufacturingCost;
+        }
+        
+        const manufacturing = new Manufacturing(manufacturingData);
+        await manufacturing.save();
+        
+        // Update product status if needed
+        if (req.body.productId) {
+            await Product.findOneAndUpdate(
+                { productId: req.body.productId },
+                { status: 'in_manufacturing' }
+            );
+        }
+        
+        res.status(201).json(manufacturing);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Update manufactured product
+app.put('/api/manufacturing/:id', async (req, res) => {
+    try {
+        const manufacturing = await Manufacturing.findByIdAndUpdate(
+            req.params.id,
+            { ...req.body, updatedAt: new Date() },
+            { new: true, runValidators: true }
+        );
+        if (!manufacturing) {
+            return res.status(404).json({ error: 'Manufactured product not found' });
+        }
+        res.json(manufacturing);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Delete manufactured product
+app.delete('/api/manufacturing/:id', async (req, res) => {
+    try {
+        const manufacturing = await Manufacturing.findByIdAndDelete(req.params.id);
+        if (!manufacturing) {
+            return res.status(404).json({ error: 'Manufactured product not found' });
+        }
+        res.json({ message: 'Manufactured product deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get manufacturing statistics
+app.get('/api/manufacturing/stats/summary', async (req, res) => {
+    try {
+        const totalManufactured = await Manufacturing.countDocuments();
+        const inProduction = await Manufacturing.countDocuments({ status: 'in_production' });
+        const completed = await Manufacturing.countDocuments({ status: 'completed' });
+        const delivered = await Manufacturing.countDocuments({ status: 'delivered' });
+        
+        const productsByType = await Manufacturing.aggregate([
+            { $group: { _id: '$productType', count: { $sum: 1 } } }
+        ]);
+        
+        const productsBySize = await Manufacturing.aggregate([
+            { $group: { _id: '$size', count: { $sum: 1 } } }
+        ]);
+        
+        res.json({
+            totalManufactured,
+            inProduction,
+            completed,
+            delivered,
+            productsByType,
+            productsBySize
         });
     } catch (error) {
         res.status(500).json({ error: error.message });

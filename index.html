@@ -430,6 +430,16 @@
                         <i class="fas fa-tshirt"></i>
                         <span>Products Inventory</span>
                     </a></li>
+                    
+                    <li><a href="#" onclick="showSection('manufacturing', event)" class="nav-item" data-section="manufacturing" data-tooltip="Manufacturing">
+                        <i class="fas fa-industry"></i>
+                        <span>Manufacturing</span>
+                    </a></li>
+                    
+                    <li><a href="#" onclick="showSection('manufactured-inventory', event)" class="nav-item" data-section="manufactured-inventory" data-tooltip="Manufactured Products">
+                        <i class="fas fa-warehouse"></i>
+                        <span>Manufactured Products</span>
+                    </a></li>
                 </ul>
             </nav>
             
@@ -556,10 +566,22 @@
                 section.classList.remove('active');
             });
             
-            // Show selected section
-            const targetSection = document.getElementById(sectionName + '-section');
-            if (targetSection) {
-                targetSection.classList.add('active');
+            // Show selected section or load it via iframe
+            if (sectionName === 'manufacturing' || sectionName === 'manufactured-inventory') {
+                // Load the external page via iframe for manufacturing sections
+                const mainContent = document.querySelector('.main-content-empty');
+                const pagePath = sectionName === 'manufacturing' ? 
+                    'pages/manufacturing.html' : 
+                    'pages/manufactured-inventory.html';
+                
+                mainContent.innerHTML = `
+                    <iframe src="${pagePath}" style="width:100%; height:100vh; border:none;"></iframe>
+                `;
+            } else {
+                const targetSection = document.getElementById(sectionName + '-section');
+                if (targetSection) {
+                    targetSection.classList.add('active');
+                }
             }
             
             // Close sidebar on mobile after selection
