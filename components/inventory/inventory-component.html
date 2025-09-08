@@ -1,0 +1,147 @@
+<!-- Inventory Management Component -->
+<div class="inventory-container">
+    <!-- Stats Cards -->
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-icon total">
+                <i class="fas fa-boxes"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Total Products</h3>
+                <div class="stat-number" id="inv-total-products">0</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon low">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Low Stock</h3>
+                <div class="stat-number" id="inv-low-stock">0</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon out">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Out of Stock</h3>
+                <div class="stat-number" id="inv-out-stock">0</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon value">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Total Items</h3>
+                <div class="stat-number" id="inv-total-items">0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="inv-search-input" placeholder="Search products...">
+        </div>
+        <select class="filter-select" id="inv-type-filter">
+            <option value="">All Types</option>
+            <option value="Shirt">Shirt</option>
+            <option value="Pants">Pants</option>
+            <option value="Jacket">Jacket</option>
+            <option value="Dress">Dress</option>
+            <option value="Accessories">Accessories</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Other">Other</option>
+        </select>
+        <select class="filter-select" id="inv-status-filter">
+            <option value="">All Status</option>
+            <option value="in-stock">In Stock</option>
+            <option value="low-stock">Low Stock</option>
+            <option value="out-stock">Out of Stock</option>
+        </select>
+        <button class="refresh-btn" onclick="inventoryManager.loadInventory()">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container">
+        <div class="table-header">
+            <div class="table-title">
+                <i class="fas fa-list"></i> Product Inventory
+            </div>
+            <div class="table-actions">
+                <button class="action-btn primary" onclick="window.open('create-product.html', '_blank')">
+                    <i class="fas fa-plus"></i> Add Product
+                </button>
+                <button class="action-btn success" onclick="inventoryManager.exportData()">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+        </div>
+
+        <div id="inv-loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Loading inventory...</p>
+        </div>
+
+        <table id="inventory-table">
+            <thead>
+                <tr>
+                    <th>Product ID</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Size</th>
+                    <th>Color</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="inv-tbody">
+                <!-- Products will be loaded here -->
+            </tbody>
+        </table>
+
+        <div id="inv-empty-state" class="empty-state" style="display: none;">
+            <i class="fas fa-inbox"></i>
+            <h3>No Products Found</h3>
+            <p>Start by adding your first product to the inventory</p>
+            <button class="action-btn" onclick="window.open('create-product.html', '_blank')">
+                <i class="fas fa-plus"></i> Add First Product
+            </button>
+        </div>
+
+        <div class="pagination" id="inv-pagination">
+            <div class="pagination-info">
+                Showing <span id="inv-showing-from">1</span> to <span id="inv-showing-to">10</span> 
+                of <span id="inv-total-records">0</span> products
+            </div>
+            <div class="pagination-controls">
+                <button class="page-btn" onclick="inventoryManager.previousPage()" id="inv-prev-btn">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <span id="inv-page-numbers"></span>
+                <button class="page-btn" onclick="inventoryManager.nextPage()" id="inv-next-btn">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QR Code Modal -->
+<div id="inv-qr-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="inventoryManager.closeQRModal()">&times;</span>
+        <h2>Product QR Code</h2>
+        <img id="inv-qr-modal-image" src="" alt="QR Code">
+        <p>Product ID: <strong id="inv-qr-product-id"></strong></p>
+    </div>
+</div>
