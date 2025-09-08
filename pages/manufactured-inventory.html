@@ -66,20 +66,6 @@
             gap: 10px;
         }
 
-        .view-btn {
-            padding: 10px 20px;
-            border: 1px solid #ddd;
-            background: white;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .view-btn.active {
-            background: #4CAF50;
-            color: white;
-            border-color: #4CAF50;
-        }
 
         .stats-container {
             display: grid;
@@ -107,20 +93,6 @@
             color: #333;
         }
 
-        .products-list {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .product-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
-            position: relative;
-        }
         
         .action-center {
             display: flex;
@@ -222,62 +194,6 @@
             box-shadow: 0 5px 20px rgba(0,0,0,0.15);
         }
 
-        .product-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .product-id {
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .status-in_production {
-            background: #FFF3E0;
-            color: #FF9800;
-        }
-
-        .status-completed {
-            background: #E8F5E9;
-            color: #4CAF50;
-        }
-
-        .status-delivered {
-            background: #E3F2FD;
-            color: #2196F3;
-        }
-
-        .product-info {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 14px;
-        }
-
-        .info-label {
-            color: #666;
-        }
-
-        .info-value {
-            font-weight: 500;
-            color: #333;
-        }
 
         .table-view {
             background: white;
@@ -362,9 +278,6 @@
                 max-width: 100%;
             }
 
-            .products-grid {
-                grid-template-columns: 1fr;
-            }
 
             .table-view {
                 overflow-x: auto;
@@ -407,8 +320,6 @@
                 <input type="text" id="searchInput" placeholder="Search by ID, product, tailor, or customer...">
             </div>
             <div class="view-toggle">
-                <button class="view-btn active" onclick="toggleView('grid')">Grid View</button>
-                <button class="view-btn" onclick="toggleView('table')">Table View</button>
                 <button class="refresh-btn" onclick="loadManufacturedProducts()">Refresh</button>
             </div>
         </div>
@@ -420,7 +331,6 @@
 
     <script>
         let allProducts = [];
-        let currentView = 'grid';
 
         async function checkAuth() {
             const auth = localStorage.getItem('qr_inventory_auth');
@@ -476,70 +386,9 @@
                 return;
             }
 
-            if (currentView === 'grid') {
-                displayGridView(products);
-            } else {
-                displayTableView(products);
-            }
+            displayTableView(products);
         }
 
-        function displayGridView(products) {
-            const container = document.getElementById('productsContainer');
-            const html = `
-                <div class="products-grid">
-                    ${products.map(product => `
-                        <div class="product-card">
-                            <div class="product-header">
-                                <span class="product-id">${product.manufacturingId}</span>
-                                <span class="status-badge" style="background: #E8F5E9; color: #4CAF50;">Qty: ${product.quantity || 1}</span>
-                            </div>
-                            <div class="product-info">
-                                <div class="info-row">
-                                    <span class="info-label">Product:</span>
-                                    <span class="info-value">${product.productName}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Type:</span>
-                                    <span class="info-value">${product.productType}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Size:</span>
-                                    <span class="info-value">${product.size}${product.size === 'Custom' && product.customSizeDetails ? ` (${product.customSizeDetails})` : ''}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Color:</span>
-                                    <span class="info-value">${product.color}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Fabric:</span>
-                                    <span class="info-value">${product.fabricType}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Tailor:</span>
-                                    <span class="info-value">${product.tailorName || '-'}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Date:</span>
-                                    <span class="info-value">${new Date(product.createdAt).toLocaleDateString()}</span>
-                                </div>
-                            </div>
-                            <div class="action-center">
-                                <button class="action-btn btn-edit" onclick="editProduct('${product._id}')">
-                                    <i class="fas fa-edit"></i> Edit
-                                </button>
-                                <button class="action-btn btn-qr" onclick="showQRCode('${product.qrCode || ''}', '${product.manufacturingId}', '${product._id}')">
-                                    <i class="fas fa-qrcode"></i> QR
-                                </button>
-                                <button class="action-btn btn-delete" onclick="deleteProduct('${product._id}', '${product.manufacturingId}')">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-            container.innerHTML = html;
-        }
 
         function displayTableView(products) {
             const container = document.getElementById('productsContainer');
@@ -592,14 +441,6 @@
             container.innerHTML = html;
         }
 
-        function toggleView(view) {
-            currentView = view;
-            document.querySelectorAll('.view-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            displayProducts(allProducts);
-        }
 
         document.getElementById('searchInput').addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();

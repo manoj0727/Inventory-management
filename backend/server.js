@@ -5,7 +5,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
@@ -156,6 +156,34 @@ const manufacturingSchema = new mongoose.Schema({
 
 const Manufacturing = mongoose.model('Manufacturing', manufacturingSchema);
 
+// Transaction Schema - for tracking all inventory transactions
+const transactionSchema = new mongoose.Schema({
+    transactionId: { type: String, required: true, unique: true },
+    type: { type: String, required: true, enum: ['stock_in', 'stock_out', 'manufacturing', 'adjustment'] },
+    itemType: { type: String, required: true, enum: ['fabric', 'product', 'manufactured'] },
+    itemId: { type: String, required: true },
+    itemName: { type: String, required: true },
+    quantity: { type: Number, required: true },
+    previousQuantity: { type: Number, required: true },
+    newQuantity: { type: Number, required: true },
+    reason: { type: String, required: true },
+    performedBy: {
+        userId: String,
+        userName: String,
+        role: String
+    },
+    timestamp: { type: Date, default: Date.now },
+    notes: String,
+    relatedItemDetails: {
+        fabricType: String,
+        color: String,
+        size: String,
+        productType: String
+    }
+});
+
+const Transaction = mongoose.model('Transaction', transactionSchema);
+
 // API Routes
 
 // Get all fabrics
@@ -205,6 +233,26 @@ app.post('/api/fabrics', async (req, res) => {
         
         const fabric = new Fabric(fabricData);
         await fabric.save();
+        
+        // Record transaction for fabric registration
+        await createTransaction(
+            'stock_in',
+            'fabric',
+            fabricId,
+            `${fabricData.fabricType} - ${fabricData.color}`,
+            quantity,
+            0,
+            quantity,
+            `Fabric registration: New fabric added to inventory`,
+            fabricData.registeredBy || { userId: 'system', userName: 'System', role: 'admin' },
+            `Fabric dimensions: ${length}x${width}${fabricData.size?.unit || 'meters'}, Total area: ${totalArea}`,
+            {
+                fabricType: fabricData.fabricType,
+                color: fabricData.color,
+                size: `${length}x${width}${fabricData.size?.unit || 'meters'}`
+            }
+        );
+        
         res.status(201).json(fabric);
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -495,6 +543,7 @@ app.post('/api/manufacturing', async (req, res) => {
             
             if (product) {
                 const manufacturingQty = req.body.quantity || 1;
+                const previousQty = product.quantity;
                 const newQuantity = product.quantity - manufacturingQty;
                 
                 if (newQuantity <= 0) {
@@ -507,6 +556,25 @@ app.post('/api/manufacturing', async (req, res) => {
                             updatedAt: new Date()
                         }
                     );
+                    
+                    // Record transaction for complete stock usage
+                    await createTransaction(
+                        'manufacturing',
+                        'product',
+                        product.productId,
+                        `${product.productType} - ${product.productName}`,
+                        previousQty, // Used all remaining quantity
+                        previousQty,
+                        0,
+                        `Manufacturing: ${manufacturingData.productName} (${manufacturingId})`,
+                        manufacturingData.createdBy,
+                        'Product completely used in manufacturing',
+                        {
+                            fabricType: product.fabricType,
+                            color: product.fabricColor,
+                            productType: product.productType
+                        }
+                    );
                 } else {
                     // Update quantity and mark as updated
                     await Product.findOneAndUpdate(
@@ -517,7 +585,46 @@ app.post('/api/manufacturing', async (req, res) => {
                             updatedAt: new Date()
                         }
                     );
+                    
+                    // Record transaction for partial stock usage
+                    await createTransaction(
+                        'manufacturing',
+                        'product',
+                        product.productId,
+                        `${product.productType} - ${product.productName}`,
+                        manufacturingQty,
+                        previousQty,
+                        newQuantity,
+                        `Manufacturing: ${manufacturingData.productName} (${manufacturingId})`,
+                        manufacturingData.createdBy,
+                        'Product used in manufacturing',
+                        {
+                            fabricType: product.fabricType,
+                            color: product.fabricColor,
+                            productType: product.productType
+                        }
+                    );
                 }
+                
+                // Also record the creation of the manufactured product
+                await createTransaction(
+                    'manufacturing',
+                    'manufactured',
+                    manufacturingId,
+                    `${manufacturingData.productType} - ${manufacturingData.productName}`,
+                    manufacturingQty,
+                    0,
+                    manufacturingQty,
+                    `Manufacturing: Product created from ${product.productId}`,
+                    manufacturingData.createdBy,
+                    'New manufactured product created',
+                    {
+                        fabricType: manufacturingData.fabricType,
+                        color: manufacturingData.color,
+                        size: manufacturingData.size,
+                        productType: manufacturingData.productType
+                    }
+                );
             }
         }
         
@@ -585,6 +692,114 @@ app.get('/api/manufacturing/stats/summary', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+// Transaction API Routes
+
+// Get all transactions with filtering
+app.get('/api/transactions', async (req, res) => {
+    try {
+        const { type, itemType, userId, limit = 50, page = 1 } = req.query;
+        
+        const query = {};
+        if (type) query.type = type;
+        if (itemType) query.itemType = itemType;
+        if (userId) query['performedBy.userId'] = userId;
+        
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        
+        const transactions = await Transaction.find(query)
+            .sort({ timestamp: -1 })
+            .skip(skip)
+            .limit(parseInt(limit));
+            
+        const total = await Transaction.countDocuments(query);
+        
+        res.json({
+            transactions,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages: Math.ceil(total / parseInt(limit)),
+                totalRecords: total,
+                limit: parseInt(limit)
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Create a new transaction
+app.post('/api/transactions', async (req, res) => {
+    try {
+        const count = await Transaction.countDocuments();
+        const transactionId = `TXN${String(count + 1).padStart(8, '0')}`;
+        
+        const transactionData = {
+            ...req.body,
+            transactionId,
+            timestamp: new Date()
+        };
+        
+        const transaction = new Transaction(transactionData);
+        await transaction.save();
+        
+        res.status(201).json(transaction);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Get transaction statistics
+app.get('/api/transactions/stats', async (req, res) => {
+    try {
+        const totalTransactions = await Transaction.countDocuments();
+        const stockIn = await Transaction.countDocuments({ type: 'stock_in' });
+        const stockOut = await Transaction.countDocuments({ type: 'stock_out' });
+        const manufacturing = await Transaction.countDocuments({ type: 'manufacturing' });
+        
+        const recentTransactions = await Transaction.find()
+            .sort({ timestamp: -1 })
+            .limit(10);
+        
+        res.json({
+            totalTransactions,
+            stockIn,
+            stockOut,
+            manufacturing,
+            recentTransactions
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Helper function to create transaction record
+async function createTransaction(type, itemType, itemId, itemName, quantity, previousQty, newQty, reason, performedBy, notes = '', relatedDetails = {}) {
+    try {
+        const count = await Transaction.countDocuments();
+        const transactionId = `TXN${String(count + 1).padStart(8, '0')}`;
+        
+        const transaction = new Transaction({
+            transactionId,
+            type,
+            itemType,
+            itemId,
+            itemName,
+            quantity,
+            previousQuantity: previousQty,
+            newQuantity: newQty,
+            reason,
+            performedBy,
+            notes,
+            relatedItemDetails: relatedDetails
+        });
+        
+        await transaction.save();
+        return transaction;
+    } catch (error) {
+        console.error('Error creating transaction:', error);
+    }
+}
 
 // Start server
 app.listen(PORT, () => {

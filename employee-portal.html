@@ -371,14 +371,9 @@
                         <span>QR Scanner</span>
                     </a></li>
                     
-                    <li><a href="#" onclick="showSection('reports', event)" class="nav-item" data-section="reports">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>Reports</span>
-                    </a></li>
-                    
-                    <li><a href="#" onclick="showSection('profile', event)" class="nav-item" data-section="profile">
-                        <i class="fas fa-user"></i>
-                        <span>Profile</span>
+                    <li><a href="#" onclick="showSection('transactions', event)" class="nav-item" data-section="transactions">
+                        <i class="fas fa-history"></i>
+                        <span>Transaction History</span>
                     </a></li>
                 </ul>
             </nav>
@@ -468,52 +463,27 @@
             
             <!-- Manufacturing Section -->
             <div id="manufacturing-section" class="content-section">
-                <iframe src="pages/manufacturing.html" frameborder="0" style="width: 100%; min-height: 100vh;"></iframe>
+                <iframe src="pages/manufacturing.html" frameborder="0" style="width: 100%; height: 100vh; border: none;"></iframe>
             </div>
             
-            <!-- Manufactured Inventory Section -->
             <div id="manufactured-inventory-section" class="content-section">
                 <iframe src="pages/manufactured-inventory.html" frameborder="0" style="width: 100%; min-height: 100vh;"></iframe>
             </div>
             
             <!-- QR Scanner Section -->
             <div id="qr-scanner-section" class="content-section">
-                <div class="section-header">
-                    <h2>QR Code Scanner</h2>
-                    <p>Scan QR codes to track inventory</p>
-                </div>
-                <div class="empty-state">
-                    <i class="fas fa-qrcode"></i>
-                    <h3>QR Scanner</h3>
-                    <p>Use your device camera to scan QR codes</p>
-                </div>
+                <iframe src="pages/qr-scanner.html" frameborder="0" style="width: 100%; height: 100vh; border: none;"></iframe>
             </div>
             
-            <!-- Reports Section -->
-            <div id="reports-section" class="content-section">
+            <!-- Transaction History Section -->
+            <div id="transactions-section" class="content-section">
                 <div class="section-header">
-                    <h2>Reports</h2>
-                    <p>View your performance reports</p>
+                    <h2>Transaction History</h2>
+                    <p>View all inventory transactions and changes</p>
                 </div>
-                <div class="empty-state">
-                    <i class="fas fa-chart-bar"></i>
-                    <h3>Reports</h3>
-                    <p>Your reports and analytics will appear here</p>
-                </div>
+                <iframe src="pages/transactions.html" frameborder="0" style="width: 100%; height: 100vh; border: none;"></iframe>
             </div>
             
-            <!-- Profile Section -->
-            <div id="profile-section" class="content-section">
-                <div class="section-header">
-                    <h2>My Profile</h2>
-                    <p>Manage your account settings</p>
-                </div>
-                <div class="empty-state">
-                    <i class="fas fa-user"></i>
-                    <h3>Profile Settings</h3>
-                    <p>Update your profile information here</p>
-                </div>
-            </div>
         </main>
     </div>
 

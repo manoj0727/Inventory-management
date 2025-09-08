@@ -273,6 +273,22 @@
                     </div>
                 </div>
                 
+                <div class="quantity-controls" style="margin-bottom: 20px;">
+                    <div class="detail-label">Adjust Quantity</div>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                        <input type="number" id="adjustQuantity" min="1" value="1" style="width: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <button type="button" class="btn" style="background: #28a745; color: white;" onclick="adjustStock('add')">
+                            <i class="fas fa-plus"></i> Add Stock
+                        </button>
+                        <button type="button" class="btn" style="background: #dc3545; color: white;" onclick="adjustStock('remove')">
+                            <i class="fas fa-minus"></i> Remove Stock
+                        </button>
+                    </div>
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                        Enter quantity to add or remove from current stock
+                    </div>
+                </div>
+                
                 <div class="action-buttons">
                     <button type="button" class="btn btn-update" onclick="updateProduct()">
                         <i class="fas fa-save"></i> Update Product
@@ -473,6 +489,99 @@
             setTimeout(() => {
                 alertDiv.style.display = 'none';
             }, 3000);
+        }
+        
+        // Adjust stock quantity (add or remove)
+        async function adjustStock(action) {
+            if (!currentProductId) {
+                showAlert('No product selected', 'error');
+                return;
+            }
+            
+            const adjustQty = parseInt(document.getElementById('adjustQuantity').value);
+            if (!adjustQty || adjustQty <= 0) {
+                showAlert('Please enter a valid quantity', 'error');
+                return;
+            }
+            
+            const currentQty = parseInt(document.getElementById('quantity').value) || 0;
+            let newQuantity;
+            let transactionType;
+            let reason;
+            
+            if (action === 'add') {
+                newQuantity = currentQty + adjustQty;
+                transactionType = 'stock_in';
+                reason = `Stock added via QR scanner (+${adjustQty})`;
+            } else {
+                newQuantity = currentQty - adjustQty;
+                if (newQuantity < 0) {
+                    showAlert('Cannot remove more than available quantity', 'error');
+                    return;
+                }
+                transactionType = 'stock_out';
+                reason = `Stock removed via QR scanner (-${adjustQty})`;
+            }
+            
+            try {
+                // Update the product quantity
+                const response = await fetch(`${API_URL}/manufacturing/${currentProductId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ quantity: newQuantity })
+                });
+                
+                if (response.ok) {
+                    // Create transaction record
+                    const auth = localStorage.getItem('qr_inventory_auth');
+                    const user = auth ? JSON.parse(auth).user : { id: 'unknown', name: 'Scanner User', role: 'employee' };
+                    
+                    const transactionData = {
+                        type: transactionType,
+                        itemType: 'manufactured',
+                        itemId: currentProduct.manufacturingId,
+                        itemName: `${currentProduct.productType} - ${currentProduct.productName}`,
+                        quantity: adjustQty,
+                        previousQuantity: currentQty,
+                        newQuantity: newQuantity,
+                        reason: reason,
+                        performedBy: {
+                            userId: user.id || user.username,
+                            userName: user.name || user.username,
+                            role: user.role
+                        },
+                        notes: 'Adjusted via QR Scanner',
+                        relatedItemDetails: {
+                            productType: currentProduct.productType,
+                            color: currentProduct.color,
+                            size: currentProduct.size,
+                            fabricType: currentProduct.fabricType
+                        }
+                    };
+                    
+                    await fetch(`${API_URL}/transactions`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(transactionData)
+                    });
+                    
+                    // Update the display
+                    document.getElementById('quantity').value = newQuantity;
+                    document.getElementById('adjustQuantity').value = 1; // Reset to 1
+                    
+                    showAlert(`Stock ${action === 'add' ? 'added' : 'removed'} successfully! New quantity: ${newQuantity}`, 'success');
+                } else {
+                    const error = await response.json();
+                    showAlert(`Error: ${error.error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error adjusting stock:', error);
+                showAlert('Failed to adjust stock', 'error');
+            }
         }
         
         // Check authentication
