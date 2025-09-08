@@ -3,24 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - QR Inventory System</title>
+    <title>QR Inventory System</title>
     
-    <!-- Original CSS files -->
-    <link rel="stylesheet" href="assets/css/realtime-tracking.css">
-    <link rel="stylesheet" href="assets/css/dashboard-modern.css">
-    <link rel="stylesheet" href="assets/css/transaction-history.css">
-    <link rel="stylesheet" href="assets/css/original-styles.css">
-    <link rel="stylesheet" href="assets/css/styles.css">
-    <link rel="stylesheet" href="assets/css/top-header.css">
-    <link rel="stylesheet" href="assets/css/sidebar-collapse.css">
-    <link rel="stylesheet" href="assets/css/transaction-enhanced.css">
-    <link rel="stylesheet" href="components/inventory/inventory-styles.css">
-    <link rel="stylesheet" href="components/fabric/fabric-styles.css">
+    <!-- Sidebar CSS -->
+    <link rel="stylesheet" href="assets/css/sidebar-white.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    
-    
-    <!-- Admin Portal - No Authentication Required -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f9fafb;
+            overflow-x: hidden;
+        }
+        
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Empty content area - just for layout */
+        .main-content-empty {
+            margin-left: 250px;
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: margin-left 0.3s ease;
+            background: #f9fafb;
+            min-height: 100vh;
+        }
+        
+        .sidebar.collapsed ~ .main-content-empty {
+            margin-left: 70px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #6b7280;
+        }
+        
+        .empty-state i {
+            font-size: 64px;
+            color: #e5e7eb;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state h2 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+        
+        .empty-state p {
+            font-size: 16px;
+            color: #6b7280;
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .main-content-empty {
+                margin-left: 0;
+                padding: 20px;
+            }
+            
+            .sidebar.collapsed ~ .main-content-empty {
+                margin-left: 0;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="dashboard-container">
@@ -40,11 +97,6 @@
                         <span>Dashboard</span>
                     </a></li>
                     
-                    <li><a href="#" onclick="showSection('create-product', event)" class="nav-item" data-section="create-product" data-tooltip="Create Product">
-                        <i class="fas fa-plus-circle"></i>
-                        <span>Create Product</span>
-                    </a></li>
-                    
                     <li><a href="#" onclick="showSection('scan-qr', event)" class="nav-item" data-section="scan-qr" data-tooltip="Scan QR">
                         <i class="fas fa-qrcode"></i>
                         <span>Scan QR Code</span>
@@ -59,7 +111,6 @@
                         <i class="fas fa-receipt"></i>
                         <span>Transactions</span>
                     </a></li>
-                    
                     
                     <li><a href="#" onclick="showSection('fabric-entry', event)" class="nav-item" data-section="fabric-entry" data-tooltip="Fabric Entry">
                         <i class="fas fa-layer-group"></i>
@@ -89,586 +140,74 @@
             </nav>
         </aside>
 
-        <!-- Main Content Area -->
-        <main class="main-content">
-            <!-- Top Navigation Header -->
-            <header class="top-header">
-                <div class="header-left">
-                    <button class="menu-toggle-btn" onclick="toggleSidebar()">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <div class="header-title">
-                        <h1>QR Inventory System</h1>
-                        <span class="header-subtitle" id="current-page">Dashboard</span>
-                    </div>
-                </div>
-                
-                <div class="header-right">
-                    <button class="header-icon-btn" onclick="toggleFullscreen()" title="Fullscreen">
-                        <i class="fas fa-expand"></i>
-                    </button>
-                    
-                    <div class="user-menu-wrapper">
-                        <button class="user-menu-btn" onclick="toggleUserMenu()">
-                            <div class="user-avatar">A</div>
-                            <span class="user-name">Admin</span>
-                            <i class="fas fa-chevron-down"></i>
-                        </button>
-                        
-                        <div class="user-dropdown" id="user-dropdown">
-                            <a href="#" onclick="showProfile()">
-                                <i class="fas fa-user"></i> Profile
-                            </a>
-                            <a href="#" onclick="showSettings()">
-                                <i class="fas fa-cog"></i> Settings
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Dashboard Section -->
-            <div id="dashboard" class="section active">
-                <div class="section-content">
-                    <div class="dashboard-header">
-                        <h2>Dashboard Overview</h2>
-                    </div>
-                    
-                    <!-- Stats Grid -->
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                                <i class="fas fa-cube"></i>
-                            </div>
-                            <div class="stat-details">
-                                <span class="stat-label">Total Products</span>
-                                <span class="stat-value" id="total-products">0</span>
-                                <span class="stat-change positive">
-                                    <i class="fas fa-arrow-up"></i> +12%
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
-                                <i class="fas fa-shopping-cart"></i>
-                            </div>
-                            <div class="stat-details">
-                                <span class="stat-label">Total Items</span>
-                                <span class="stat-value" id="total-items">0</span>
-                                <span class="stat-change positive">
-                                    <i class="fas fa-arrow-up"></i> Updated
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                                <i class="fas fa-tags"></i>
-                            </div>
-                            <div class="stat-details">
-                                <span class="stat-label">Product Types</span>
-                                <span class="stat-value" id="product-types">0</span>
-                                <span class="stat-change">
-                                    <i class="fas fa-minus"></i> Stable
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                                <i class="fas fa-exchange-alt"></i>
-                            </div>
-                            <div class="stat-details">
-                                <span class="stat-label">Recent Transactions</span>
-                                <span class="stat-value" id="recent-transactions">0</span>
-                                <span class="stat-change positive">
-                                    <i class="fas fa-arrow-up"></i> Active
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-                                <i class="fas fa-exclamation-triangle"></i>
-                            </div>
-                            <div class="stat-details">
-                                <span class="stat-label">Low Stock Items</span>
-                                <span class="stat-value" id="low-stock">0</span>
-                                <span class="stat-change negative">
-                                    <i class="fas fa-arrow-down"></i> Alert
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Real-time User Activity Tracking -->
-                    <div class="realtime-tracking-section">
-                        <h3 class="section-header">
-                            <i class="fas fa-users-cog"></i> Real-time User Activity
-                            <span class="live-indicator">
-                                <span class="pulse"></span> LIVE
-                            </span>
-                        </h3>
-                        
-                        <div class="tracking-grid">
-                            <!-- Currently Online Users -->
-                            <div class="tracking-card">
-                                <div class="tracking-header">
-                                    <h4><i class="fas fa-circle text-success"></i> Currently Online</h4>
-                                    <span class="user-count" id="online-count">0</span>
-                                </div>
-                                <div class="online-users-list" id="online-users">
-                                    <!-- Will be populated dynamically -->
-                                </div>
-                            </div>
-                            
-                            <!-- Recent Login Activity -->
-                            <div class="tracking-card">
-                                <div class="tracking-header">
-                                    <h4><i class="fas fa-sign-in-alt"></i> Recent Logins</h4>
-                                    <button class="btn-small" onclick="clearLoginHistory()">Clear</button>
-                                </div>
-                                <div class="activity-log" id="login-activity">
-                                    <!-- Will be populated dynamically -->
-                                </div>
-                            </div>
-                            
-                            <!-- Employee Product Tracking -->
-                            <div class="tracking-card wide">
-                                <div class="tracking-header">
-                                    <h4><i class="fas fa-chart-bar"></i> Employee Product Activity</h4>
-                                    <select id="activity-period" onchange="updateProductTracking(this.value)">
-                                        <option value="today">Today</option>
-                                        <option value="week">This Week</option>
-                                        <option value="month">This Month</option>
-                                    </select>
-                                </div>
-                                <div class="product-tracking-table">
-                                    <table class="tracking-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Employee</th>
-                                                <th>Role</th>
-                                                <th>Products Added</th>
-                                                <th>Last Activity</th>
-                                                <th>Status</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="product-tracking-body">
-                                            <!-- Will be populated dynamically -->
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Live Activity Feed -->
-                        <div class="live-feed-section">
-                            <div class="feed-header">
-                                <h4><i class="fas fa-stream"></i> Live Activity Feed</h4>
-                                <div class="feed-controls">
-                                    <button class="filter-btn active" data-filter="all">All</button>
-                                    <button class="filter-btn" data-filter="login">Logins</button>
-                                    <button class="filter-btn" data-filter="products">Products</button>
-                                </div>
-                            </div>
-                            <div class="live-feed" id="live-activity-feed">
-                                <!-- Will be populated dynamically -->
-                            </div>
-                        </div>
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <!-- Create Product Section -->
-            <div id="create-product" class="section">
-                <iframe src="create-product.html" style="width: 100%; height: calc(100vh - 70px); border: none;"></iframe>
-            </div>
-            
-            <!-- Scan QR Section -->
-            <div id="scan-qr" class="section">
-                <div class="section-content">
-                    <h2>Scan QR Code</h2>
-                    
-                    <div class="scan-options">
-                        <button onclick="startScanner()" class="btn btn-primary">Start Camera Scanner</button>
-                        <button onclick="showManualEntry()" class="btn btn-secondary">Manual Entry</button>
-                    </div>
-                    
-                    <div id="scanner-container" style="display: none;">
-                        <div class="scanner-wrapper">
-                            <p id="camera-info" style="text-align: center; color: #666; margin-bottom: 1rem;">
-                                Requesting camera permission...
-                            </p>
-                            <div class="reader-container">
-                                <div id="reader"></div>
-                            </div>
-                            <div id="camera-loading" style="text-align: center; padding: 2rem; display: none;">
-                                <div class="loading">
-                                    <div class="spinner"></div>
-                                    <p style="margin-top: 1rem;">Initializing camera...</p>
-                                </div>
-                            </div>
-                            <button onclick="stopScanner()" class="btn btn-danger" style="margin-top: 1rem; display: block; margin-left: auto; margin-right: auto;">Stop Scanner</button>
-                        </div>
-                    </div>
-                    
-                    <div id="manual-entry" style="display: none;">
-                        <div class="form-group">
-                            <label for="manual-product-id">Enter Product ID</label>
-                            <input type="text" id="manual-product-id" placeholder="e.g., SHI-M-ABC123">
-                        </div>
-                        <button onclick="manualLookup()" class="btn btn-primary">Lookup Product</button>
-                    </div>
-                    
-                    <div id="scan-result" class="scan-result" style="display: none;">
-                        <div id="product-details"></div>
-                        
-                        <h3>Update Inventory</h3>
-                        <form id="inventory-action-form" class="form">
-                            <div class="form-group">
-                                <label for="action">Action</label>
-                                <select id="action" required>
-                                    <option value="">Select Action</option>
-                                    <option value="IN">Add Items (Stock In)</option>
-                                    <option value="OUT">Remove Items (Stock Out)</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="quantity">Quantity</label>
-                                <input type="number" id="quantity" value="1" min="1" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="performed-by">Performed By</label>
-                                <input type="text" id="performed-by" placeholder="Enter your name">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="location">Location (Optional)</label>
-                                <input type="text" id="location" placeholder="e.g., Warehouse A">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="notes">Notes (Optional)</label>
-                                <textarea id="notes" rows="2"></textarea>
-                            </div>
-                            
-                            <button type="submit" class="btn btn-primary">Update Inventory</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Inventory Section -->
-            <div id="inventory" class="section">
-                <div class="section-content">
-                    <h2>Inventory Management</h2>
-                    <div id="inventory-component-container">
-                        <!-- Inventory component will be loaded here -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Transactions Section -->
-            <div id="transactions" class="section">
-                <div class="inventory-container trans-enhanced">
-                    <!-- Enhanced Header Bar -->
-                    <div class="inventory-header trans-header-white">
-                        <div class="header-left">
-                            <h1 class="trans-title">Transaction History</h1>
-                            <span class="record-count trans-count" id="trans-record-count">0 Transactions</span>
-                        </div>
-                    </div>
-
-                    <!-- Enhanced Filter Navigation Bar -->
-                    <nav class="trans-filter-nav">
-                        <div class="filter-nav-container">
-                            <!-- Search Section -->
-                            <div class="nav-search-section">
-                                <div class="search-input-wrapper">
-                                    <i class="fas fa-search search-icon"></i>
-                                    <input 
-                                        type="text" 
-                                        class="nav-search-input" 
-                                        placeholder="Search transactions..." 
-                                        id="search-transactions" 
-                                        oninput="searchTransactions()"
-                                    >
-                                </div>
-                            </div>
-                            
-                            <!-- Filters Section -->
-                            <div class="nav-filters-section">
-                                <!-- Date Filter -->
-                                <div class="nav-filter-item">
-                                    <label class="nav-filter-label">
-                                        <i class="fas fa-calendar-alt"></i>
-                                        <span>Date</span>
-                                    </label>
-                                    <select id="date-filter" class="nav-select" onchange="filterTransactions()">
-                                        <option value="all">All Time</option>
-                                        <option value="today">Today</option>
-                                        <option value="week">This Week</option>
-                                        <option value="month" selected>This Month</option>
-                                        <option value="year">This Year</option>
-                                    </select>
-                                </div>
-                                
-                                <!-- Action Filter -->
-                                <div class="nav-filter-item">
-                                    <label class="nav-filter-label">
-                                        <i class="fas fa-exchange-alt"></i>
-                                        <span>Status</span>
-                                    </label>
-                                    <select id="type-filter" class="nav-select" onchange="filterTransactions()">
-                                        <option value="all">All Status</option>
-                                        <option value="STOCK_IN">Stock In</option>
-                                        <option value="STOCK_OUT">Stock Out</option>
-                                        <option value="SALE">Removed</option>
-                                        <option value="INITIAL_STOCK">Updated</option>
-                                    </select>
-                                </div>
-                                
-                                <!-- Clear Filters Button -->
-                                <button class="clear-filters-btn" onclick="clearAllFilters()" title="Clear all filters">
-                                    <i class="fas fa-times-circle"></i>
-                                    Clear
-                                </button>
-                            </div>
-                            
-                            <!-- Entries Section -->
-                            <div class="nav-entries-section">
-                                <div class="nav-entries-wrapper">
-                                    <label class="nav-entries-label">Show</label>
-                                    <select id="per-page-trans" class="nav-select-entries" onchange="updateTransPerPage()">
-                                        <option value="10">10</option>
-                                        <option value="25">25</option>
-                                        <option value="50" selected>50</option>
-                                        <option value="100">100</option>
-                                    </select>
-                                    <span class="nav-entries-text">entries</span>
-                                </div>
-                            </div>
-                        </div>
-                    </nav>
-
-                    <!-- Enhanced Table Wrapper -->
-                    <div class="table-wrapper trans-table-wrapper">
-                        <!-- Enhanced Transactions Table -->
-                        <table class="inventory-table trans-table-enhanced" id="transactions-table">
-                            <thead>
-                                <tr>
-                                    <th width="10%">PRODUCT ID</th>
-                                    <th width="18%">Date & Time</th>
-                                    <th width="22%">Product Name</th>
-                                    <th width="12%">Status</th>
-                                    <th width="10%">Size</th>
-                                    <th width="10%">Qty</th>
-                                    <th width="12%">User</th>
-                                    <th width="10%">Location</th>
-                                </tr>
-                            </thead>
-                            <tbody id="transactions-list">
-                                <!-- Transaction rows will be populated here -->
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Pagination -->
-                    <div class="pagination-wrapper">
-                        <div class="pagination-info">
-                            Showing <span id="trans-start-record">1</span> to <span id="trans-end-record">25</span> 
-                            of <span id="trans-total-records">125</span> entries
-                        </div>
-                        
-                        <div class="pagination">
-                            <button class="page-btn" onclick="previousPage()" id="prev-btn" disabled>
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-                            <button class="page-number active">1</button>
-                            <button class="page-number">2</button>
-                            <button class="page-number">3</button>
-                            <span class="page-dots">...</span>
-                            <button class="page-number">5</button>
-                            <button class="page-btn" onclick="nextPage()" id="next-btn">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Empty State -->
-                    <div class="empty-state trans-empty" style="display: none;">
-                        <i class="fas fa-exchange-alt"></i>
-                        <h3>No transactions found</h3>
-                        <p>Start by adding some inventory transactions</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Reports Section -->
-            <div id="reports" class="section">
-                <div class="reports-container">
-                    <div class="reports-header">
-                        <div class="header-content">
-                            <h2>Reports & Analytics</h2>
-                            <p class="header-subtitle">Comprehensive insights and data analysis</p>
-                        </div>
-                        <!-- Reports controls removed -->
-                    </div>
-
-                    <div class="metrics-grid">
-                        <div class="metric-card">
-                            <div class="metric-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                                <i class="fas fa-rupee-sign"></i>
-                            </div>
-                            <div class="metric-details">
-                                <h3 id="total-value-metric">₹0</h3>
-                                <p>Total Inventory Value</p>
-                                <div class="metric-change" id="value-change">
-                                    <span>Calculating...</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="metric-card">
-                            <div class="metric-icon" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
-                                <i class="fas fa-boxes"></i>
-                            </div>
-                            <div class="metric-details">
-                                <h3 id="total-products-metric">0</h3>
-                                <p>Total Products</p>
-                                <div class="metric-change" id="products-change">
-                                    <span>Active items</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="metric-card">
-                            <div class="metric-icon" style="background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);">
-                                <i class="fas fa-trash-alt"></i>
-                            </div>
-                            <div class="metric-details">
-                                <h3 id="deleted-items-metric">0</h3>
-                                <p>Deleted Items</p>
-                                <div class="metric-change" id="deleted-change">
-                                    <span>Inactive products</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Stock movements metric removed -->
-                    </div>
-
-                    <div class="charts-section">
-                        <div class="charts-row">
-                            <div class="chart-card large">
-                                <div class="card-header">
-                                    <h3>Stock Movement Trends</h3>
-                                    <div class="chart-controls">
-                                        <button class="chart-btn active" onclick="updateStockChart('line')">Line</button>
-                                        <button class="chart-btn" onclick="updateStockChart('bar')">Bar</button>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="stockMovementChart"></canvas>
-                                </div>
-                            </div>
-
-                            <div class="chart-card medium">
-                                <div class="card-header">
-                                    <h3>Category Distribution</h3>
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="categoryChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="charts-row">
-                            <div class="chart-card medium">
-                                <div class="card-header">
-                                    <h3>Stock Status Overview</h3>
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="stockStatusChart"></canvas>
-                                </div>
-                            </div>
-
-                            <div class="chart-card medium">
-                                <div class="card-header">
-                                    <h3>Top Products by Quantity</h3>
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="topProductsChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Detailed analytics section removed -->
-
-                    <!-- AI insights section removed -->
-                </div>
-            </div>
-            
-            <!-- Fabric Entry Section -->
-            <div id="fabric-entry" class="section">
-                <div class="section-content">
-                    <div id="fabric-entry-container">
-                        <!-- Fabric entry component will be loaded here -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Fabric Cutting Section -->
-            <div id="fabric-cutting" class="section">
-                <div class="section-content">
-                    <div id="fabric-cutting-container">
-                        <!-- Fabric cutting component will be loaded here -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Tailor Assignment Section -->
-            <div id="tailor-assignment" class="section">
-                <div class="section-content">
-                    <div id="tailor-assignment-container">
-                        <!-- Tailor assignment component will be loaded here -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Employees Section -->
-            <div id="employees" class="section">
-                <div class="section-content">
-                    <div id="employees-container">
-                        <!-- Employee management component will be loaded here -->
-                    </div>
-                </div>
+        <!-- Empty Main Content -->
+        <main class="main-content-empty">
+            <div class="empty-state">
+                <i class="fas fa-cube"></i>
+                <h2>QR Inventory System</h2>
+                <p>Clean sidebar navigation ready for development</p>
             </div>
         </main>
-
-        <!-- Notification Container -->
-        <div id="notification-container"></div>
     </div>
 
-    <!-- External Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.4/html5-qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    
-    <!-- Component Scripts -->
-    <script src="components/inventory/inventory-manager.js"></script>
-    <script src="components/fabric/fabric-manager.js"></script>
-    <script src="components/fabric/cutting-manager.js"></script>
-    <script src="components/fabric/tailor-manager.js"></script>
-    <script src="components/fabric/employee-manager.js"></script>
-    
-    <!-- Main Application Script -->
-    <script src="assets/js/app-main.js"></script>
+    <script>
+        // Sidebar collapse functionality
+        function collapseSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+        }
+        
+        // Toggle sidebar for mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+        
+        // Show section functionality (placeholder)
+        function showSection(sectionName, event) {
+            if (event) {
+                event.preventDefault();
+            }
+            
+            // Remove active class from all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to clicked nav item
+            if (event && event.target) {
+                const clickedItem = event.target.closest('.nav-item');
+                if (clickedItem) {
+                    clickedItem.classList.add('active');
+                }
+            }
+            
+            // Update empty state text
+            const emptyState = document.querySelector('.empty-state p');
+            if (emptyState) {
+                emptyState.textContent = `${sectionName.charAt(0).toUpperCase() + sectionName.slice(1).replace('-', ' ')} section selected`;
+            }
+            
+            console.log(`Navigation clicked: ${sectionName}`);
+        }
+        
+        // Mobile sidebar close on click outside
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const isClickInsideSidebar = sidebar.contains(event.target);
+            
+            if (!isClickInsideSidebar && window.innerWidth <= 768) {
+                sidebar.classList.remove('active');
+            }
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>
