@@ -31,9 +31,9 @@ const fabricSchema = new mongoose.Schema({
         width: { type: Number, required: true },
         unit: { type: String, default: 'meters' }
     },
-    quantity: { type: Number, required: true },
-    quality: { type: String, required: true },
-    pattern: String,
+    quantity: { type: Number, default: 1 },
+    quality: { type: String, default: 'Standard' },
+    pattern: { type: String, default: 'Plain' },
     supplier: String,
     purchaseDate: { type: Date, default: Date.now },
     pricePerMeter: Number,

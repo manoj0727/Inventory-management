@@ -51,8 +51,8 @@
         
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
             margin-bottom: 24px;
         }
         
@@ -96,10 +96,13 @@
         }
         
         .size-inputs {
-            display: grid;
-            grid-template-columns: 1fr 1fr auto;
+            display: flex;
             gap: 10px;
-            align-items: end;
+            align-items: center;
+        }
+        
+        .size-inputs input {
+            flex: 1;
         }
         
         .btn-group {
@@ -228,21 +231,101 @@
             color: #991b1b;
         }
         
+        /* Tablet responsive */
+        @media (max-width: 1024px) {
+            .container {
+                max-width: 100%;
+                padding: 0 16px;
+            }
+            
+            .form-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+            }
+        }
+        
+        /* Mobile responsive */
         @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+            
+            .page-header {
+                padding: 20px;
+            }
+            
+            .page-header h1 {
+                font-size: 24px;
+            }
+            
+            .page-header p {
+                font-size: 14px;
+            }
+            
+            .form-card {
+                padding: 20px;
+            }
+            
             .form-grid {
                 grid-template-columns: 1fr;
+                gap: 16px;
             }
             
             .btn-group {
-                flex-direction: column;
+                flex-direction: column-reverse;
+                width: 100%;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
             }
             
             .entries-table {
                 overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
             }
             
             .entries-table table {
-                min-width: 600px;
+                min-width: 700px;
+            }
+            
+            .recent-entries h2 {
+                font-size: 18px;
+            }
+        }
+        
+        /* Small mobile */
+        @media (max-width: 480px) {
+            .page-header h1 {
+                font-size: 20px;
+            }
+            
+            .form-card {
+                padding: 16px;
+                border-radius: 8px;
+            }
+            
+            .size-inputs {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .size-inputs input,
+            .size-inputs select,
+            .size-inputs span {
+                width: 100%;
+            }
+            
+            .form-group label {
+                font-size: 13px;
+            }
+            
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                font-size: 14px;
+                padding: 8px 12px;
             }
         }
     </style>
@@ -286,29 +369,14 @@
                     
                     <div class="form-group">
                         <label>Color <span class="required">*</span></label>
-                        <input type="text" id="color" placeholder="e.g., Navy Blue" required>
+                        <input type="text" id="color" placeholder="e.g., Navy Blue, Red, Green" required>
                     </div>
                     
                     <div class="form-group">
-                        <label>Pattern</label>
-                        <select id="pattern">
-                            <option value="">Select Pattern</option>
-                            <option value="Plain">Plain</option>
-                            <option value="Striped">Striped</option>
-                            <option value="Checkered">Checkered</option>
-                            <option value="Floral">Floral</option>
-                            <option value="Geometric">Geometric</option>
-                            <option value="Abstract">Abstract</option>
-                            <option value="Printed">Printed</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Size (Length x Width) <span class="required">*</span></label>
+                        <label>Total Length <span class="required">*</span></label>
                         <div class="size-inputs">
-                            <input type="number" id="length" placeholder="Length" step="0.01" required>
-                            <input type="number" id="width" placeholder="Width" step="0.01" required>
-                            <select id="unit">
+                            <input type="number" id="length" placeholder="Enter length" step="0.01" required>
+                            <select id="unit" style="width: 120px;">
                                 <option value="meters">Meters</option>
                                 <option value="yards">Yards</option>
                                 <option value="feet">Feet</option>
@@ -317,20 +385,11 @@
                     </div>
                     
                     <div class="form-group">
-                        <label>Quantity (Rolls/Pieces) <span class="required">*</span></label>
-                        <input type="number" id="quantity" placeholder="Enter quantity" min="1" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Quality Grade <span class="required">*</span></label>
-                        <select id="quality" required>
-                            <option value="">Select Quality</option>
-                            <option value="Premium">Premium</option>
-                            <option value="Standard">Standard</option>
-                            <option value="Economy">Economy</option>
-                            <option value="Export">Export Quality</option>
-                            <option value="Defective">Defective</option>
-                        </select>
+                        <label>Width <span class="required">*</span></label>
+                        <div class="size-inputs">
+                            <input type="number" id="width" placeholder="Enter width" step="0.01" required>
+                            <span style="padding: 10px; color: #6b7280;">Same unit as length</span>
+                        </div>
                     </div>
                     
                     <div class="form-group">
@@ -442,14 +501,14 @@
             const fabricData = {
                 fabricType: document.getElementById('fabricType').value,
                 color: document.getElementById('color').value,
-                pattern: document.getElementById('pattern').value,
+                pattern: 'Plain', // Default pattern
                 size: {
                     length: parseFloat(document.getElementById('length').value),
                     width: parseFloat(document.getElementById('width').value),
                     unit: document.getElementById('unit').value
                 },
-                quantity: parseInt(document.getElementById('quantity').value),
-                quality: document.getElementById('quality').value,
+                quantity: 1, // Default quantity
+                quality: 'Standard', // Default quality
                 supplier: document.getElementById('supplier').value,
                 purchaseDate: document.getElementById('purchaseDate').value,
                 pricePerMeter: parseFloat(document.getElementById('pricePerMeter').value) || 0,
