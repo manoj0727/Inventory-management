@@ -33,6 +33,8 @@ const fabricSchema = new mongoose.Schema({
         unit: { type: String, default: 'meters' }
     },
     quantity: { type: Number, default: 1 },
+    remainingArea: { type: Number }, // Track remaining area after cutting
+    originalArea: { type: Number }, // Store original total area
     quality: { type: String, default: 'Standard' },
     pattern: { type: String, default: 'Plain' },
     supplier: String,
@@ -150,9 +152,17 @@ app.post('/api/fabrics', async (req, res) => {
         const count = await Fabric.countDocuments();
         const fabricId = `FAB${String(count + 1).padStart(5, '0')}`;
         
+        // Calculate total area from dimensions and quantity
+        const length = req.body.size?.length || 0;
+        const width = req.body.size?.width || 0;
+        const quantity = req.body.quantity || 1;
+        const totalArea = length * width * quantity;
+        
         const fabricData = {
             ...req.body,
             fabricId,
+            originalArea: totalArea,
+            remainingArea: totalArea, // Initially, remaining area equals total area
             createdAt: new Date(),
             updatedAt: new Date()
         };
@@ -252,28 +262,40 @@ app.post('/api/cuttings', async (req, res) => {
         const count = await Cutting.countDocuments();
         const cuttingId = `CUT${String(count + 1).padStart(5, '0')}`;
         
-        // Update fabric quantity
+        // Get fabric details
         const fabric = await Fabric.findOne({ fabricId: req.body.fabricId });
         if (!fabric) {
             return res.status(404).json({ error: 'Fabric not found' });
         }
         
-        if (fabric.quantity < req.body.fabricQuantityUsed) {
-            return res.status(400).json({ error: 'Insufficient fabric quantity' });
+        // Calculate area used for cutting
+        const pieceLength = req.body.pieceSize?.length || 0;
+        const pieceWidth = req.body.pieceSize?.width || 0;
+        const numberOfPieces = req.body.numberOfPieces || 0;
+        const totalAreaUsed = pieceLength * pieceWidth * numberOfPieces;
+        
+        // Check if enough area is available
+        const currentRemainingArea = fabric.remainingArea || (fabric.size.length * fabric.size.width * fabric.quantity);
+        if (totalAreaUsed > currentRemainingArea) {
+            return res.status(400).json({ error: `Insufficient fabric area. Available: ${currentRemainingArea.toFixed(2)} m², Required: ${totalAreaUsed.toFixed(2)} m²` });
         }
         
-        // Update fabric quantity and status
-        fabric.quantity -= req.body.fabricQuantityUsed || 1;
-        if (fabric.quantity > 0) {
+        // Update fabric remaining area and status
+        fabric.remainingArea = currentRemainingArea - totalAreaUsed;
+        
+        // Update status based on remaining area
+        if (fabric.remainingArea > 0) {
             fabric.status = 'updated';
         } else {
             fabric.status = 'out_of_stock';
         }
+        
         await fabric.save();
         
         const cuttingData = {
             ...req.body,
             cuttingId,
+            totalAreaUsed, // Store the area used
             createdAt: new Date(),
             updatedAt: new Date()
         };

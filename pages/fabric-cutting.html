@@ -655,7 +655,16 @@
                 return;
             }
             
-            const user = JSON.parse(localStorage.getItem('user'));
+            // Get current user from auth system
+            const authData = JSON.parse(localStorage.getItem('qr_inventory_auth'));
+            const user = authData ? authData.user : null;
+            
+            if (!user) {
+                alert('User session expired. Please login again.');
+                window.location.href = '/login.html';
+                return;
+            }
+            
             const fabricQuantityUsed = calculationResult.fabricQuantityUsed;
             
             // Create cutting record
@@ -676,8 +685,8 @@
                 productType: document.getElementById('productType').value,
                 productDescription: document.getElementById('productName').value,
                 cuttingBy: {
-                    userId: user.id,
-                    userName: user.username,
+                    userId: user.id || user.username,
+                    userName: user.name || user.username,
                     role: user.role
                 },
                 notes: document.getElementById('notes').value

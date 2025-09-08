@@ -861,7 +861,11 @@
                         </div>
                         <div class="fabric-info-row">
                             <span class="info-label">Quantity:</span>
-                            <span class="info-value">${fabric.quantity}</span>
+                            <span class="info-value">${fabric.quantity} units</span>
+                        </div>
+                        <div class="fabric-info-row">
+                            <span class="info-label">Remaining Area:</span>
+                            <span class="info-value">${(fabric.remainingArea || (fabric.size.length * fabric.size.width * fabric.quantity)).toFixed(2)} m²</span>
                         </div>
                         <div class="fabric-info-row">
                             <span class="info-label">Location:</span>
@@ -909,7 +913,10 @@
                     <td>${fabric.fabricType}</td>
                     <td>${fabric.color}</td>
                     <td>${fabric.size.length} x ${fabric.size.width} ${fabric.size.unit}</td>
-                    <td>${fabric.quantity}</td>
+                    <td>
+                        <div>${fabric.quantity} units</div>
+                        <small style="color: #6b7280;">Area: ${(fabric.remainingArea || (fabric.size.length * fabric.size.width * fabric.quantity)).toFixed(2)} m²</small>
+                    </td>
                     <td>${fabric.location || '-'}</td>
                     <td><span class="status-badge status-${fabric.status}">${fabric.status.replace('_', ' ')}</span></td>
                     <td>${fabric.registeredBy?.userName || 'Unknown'}</td>
