@@ -25,19 +25,19 @@
         .dashboard-container {
             display: flex;
             min-height: 100vh;
+            position: relative;
         }
         
-        /* Empty content area - just for layout */
+        /* Main content area with better positioning */
         .main-content-empty {
-            margin-left: 250px;
             flex: 1;
-            padding: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: margin-left 0.3s ease;
+            margin-left: 250px;
+            padding: 0;
             background: #f9fafb;
             min-height: 100vh;
+            transition: all 0.3s ease;
+            overflow-y: auto;
+            position: relative;
         }
         
         .sidebar.collapsed ~ .main-content-empty {
@@ -45,6 +45,12 @@
         }
         
         .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px;
             text-align: center;
             color: #6b7280;
         }
@@ -56,14 +62,16 @@
         }
         
         .empty-state h2 {
-            font-size: 24px;
+            font-size: 28px;
             margin-bottom: 8px;
             color: #374151;
+            font-weight: 700;
         }
         
         .empty-state p {
             font-size: 16px;
             color: #6b7280;
+            max-width: 400px;
         }
         
         /* Mobile Menu Button */
@@ -129,6 +137,26 @@
             color: #374151;
         }
         
+        /* Content Sections */
+        .content-section {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+        
+        .content-section.active {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .content-section iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            flex: 1;
+        }
+        
         /* Mobile overlay */
         .mobile-overlay {
             display: none;
@@ -145,6 +173,17 @@
         
         .mobile-overlay.active {
             opacity: 1;
+        }
+        
+        /* Tablet responsive */
+        @media (max-width: 1024px) {
+            .main-content-empty {
+                margin-left: 250px;
+            }
+            
+            .sidebar.collapsed ~ .main-content-empty {
+                margin-left: 70px;
+            }
         }
         
         /* Mobile responsive */
@@ -167,7 +206,9 @@
             
             .main-content-empty {
                 margin-left: 0;
-                padding: 80px 20px 20px 20px;
+                padding: 0;
+                min-height: calc(100vh - 60px);
+                margin-top: 60px;
             }
             
             .sidebar.collapsed ~ .main-content-empty {
@@ -175,14 +216,23 @@
             }
             
             .empty-state {
-                margin-top: 40px;
+                padding: 20px;
+                min-height: calc(100vh - 60px);
+            }
+            
+            .empty-state h2 {
+                font-size: 24px;
+            }
+            
+            .empty-state i {
+                font-size: 48px;
             }
         }
         
         /* Smaller mobile devices */
         @media (max-width: 480px) {
-            .main-content-empty {
-                padding: 60px 16px 16px 16px;
+            .empty-state {
+                padding: 16px;
             }
             
             .empty-state h2 {
@@ -191,6 +241,10 @@
             
             .empty-state p {
                 font-size: 14px;
+            }
+            
+            .empty-state i {
+                font-size: 40px;
             }
         }
     </style>
@@ -214,9 +268,14 @@
             
             <nav class="nav-menu">
                 <ul>
-                    <li><a href="#" class="nav-item active" data-section="dashboard" data-tooltip="Dashboard">
+                    <li><a href="#" onclick="showSection('dashboard', event)" class="nav-item active" data-section="dashboard" data-tooltip="Dashboard">
                         <i class="fas fa-tachometer-alt"></i>
                         <span>Dashboard</span>
+                    </a></li>
+                    
+                    <li><a href="#" onclick="showSection('tailor-management', event)" class="nav-item" data-section="tailor-management" data-tooltip="Tailor Management">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Tailor Management</span>
                     </a></li>
                 </ul>
             </nav>
@@ -227,12 +286,20 @@
             <i class="fas fa-bars"></i>
         </button>
 
-        <!-- Dashboard Main Content -->
-        <main class="main-content-empty">
-            <div class="empty-state">
-                <i class="fas fa-tachometer-alt"></i>
-                <h2>Dashboard</h2>
-                <p>Welcome to the QR Inventory Management Dashboard</p>
+        <!-- Main Content Area -->
+        <main id="main-content-area" class="main-content-empty">
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="content-section active">
+                <div class="empty-state">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <h2>Dashboard</h2>
+                    <p>Welcome to the QR Inventory Management Dashboard</p>
+                </div>
+            </div>
+            
+            <!-- Tailor Management Section -->
+            <div id="tailor-management-section" class="content-section">
+                <iframe src="pages/tailor-management.html" frameborder="0"></iframe>
             </div>
         </main>
     </div>
@@ -265,6 +332,43 @@
             document.body.style.overflow = '';
         }
         
+        // Show section functionality
+        function showSection(sectionName, event) {
+            if (event) {
+                event.preventDefault();
+            }
+            
+            // Remove active class from all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to clicked nav item
+            if (event && event.target) {
+                const clickedItem = event.target.closest('.nav-item');
+                if (clickedItem) {
+                    clickedItem.classList.add('active');
+                }
+            }
+            
+            // Hide all content sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Show selected section
+            const targetSection = document.getElementById(sectionName + '-section');
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
+            
+            // Close sidebar on mobile after selection
+            if (window.innerWidth <= 768) {
+                closeSidebar();
+            }
+            
+            console.log(`Navigation clicked: ${sectionName}`);
+        }
         
         // Handle window resize
         window.addEventListener('resize', function() {

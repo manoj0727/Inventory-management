@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tailor Management - QR Inventory System</title>
+    <link rel="stylesheet" href="../css/tailor-management.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Tailor Management</h1>
+                <p class="page-subtitle">Manage tailors, assign work, and track progress</p>
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="add-tailor-btn">
+                    <i class="fas fa-plus"></i> Add New Tailor
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistics Cards 3x2 Grid -->
+        <div class="stats-container">
+            <div class="stat-card primary">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Total Tailors</h3>
+                    <p class="number" id="total-tailors">0</p>
+                    <div class="stat-footer">
+                        <span class="stat-label">Registered workforce</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card success">
+                <div class="stat-icon">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Active Now</h3>
+                    <p class="number" id="active-tailors">0</p>
+                    <div class="stat-footer">
+                        <span class="stat-label positive">
+                            <i class="fas fa-circle"></i> Available
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card warning">
+                <div class="stat-icon">
+                    <i class="fas fa-user-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Working</h3>
+                    <p class="number" id="busy-tailors">0</p>
+                    <div class="stat-footer">
+                        <span class="stat-label">On assignments</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card info">
+                <div class="stat-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Active Orders</h3>
+                    <p class="number" id="active-assignments">0</p>
+                    <div class="stat-footer">
+                        <span class="stat-label">In progress</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card success-light">
+                <div class="stat-icon">
+                    <i class="fas fa-check-double"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Completed</h3>
+                    <p class="number" id="completed-assignments">0</p>
+                    <div class="stat-footer">
+                        <span class="stat-label positive">This month</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card danger">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Overdue</h3>
+                    <p class="number" id="overdue-assignments">0</p>
+                    <div class="stat-footer">
+                        <span class="stat-label negative">Need attention</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section Title -->
+        <div class="section-header">
+            <h2 class="section-title">Tailor Workforce</h2>
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="tailorMgmt.filterTailors('all')">All</button>
+                <button class="filter-btn" onclick="tailorMgmt.filterTailors('active')">Active</button>
+                <button class="filter-btn" onclick="tailorMgmt.filterTailors('busy')">Busy</button>
+                <button class="filter-btn" onclick="tailorMgmt.filterTailors('inactive')">Inactive</button>
+            </div>
+        </div>
+
+        <!-- Tailors Grid -->
+        <div class="tailors-grid" id="tailors-container">
+            <!-- Tailors will be loaded here -->
+        </div>
+    </main>
+
+    <!-- Add Tailor Modal -->
+    <div class="modal" id="add-tailor-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add New Tailor</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            
+            <form id="add-tailor-form">
+                <div class="form-group">
+                    <label class="form-label" for="username">Username *</label>
+                    <input type="text" class="form-input" id="username" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="password">Password *</label>
+                    <input type="password" class="form-input" id="password" name="password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="fullName">Full Name *</label>
+                    <input type="text" class="form-input" id="fullName" name="fullName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone">Phone Number</label>
+                    <input type="tel" class="form-input" id="phone" name="phone">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="email">Email</label>
+                    <input type="email" class="form-input" id="email" name="email">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="specialization">Specialization *</label>
+                    <select class="form-select" id="specialization" name="specialization" required>
+                        <option value="">Select Specialization</option>
+                        <option value="Shirt Tailor">Shirt Tailor</option>
+                        <option value="Trouser Specialist">Trouser Specialist</option>
+                        <option value="Suit Maker">Suit Maker</option>
+                        <option value="Dress Maker">Dress Maker</option>
+                        <option value="Traditional Wear">Traditional Wear</option>
+                        <option value="Alterations">Alterations</option>
+                        <option value="General Tailor">General Tailor</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="experience">Years of Experience *</label>
+                    <input type="number" class="form-input" id="experience" name="experience" min="0" max="50" required>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Tailor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Assign Work Modal -->
+    <div class="modal" id="assign-work-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Assign Work</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            
+            <div style="margin-bottom: 20px; padding: 12px; background: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 6px;">
+                <p style="margin: 0; color: #1e40af; font-weight: 500;">
+                    <i class="fas fa-user"></i> Assigning to: <span id="assignment-tailor-name"></span>
+                </p>
+            </div>
+            
+            <form id="assign-work-form">
+                <div class="form-group">
+                    <label class="form-label" for="orderType">Order Type *</label>
+                    <select class="form-select" id="orderType" name="orderType" required>
+                        <option value="">Select Order Type</option>
+                        <option value="Shirt">Shirt</option>
+                        <option value="Trouser">Trouser</option>
+                        <option value="Suit">Suit</option>
+                        <option value="Dress">Dress</option>
+                        <option value="Kurta">Kurta</option>
+                        <option value="Saree Blouse">Saree Blouse</option>
+                        <option value="Alteration">Alteration</option>
+                        <option value="Custom Order">Custom Order</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="description">Description *</label>
+                    <textarea class="form-textarea" id="description" name="description" placeholder="Describe the work to be done..." required></textarea>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label" for="quantity">Quantity *</label>
+                        <input type="number" class="form-input" id="quantity" name="quantity" min="1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="fabricType">Fabric Type</label>
+                        <select class="form-select" id="fabricType" name="fabricType">
+                            <option value="">Select Fabric</option>
+                            <option value="Cotton">Cotton</option>
+                            <option value="Silk">Silk</option>
+                            <option value="Wool">Wool</option>
+                            <option value="Linen">Linen</option>
+                            <option value="Polyester">Polyester</option>
+                            <option value="Denim">Denim</option>
+                            <option value="Chiffon">Chiffon</option>
+                            <option value="Georgette">Georgette</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label" for="deadline">Deadline *</label>
+                        <input type="datetime-local" class="form-input" id="deadline" name="deadline" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="priority">Priority *</label>
+                        <select class="form-select" id="priority" name="priority" required>
+                            <option value="">Select Priority</option>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                            <option value="Urgent">Urgent</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="estimatedHours">Estimated Hours *</label>
+                    <input type="number" class="form-input" id="estimatedHours" name="estimatedHours" min="1" step="0.5" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="notes">Additional Notes</label>
+                    <textarea class="form-textarea" id="notes" name="notes" placeholder="Any special instructions or notes..."></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Assign Work</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Load JavaScript -->
+    <script src="../js/tailor-management.js"></script>
+</body>
+</html>
