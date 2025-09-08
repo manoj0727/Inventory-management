@@ -91,9 +91,9 @@
             background: #f3f4f6;
         }
         
-        .export-btn {
+        .refresh-btn {
             padding: 10px 16px;
-            background: #10b981;
+            background: #3b82f6;
             color: white;
             border: none;
             border-radius: 8px;
@@ -105,8 +105,17 @@
             transition: all 0.3s ease;
         }
         
-        .export-btn:hover {
-            background: #059669;
+        .refresh-btn:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+        
+        .refresh-btn i {
+            transition: transform 0.5s ease;
+        }
+        
+        .refresh-btn.spinning i {
+            animation: spin 1s linear infinite;
         }
         
         /* Statistics Cards */
@@ -334,12 +343,19 @@
             margin-bottom: 6px;
         }
         
-        .filter-group select {
+        .filter-group select,
+        .filter-group input {
             width: 100%;
             padding: 8px 12px;
             border: 1px solid #d1d5db;
             border-radius: 6px;
             font-size: 14px;
+        }
+        
+        .filter-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
         
         .filter-actions {
@@ -465,9 +481,9 @@
                     <i class="fas fa-filter"></i>
                     Filters
                 </button>
-                <button class="export-btn" onclick="exportData()">
-                    <i class="fas fa-download"></i>
-                    Export
+                <button class="refresh-btn" onclick="refreshInventory()">
+                    <i class="fas fa-sync-alt"></i>
+                    Refresh
                 </button>
             </div>
         </div>
@@ -477,21 +493,11 @@
             <div class="filter-grid">
                 <div class="filter-group">
                     <label>Fabric Type</label>
-                    <select id="filterType">
-                        <option value="">All Types</option>
-                        <option value="Cotton">Cotton</option>
-                        <option value="Silk">Silk</option>
-                        <option value="Wool">Wool</option>
-                        <option value="Polyester">Polyester</option>
-                        <option value="Linen">Linen</option>
-                        <option value="Denim">Denim</option>
-                    </select>
+                    <input type="text" id="filterType" placeholder="Enter fabric type...">
                 </div>
                 <div class="filter-group">
                     <label>Color</label>
-                    <select id="filterColor">
-                        <option value="">All Colors</option>
-                    </select>
+                    <input type="text" id="filterColor" placeholder="Enter color...">
                 </div>
                 <div class="filter-group">
                     <label>Status</label>
@@ -602,7 +608,6 @@
                 filteredFabrics = [...allFabrics];
                 
                 renderInventory(filteredFabrics);
-                updateColorFilter();
             } catch (error) {
                 console.error('Error loading inventory:', error);
                 showEmptyState('Error loading inventory data');
@@ -703,24 +708,28 @@
             panel.classList.toggle('show');
         }
         
-        // Update color filter options
-        function updateColorFilter() {
-            const colors = [...new Set(allFabrics.map(f => f.color))];
-            const colorSelect = document.getElementById('filterColor');
+        // Refresh inventory
+        async function refreshInventory() {
+            const refreshBtn = document.querySelector('.refresh-btn');
+            refreshBtn.classList.add('spinning');
             
-            colorSelect.innerHTML = '<option value="">All Colors</option>' +
-                colors.map(color => `<option value="${color}">${color}</option>`).join('');
+            await loadInventory();
+            await loadStats();
+            
+            setTimeout(() => {
+                refreshBtn.classList.remove('spinning');
+            }, 500);
         }
         
         // Apply filters
         function applyFilters() {
-            const type = document.getElementById('filterType').value;
-            const color = document.getElementById('filterColor').value;
+            const type = document.getElementById('filterType').value.toLowerCase();
+            const color = document.getElementById('filterColor').value.toLowerCase();
             const status = document.getElementById('filterStatus').value;
             
             filteredFabrics = allFabrics.filter(fabric => {
-                return (!type || fabric.fabricType === type) &&
-                       (!color || fabric.color === color) &&
+                return (!type || fabric.fabricType.toLowerCase().includes(type)) &&
+                       (!color || fabric.color.toLowerCase().includes(color)) &&
                        (!status || fabric.status === status);
             });
             
@@ -762,33 +771,6 @@
         // Edit fabric (placeholder)
         function editFabric(id) {
             alert('Edit functionality will be implemented soon');
-        }
-        
-        // Export data
-        function exportData() {
-            const csvContent = [
-                ['Fabric ID', 'Type', 'Color', 'Length', 'Width', 'Unit', 'Quantity', 'Location', 'Status', 'Registered By', 'Date'],
-                ...filteredFabrics.map(f => [
-                    f.fabricId,
-                    f.fabricType,
-                    f.color,
-                    f.size.length,
-                    f.size.width,
-                    f.size.unit,
-                    f.quantity,
-                    f.location || '',
-                    f.status,
-                    f.registeredBy?.userName || '',
-                    new Date(f.createdAt).toLocaleDateString()
-                ])
-            ].map(row => row.join(',')).join('\n');
-            
-            const blob = new Blob([csvContent], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `fabric_inventory_${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
         }
     </script>
 </body>

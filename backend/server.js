@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -12,7 +13,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // MongoDB connection
-const MONGODB_URI = 'mongodb+srv://manojkumawat2465_db_user:8kGMjjM66wh3w19s@server.ze020oi.mongodb.net/inventory_management?retryWrites=true&w=majority&appName=server';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
