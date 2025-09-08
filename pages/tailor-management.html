@@ -125,60 +125,111 @@
 
     <!-- Add Tailor Modal -->
     <div class="modal" id="add-tailor-modal">
-        <div class="modal-content">
+        <div class="modal-content modal-large">
             <div class="modal-header">
-                <h2 class="modal-title">Add New Tailor</h2>
+                <div>
+                    <h2 class="modal-title">Add New Tailor</h2>
+                    <p class="modal-subtitle">Create a new tailor account and profile</p>
+                </div>
                 <button class="modal-close">&times;</button>
             </div>
             
-            <form id="add-tailor-form">
-                <div class="form-group">
-                    <label class="form-label" for="username">Username *</label>
-                    <input type="text" class="form-input" id="username" name="username" required>
+            <form id="add-tailor-form" class="modern-form">
+                <div class="form-section">
+                    <h3 class="form-section-title">
+                        <i class="fas fa-user-circle"></i> Account Information
+                    </h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="username">
+                                <i class="fas fa-user"></i> Username *
+                            </label>
+                            <input type="text" class="form-input" id="username" name="username" placeholder="Enter unique username" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="password">
+                                <i class="fas fa-lock"></i> Password *
+                            </label>
+                            <input type="password" class="form-input" id="password" name="password" placeholder="Enter secure password" required>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label class="form-label" for="password">Password *</label>
-                    <input type="password" class="form-input" id="password" name="password" required>
+                <div class="form-section">
+                    <h3 class="form-section-title">
+                        <i class="fas fa-id-card"></i> Personal Information
+                    </h3>
+                    <div class="form-group">
+                        <label class="form-label" for="fullName">
+                            <i class="fas fa-signature"></i> Full Name *
+                        </label>
+                        <input type="text" class="form-input" id="fullName" name="fullName" placeholder="Enter full name" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="phone">
+                                <i class="fas fa-phone"></i> Phone Number
+                            </label>
+                            <input type="tel" class="form-input" id="phone" name="phone" placeholder="+91 98765 43210">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="email">
+                                <i class="fas fa-envelope"></i> Email Address
+                            </label>
+                            <input type="email" class="form-input" id="email" name="email" placeholder="email@example.com">
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label class="form-label" for="fullName">Full Name *</label>
-                    <input type="text" class="form-input" id="fullName" name="fullName" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="phone">Phone Number</label>
-                    <input type="tel" class="form-input" id="phone" name="phone">
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="email">Email</label>
-                    <input type="email" class="form-input" id="email" name="email">
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="specialization">Specialization *</label>
-                    <select class="form-select" id="specialization" name="specialization" required>
-                        <option value="">Select Specialization</option>
-                        <option value="Shirt Tailor">Shirt Tailor</option>
-                        <option value="Trouser Specialist">Trouser Specialist</option>
-                        <option value="Suit Maker">Suit Maker</option>
-                        <option value="Dress Maker">Dress Maker</option>
-                        <option value="Traditional Wear">Traditional Wear</option>
-                        <option value="Alterations">Alterations</option>
-                        <option value="General Tailor">General Tailor</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="experience">Years of Experience *</label>
-                    <input type="number" class="form-input" id="experience" name="experience" min="0" max="50" required>
+                <div class="form-section">
+                    <h3 class="form-section-title">
+                        <i class="fas fa-briefcase"></i> Professional Details
+                    </h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="specialization">
+                                <i class="fas fa-cut"></i> Specialization *
+                                <button type="button" class="btn-icon" onclick="tailorMgmt.manageSpecializations()" title="Manage Specializations">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                            </label>
+                            <div class="custom-select-wrapper">
+                                <input type="text" class="form-input" id="specialization" name="specialization" 
+                                       placeholder="Type or select specialization" list="specialization-list" required>
+                                <datalist id="specialization-list">
+                                    <!-- Options will be populated by JavaScript -->
+                                </datalist>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="experience">
+                                <i class="fas fa-award"></i> Years of Experience *
+                            </label>
+                            <input type="number" class="form-input" id="experience" name="experience" 
+                                   min="0" max="50" placeholder="0" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="skills">
+                            <i class="fas fa-tools"></i> Skills & Expertise
+                        </label>
+                        <textarea class="form-textarea" id="skills" name="skills" 
+                                  placeholder="List special skills, techniques, or certifications..." rows="3"></textarea>
+                    </div>
                 </div>
                 
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary modal-close">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Tailor</button>
+                    <button type="button" class="btn btn-secondary modal-close">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Tailor
+                    </button>
                 </div>
             </form>
         </div>

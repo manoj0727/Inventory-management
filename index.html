@@ -16,26 +16,34 @@
             box-sizing: border-box;
         }
         
+        html {
+            font-size: 16px;
+        }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f9fafb;
             overflow-x: hidden;
+            width: 100%;
+            min-height: 100vh;
         }
         
         .dashboard-container {
             display: flex;
             min-height: 100vh;
             position: relative;
+            width: 100%;
         }
         
         /* Main content area with better positioning */
         .main-content-empty {
             flex: 1;
+            width: 100%;
             margin-left: 250px;
             padding: 0;
             background: #f9fafb;
             min-height: 100vh;
-            transition: all 0.3s ease;
+            transition: margin-left 0.3s ease;
             overflow-y: auto;
             position: relative;
         }
@@ -141,7 +149,7 @@
         .content-section {
             display: none;
             width: 100%;
-            height: 100vh;
+            min-height: 100vh;
             position: relative;
         }
         
@@ -152,9 +160,21 @@
         
         .content-section iframe {
             width: 100%;
+            min-height: 100vh;
             height: 100%;
             border: none;
             flex: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .content-section {
+                min-height: calc(100vh - 60px);
+                margin-top: 60px;
+            }
+            
+            .content-section iframe {
+                min-height: calc(100vh - 60px);
+            }
         }
         
         /* Mobile overlay */
@@ -175,8 +195,97 @@
             opacity: 1;
         }
         
+        /* Admin info and logout */
+        .admin-info {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            padding: 0 20px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 20px;
+        }
+        
+        .admin-details {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .admin-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .admin-text {
+            flex: 1;
+        }
+        
+        .admin-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .admin-role {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        .sidebar.collapsed .admin-info {
+            padding: 0 10px;
+        }
+        
+        .sidebar.collapsed .admin-text,
+        .sidebar.collapsed .logout-btn span {
+            display: none;
+        }
+        
+        .logout-btn {
+            width: 100%;
+            padding: 10px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+        
+        /* Large Desktop */
+        @media (min-width: 1441px) {
+            .main-content-empty {
+                margin-left: 250px;
+                max-width: 1600px;
+            }
+        }
+        
+        /* Desktop */
+        @media (max-width: 1440px) and (min-width: 1025px) {
+            .main-content-empty {
+                margin-left: 250px;
+            }
+        }
+        
         /* Tablet responsive */
-        @media (max-width: 1024px) {
+        @media (max-width: 1024px) and (min-width: 769px) {
             .main-content-empty {
                 margin-left: 250px;
             }
@@ -205,46 +314,75 @@
             }
             
             .main-content-empty {
-                margin-left: 0;
+                margin-left: 0 !important;
+                width: 100%;
                 padding: 0;
-                min-height: calc(100vh - 60px);
-                margin-top: 60px;
+                min-height: 100vh;
+                margin-top: 0;
             }
             
             .sidebar.collapsed ~ .main-content-empty {
-                margin-left: 0;
+                margin-left: 0 !important;
+            }
+            
+            .dashboard-container {
+                flex-direction: column;
             }
             
             .empty-state {
                 padding: 20px;
-                min-height: calc(100vh - 60px);
+                min-height: 100vh;
+                justify-content: center;
             }
             
             .empty-state h2 {
-                font-size: 24px;
+                font-size: 1.5rem;
             }
             
             .empty-state i {
-                font-size: 48px;
+                font-size: 3rem;
             }
         }
         
         /* Smaller mobile devices */
         @media (max-width: 480px) {
-            .empty-state {
-                padding: 16px;
-            }
-            
-            .empty-state h2 {
-                font-size: 20px;
-            }
-            
-            .empty-state p {
+            html {
                 font-size: 14px;
             }
             
+            .main-content-empty {
+                width: 100vw;
+            }
+            
+            .empty-state {
+                padding: 1rem;
+                width: 100%;
+            }
+            
+            .empty-state h2 {
+                font-size: 1.25rem;
+            }
+            
+            .empty-state p {
+                font-size: 0.875rem;
+            }
+            
             .empty-state i {
-                font-size: 40px;
+                font-size: 2.5rem;
+            }
+            
+            .mobile-menu-btn {
+                top: 10px;
+                left: 10px;
+                width: 40px;
+                height: 40px;
+            }
+        }
+        
+        /* Extra small devices */
+        @media (max-width: 375px) {
+            html {
+                font-size: 13px;
             }
         }
     </style>
@@ -279,6 +417,21 @@
                     </a></li>
                 </ul>
             </nav>
+            
+            <!-- Admin Info and Logout -->
+            <div class="admin-info">
+                <div class="admin-details">
+                    <div class="admin-avatar" id="adminAvatar">A</div>
+                    <div class="admin-text">
+                        <div class="admin-name" id="adminName">Administrator</div>
+                        <div class="admin-role">Admin</div>
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
         </aside>
         
         <!-- Mobile Menu Button -->
@@ -304,7 +457,24 @@
         </main>
     </div>
 
+    <script src="js/auth.js"></script>
     <script>
+        // Check authentication on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Protect this page - only admin can access
+            if (!protectPage(['admin'])) {
+                return;
+            }
+            
+            // Load user information
+            const user = getCurrentUser();
+            if (user) {
+                // Update admin info in sidebar
+                document.getElementById('adminName').textContent = user.name;
+                document.getElementById('adminAvatar').textContent = user.name.split(' ').map(n => n[0]).join('').toUpperCase();
+            }
+        });
+        
         // Sidebar collapse functionality
         function collapseSidebar() {
             const sidebar = document.getElementById('sidebar');

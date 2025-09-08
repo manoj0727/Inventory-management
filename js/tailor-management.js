@@ -4,11 +4,18 @@ class TailorManagement {
     constructor() {
         this.tailors = JSON.parse(localStorage.getItem('tailors')) || [];
         this.assignments = JSON.parse(localStorage.getItem('assignments')) || [];
+        this.specializations = JSON.parse(localStorage.getItem('specializations')) || [
+            'Shirt Tailor', 'Trouser Specialist', 'Suit Maker', 'Dress Maker',
+            'Traditional Wear', 'Alterations', 'General Tailor', 'Saree Blouse',
+            'Kurta Pajama', 'Wedding Wear', 'Kids Wear', 'Uniform Maker'
+        ];
         this.currentTailorId = null;
+        this.currentFilter = 'all';
         this.init();
     }
 
     init() {
+        this.loadSpecializations();
         this.loadTailors();
         this.loadStats();
         this.setupEventListeners();
@@ -175,12 +182,17 @@ class TailorManagement {
     createTailorCard(tailor) {
         const activeAssignments = this.assignments.filter(a => a.tailorId === tailor.id && a.status === 'assigned');
         const overdueAssignments = activeAssignments.filter(a => new Date(a.deadline) < new Date());
+        const completionRate = tailor.completedOrders > 0 ? 
+            Math.round((tailor.completedOrders / (tailor.completedOrders + tailor.activeOrders)) * 100) : 0;
+        
+        // Calculate progress for active orders
+        const progressPercentage = this.calculateTailorProgress(tailor.id);
         
         return `
             <div class="tailor-card">
                 <div class="tailor-header">
                     <div class="tailor-avatar">
-                        ${tailor.fullName.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                        ${tailor.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                     </div>
                     <div class="tailor-info">
                         <h4>${tailor.fullName}</h4>
@@ -188,6 +200,22 @@ class TailorManagement {
                     </div>
                     <span class="status-badge status-${tailor.status}">${tailor.status}</span>
                 </div>
+                
+                ${tailor.activeOrders > 0 ? `
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <span class="progress-label">Current Work Progress</span>
+                        <span class="progress-percentage">${progressPercentage}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progressPercentage}%"></div>
+                    </div>
+                    <div class="progress-info">
+                        <span class="info-item"><i class="fas fa-clock"></i> ${this.getEstimatedCompletion(tailor.id)}</span>
+                        ${overdueAssignments.length > 0 ? `<span class="info-item danger"><i class="fas fa-exclamation-triangle"></i> ${overdueAssignments.length} overdue</span>` : ''}
+                    </div>
+                </div>
+                ` : ''}
                 
                 <div class="tailor-stats">
                     <div class="stat">
@@ -199,21 +227,21 @@ class TailorManagement {
                         <span class="stat-label">Completed</span>
                     </div>
                     <div class="stat">
-                        <span class="stat-number">${overdueAssignments.length}</span>
-                        <span class="stat-label">Overdue</span>
+                        <span class="stat-number">${completionRate}%</span>
+                        <span class="stat-label">Success Rate</span>
                     </div>
                     <div class="stat">
-                        <span class="stat-number">${tailor.rating}</span>
+                        <span class="stat-number">⭐ ${tailor.rating}</span>
                         <span class="stat-label">Rating</span>
                     </div>
                 </div>
                 
                 <div class="tailor-actions">
                     <button class="btn btn-primary btn-small" onclick="tailorMgmt.showAssignWorkModal('${tailor.id}')">
-                        <i class="fas fa-plus"></i> Assign Work
+                        <i class="fas fa-plus"></i> Assign
                     </button>
-                    <button class="btn btn-secondary btn-small" onclick="tailorMgmt.viewTailorDetails('${tailor.id}')">
-                        <i class="fas fa-eye"></i> View
+                    <button class="btn btn-secondary btn-small" onclick="tailorMgmt.viewTailorProgress('${tailor.id}')">
+                        <i class="fas fa-chart-line"></i> Progress
                     </button>
                     <button class="btn btn-secondary btn-small" onclick="tailorMgmt.toggleTailorStatus('${tailor.id}')">
                         <i class="fas fa-power-off"></i>
@@ -330,6 +358,133 @@ class TailorManagement {
         localStorage.setItem('assignments', JSON.stringify(this.assignments));
     }
 
+    // Progress Tracking Methods
+    calculateTailorProgress(tailorId) {
+        const assignments = this.assignments.filter(a => a.tailorId === tailorId && a.status === 'assigned');
+        if (assignments.length === 0) return 0;
+        
+        let totalProgress = 0;
+        assignments.forEach(assignment => {
+            const created = new Date(assignment.assignedAt);
+            const deadline = new Date(assignment.deadline);
+            const now = new Date();
+            
+            const totalTime = deadline - created;
+            const elapsed = now - created;
+            const progress = Math.min(100, Math.max(0, (elapsed / totalTime) * 100));
+            
+            totalProgress += progress;
+        });
+        
+        return Math.round(totalProgress / assignments.length);
+    }
+    
+    getEstimatedCompletion(tailorId) {
+        const assignments = this.assignments.filter(a => a.tailorId === tailorId && a.status === 'assigned');
+        if (assignments.length === 0) return 'No active work';
+        
+        const nearestDeadline = assignments.reduce((nearest, assignment) => {
+            const deadline = new Date(assignment.deadline);
+            return deadline < nearest ? deadline : nearest;
+        }, new Date('2099-12-31'));
+        
+        const daysLeft = Math.ceil((nearestDeadline - new Date()) / (1000 * 60 * 60 * 24));
+        
+        if (daysLeft < 0) return 'Overdue';
+        if (daysLeft === 0) return 'Due today';
+        if (daysLeft === 1) return '1 day left';
+        return `${daysLeft} days left`;
+    }
+    
+    viewTailorProgress(tailorId) {
+        const tailor = this.tailors.find(t => t.id === tailorId);
+        const assignments = this.assignments.filter(a => a.tailorId === tailorId);
+        
+        if (tailor) {
+            // Create a detailed progress view
+            const progressHTML = `
+                <h3>${tailor.fullName} - Progress Report</h3>
+                <div style="padding: 20px;">
+                    <p><strong>Total Assignments:</strong> ${assignments.length}</p>
+                    <p><strong>Active:</strong> ${assignments.filter(a => a.status === 'assigned').length}</p>
+                    <p><strong>Completed:</strong> ${assignments.filter(a => a.status === 'completed').length}</p>
+                    <p><strong>Progress:</strong> ${this.calculateTailorProgress(tailorId)}%</p>
+                    <p><strong>Next Deadline:</strong> ${this.getEstimatedCompletion(tailorId)}</p>
+                </div>
+            `;
+            
+            // Show in a temporary alert (you can replace with a modal)
+            const modal = document.createElement('div');
+            modal.className = 'modal active';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title">Progress Report</h2>
+                        <button class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
+                    </div>
+                    ${progressHTML}
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+    }
+    
+    // Filter Methods
+    filterTailors(filter) {
+        this.currentFilter = filter;
+        const buttons = document.querySelectorAll('.filter-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        let filteredTailors = this.tailors;
+        
+        switch(filter) {
+            case 'active':
+                filteredTailors = this.tailors.filter(t => t.status === 'active');
+                break;
+            case 'busy':
+                filteredTailors = this.tailors.filter(t => t.status === 'busy');
+                break;
+            case 'inactive':
+                filteredTailors = this.tailors.filter(t => t.status === 'inactive');
+                break;
+        }
+        
+        const container = document.getElementById('tailors-container');
+        if (filteredTailors.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state" style="text-align: center; padding: 40px; grid-column: 1/-1;">
+                    <i class="fas fa-filter" style="font-size: 48px; color: #d1d5db; margin-bottom: 16px;"></i>
+                    <h3 style="color: #6b7280; margin: 0;">No ${filter} tailors found</h3>
+                </div>
+            `;
+        } else {
+            container.innerHTML = filteredTailors.map(tailor => this.createTailorCard(tailor)).join('');
+        }
+    }
+    
+    // Specialization Management
+    loadSpecializations() {
+        const datalist = document.getElementById('specialization-list');
+        if (datalist) {
+            datalist.innerHTML = this.specializations.map(spec => 
+                `<option value="${spec}">${spec}</option>`
+            ).join('');
+        }
+    }
+    
+    manageSpecializations() {
+        const currentSpecs = this.specializations.join(', ');
+        const newSpecs = prompt('Edit specializations (comma-separated):', currentSpecs);
+        
+        if (newSpecs !== null) {
+            this.specializations = newSpecs.split(',').map(s => s.trim()).filter(s => s);
+            localStorage.setItem('specializations', JSON.stringify(this.specializations));
+            this.loadSpecializations();
+            this.showNotification('Specializations updated successfully!', 'success');
+        }
+    }
+    
     // Notifications
     showNotification(message, type = 'info') {
         // Create notification element
