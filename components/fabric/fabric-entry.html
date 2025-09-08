@@ -1,0 +1,163 @@
+<!-- Fabric Entry Component -->
+<div class="fabric-entry-container">
+    <!-- Header -->
+    <div class="fabric-header">
+        <h2><i class="fas fa-plus-circle"></i> Fabric Entry</h2>
+        <div class="header-actions">
+            <button class="btn-secondary" onclick="fabricManager.viewInventory()">
+                <i class="fas fa-warehouse"></i> View Inventory
+            </button>
+            <button class="btn-primary" onclick="fabricManager.scanBarcode()">
+                <i class="fas fa-barcode"></i> Scan Barcode
+            </button>
+        </div>
+    </div>
+
+    <!-- Entry Form -->
+    <div class="fabric-form-card">
+        <form id="fabric-entry-form" onsubmit="fabricManager.submitFabric(event)">
+            <div class="form-grid">
+                <!-- Basic Information -->
+                <div class="form-section">
+                    <h3>Basic Information</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fabric-name">Fabric Name *</label>
+                            <input type="text" id="fabric-name" name="name" required 
+                                   placeholder="e.g., Premium Cotton">
+                        </div>
+                        <div class="form-group">
+                            <label for="fabric-type">Fabric Type *</label>
+                            <select id="fabric-type" name="type" required>
+                                <option value="">Select Type</option>
+                                <option value="Cotton">Cotton</option>
+                                <option value="Silk">Silk</option>
+                                <option value="Wool">Wool</option>
+                                <option value="Polyester">Polyester</option>
+                                <option value="Linen">Linen</option>
+                                <option value="Denim">Denim</option>
+                                <option value="Velvet">Velvet</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fabric-color">Color *</label>
+                            <div class="color-input-group">
+                                <input type="text" id="fabric-color" name="color" required 
+                                       placeholder="e.g., Navy Blue">
+                                <input type="color" id="fabric-color-picker" 
+                                       onchange="document.getElementById('fabric-color').value = this.value">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="fabric-pattern">Pattern</label>
+                            <input type="text" id="fabric-pattern" name="pattern" 
+                                   placeholder="e.g., Striped, Plain, Floral">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quantity & Pricing -->
+                <div class="form-section">
+                    <h3>Quantity & Pricing</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fabric-quantity">Quantity *</label>
+                            <input type="number" id="fabric-quantity" name="quantity" 
+                                   required min="0" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="fabric-unit">Unit *</label>
+                            <select id="fabric-unit" name="unit" required>
+                                <option value="meters">Meters</option>
+                                <option value="yards">Yards</option>
+                                <option value="rolls">Rolls</option>
+                                <option value="pieces">Pieces</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fabric-price">Price per Unit (₹) *</label>
+                            <input type="number" id="fabric-price" name="pricePerUnit" 
+                                   required min="0" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="fabric-total">Total Value (₹)</label>
+                            <input type="text" id="fabric-total" readonly 
+                                   placeholder="Auto-calculated">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Supplier Information -->
+                <div class="form-section">
+                    <h3>Supplier Information</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fabric-supplier">Supplier Name *</label>
+                            <input type="text" id="fabric-supplier" name="supplier" required 
+                                   placeholder="e.g., ABC Textiles">
+                        </div>
+                        <div class="form-group">
+                            <label for="fabric-invoice">Invoice Number</label>
+                            <input type="text" id="fabric-invoice" name="invoiceNumber" 
+                                   placeholder="e.g., INV-2024-001">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fabric-location">Storage Location *</label>
+                            <select id="fabric-location" name="location" required>
+                                <option value="Warehouse-A">Warehouse A</option>
+                                <option value="Warehouse-B">Warehouse B</option>
+                                <option value="Store-Front">Store Front</option>
+                                <option value="Production-Floor">Production Floor</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="fabric-min-stock">Min Stock Level</label>
+                            <input type="number" id="fabric-min-stock" name="minStockLevel" 
+                                   min="0" placeholder="10" value="10">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Details -->
+                <div class="form-section full-width">
+                    <h3>Additional Details</h3>
+                    <div class="form-group">
+                        <label for="fabric-notes">Notes</label>
+                        <textarea id="fabric-notes" name="notes" rows="3" 
+                                  placeholder="Any additional information about the fabric..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="fabricManager.resetForm()">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-save"></i> Save Fabric
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Recent Entries -->
+    <div class="recent-entries-card">
+        <h3><i class="fas fa-history"></i> Recent Entries</h3>
+        <div id="recent-fabric-entries">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i> Loading recent entries...
+            </div>
+        </div>
+    </div>
+</div>

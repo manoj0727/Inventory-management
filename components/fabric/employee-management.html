@@ -1,0 +1,285 @@
+<!-- Employee Management Component -->
+<div class="employee-container">
+    <!-- Header -->
+    <div class="employee-header">
+        <h2><i class="fas fa-users"></i> Employee Management</h2>
+        <div class="header-actions">
+            <button class="btn-secondary" onclick="employeeManager.exportData()">
+                <i class="fas fa-download"></i> Export
+            </button>
+            <button class="btn-primary" onclick="employeeManager.showAddEmployee()">
+                <i class="fas fa-user-plus"></i> Add Employee
+            </button>
+        </div>
+    </div>
+
+    <!-- Department Overview -->
+    <div class="department-stats">
+        <div class="dept-card">
+            <div class="dept-icon fabric">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <div class="dept-info">
+                <h4>Fabric Entry</h4>
+                <p><span id="fabric-entry-count">0</span> Employees</p>
+            </div>
+        </div>
+        <div class="dept-card">
+            <div class="dept-icon cutting">
+                <i class="fas fa-cut"></i>
+            </div>
+            <div class="dept-info">
+                <h4>Cutting</h4>
+                <p><span id="cutting-count">0</span> Employees</p>
+            </div>
+        </div>
+        <div class="dept-card">
+            <div class="dept-icon tailoring">
+                <i class="fas fa-user-tie"></i>
+            </div>
+            <div class="dept-info">
+                <h4>Tailoring</h4>
+                <p><span id="tailoring-count">0</span> Employees</p>
+            </div>
+        </div>
+        <div class="dept-card">
+            <div class="dept-icon quality">
+                <i class="fas fa-check-double"></i>
+            </div>
+            <div class="dept-info">
+                <h4>Quality Check</h4>
+                <p><span id="quality-count">0</span> Employees</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Form -->
+    <div class="employee-form-card" id="employee-form-card" style="display: none;">
+        <div class="form-header">
+            <h3><i class="fas fa-user-edit"></i> <span id="form-title">Add New Employee</span></h3>
+            <button class="btn-close" onclick="employeeManager.hideForm()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <form id="employee-form" onsubmit="employeeManager.submitEmployee(event)">
+            <div class="form-tabs">
+                <button type="button" class="tab-btn active" onclick="employeeManager.showTab('personal')">
+                    Personal Info
+                </button>
+                <button type="button" class="tab-btn" onclick="employeeManager.showTab('professional')">
+                    Professional Info
+                </button>
+                <button type="button" class="tab-btn" onclick="employeeManager.showTab('contact')">
+                    Contact Info
+                </button>
+            </div>
+
+            <!-- Personal Information Tab -->
+            <div id="personal-tab" class="tab-content active">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="emp-name">Full Name *</label>
+                        <input type="text" id="emp-name" name="name" required 
+                               placeholder="Enter full name">
+                    </div>
+                    <div class="form-group">
+                        <label for="emp-email">Email *</label>
+                        <input type="email" id="emp-email" name="email" required 
+                               placeholder="email@example.com">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="emp-phone">Phone Number *</label>
+                        <input type="tel" id="emp-phone" name="phone" required 
+                               placeholder="+91 9876543210">
+                    </div>
+                    <div class="form-group">
+                        <label for="emp-dob">Date of Birth</label>
+                        <input type="date" id="emp-dob" name="dateOfBirth">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Professional Information Tab -->
+            <div id="professional-tab" class="tab-content">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="emp-role">Role *</label>
+                        <select id="emp-role" name="role" required>
+                            <option value="">Select Role</option>
+                            <option value="admin">Admin</option>
+                            <option value="manager">Manager</option>
+                            <option value="cutter">Fabric Cutter</option>
+                            <option value="tailor">Tailor</option>
+                            <option value="quality_checker">Quality Checker</option>
+                            <option value="warehouse">Warehouse Staff</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="emp-department">Department *</label>
+                        <select id="emp-department" name="department" required>
+                            <option value="">Select Department</option>
+                            <option value="Fabric Entry">Fabric Entry</option>
+                            <option value="Cutting">Cutting</option>
+                            <option value="Tailoring">Tailoring</option>
+                            <option value="Quality">Quality</option>
+                            <option value="Warehouse">Warehouse</option>
+                            <option value="Management">Management</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="emp-experience">Experience (Years)</label>
+                        <input type="number" id="emp-experience" name="experience" 
+                               min="0" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="emp-joining">Joining Date</label>
+                        <input type="date" id="emp-joining" name="joiningDate">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="emp-skills">Skills</label>
+                    <input type="text" id="emp-skills" name="skills" 
+                           placeholder="Enter skills separated by commas">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="emp-shift-start">Shift Start Time</label>
+                        <input type="time" id="emp-shift-start" name="shiftStart" value="09:00">
+                    </div>
+                    <div class="form-group">
+                        <label for="emp-shift-end">Shift End Time</label>
+                        <input type="time" id="emp-shift-end" name="shiftEnd" value="18:00">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Information Tab -->
+            <div id="contact-tab" class="tab-content">
+                <div class="form-group">
+                    <label for="emp-address">Street Address</label>
+                    <input type="text" id="emp-address" name="street" 
+                           placeholder="Street address">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="emp-city">City</label>
+                        <input type="text" id="emp-city" name="city" placeholder="City">
+                    </div>
+                    <div class="form-group">
+                        <label for="emp-state">State</label>
+                        <input type="text" id="emp-state" name="state" placeholder="State">
+                    </div>
+                    <div class="form-group">
+                        <label for="emp-zip">ZIP Code</label>
+                        <input type="text" id="emp-zip" name="zipCode" placeholder="ZIP Code">
+                    </div>
+                </div>
+                <h4>Emergency Contact</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="emergency-name">Contact Name</label>
+                        <input type="text" id="emergency-name" name="emergencyName" 
+                               placeholder="Emergency contact name">
+                    </div>
+                    <div class="form-group">
+                        <label for="emergency-relation">Relationship</label>
+                        <input type="text" id="emergency-relation" name="emergencyRelation" 
+                               placeholder="Relationship">
+                    </div>
+                    <div class="form-group">
+                        <label for="emergency-phone">Contact Phone</label>
+                        <input type="tel" id="emergency-phone" name="emergencyPhone" 
+                               placeholder="Emergency phone">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="employeeManager.resetForm()">
+                    <i class="fas fa-redo"></i> Reset
+                </button>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-save"></i> Save Employee
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Employee List -->
+    <div class="employee-list-card">
+        <div class="list-header">
+            <h3><i class="fas fa-list"></i> Employee List</h3>
+            <div class="list-filters">
+                <input type="text" id="employee-search" placeholder="Search employees..." 
+                       onkeyup="employeeManager.searchEmployees()">
+                <select id="dept-filter" onchange="employeeManager.filterEmployees()">
+                    <option value="all">All Departments</option>
+                    <option value="Fabric Entry">Fabric Entry</option>
+                    <option value="Cutting">Cutting</option>
+                    <option value="Tailoring">Tailoring</option>
+                    <option value="Quality">Quality</option>
+                    <option value="Warehouse">Warehouse</option>
+                </select>
+                <select id="status-filter" onchange="employeeManager.filterEmployees()">
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="on_leave">On Leave</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="employee-grid" id="employee-grid">
+            <!-- Employee cards will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Performance Dashboard -->
+    <div class="performance-card">
+        <h3><i class="fas fa-chart-line"></i> Performance Overview</h3>
+        <div class="performance-grid">
+            <div class="perf-item">
+                <h4>Top Performers</h4>
+                <div id="top-performers">
+                    <!-- Top performers will be listed here -->
+                </div>
+            </div>
+            <div class="perf-item">
+                <h4>Department Efficiency</h4>
+                <canvas id="dept-efficiency-chart"></canvas>
+            </div>
+            <div class="perf-item">
+                <h4>Attendance Rate</h4>
+                <div class="attendance-stats">
+                    <div class="attendance-metric">
+                        <span>Present Today</span>
+                        <span id="present-today">0</span>
+                    </div>
+                    <div class="attendance-metric">
+                        <span>On Leave</span>
+                        <span id="on-leave">0</span>
+                    </div>
+                    <div class="attendance-metric">
+                        <span>Late Arrivals</span>
+                        <span id="late-arrivals">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Employee Details Modal -->
+<div id="employee-modal" class="modal" style="display: none;">
+    <div class="modal-content large">
+        <span class="close" onclick="employeeManager.closeModal()">&times;</span>
+        <div id="employee-details">
+            <!-- Employee details will be loaded here -->
+        </div>
+    </div>
+</div>
