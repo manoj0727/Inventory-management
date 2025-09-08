@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fabric Inventory</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f9fafb;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .page-header {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .page-title h1 {
+            font-size: 28px;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+        
+        .page-title p {
+            color: #6b7280;
+            font-size: 16px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box input {
+            padding: 10px 14px 10px 40px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            width: 300px;
+            font-size: 14px;
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+        }
+        
+        .filter-btn {
+            padding: 10px 16px;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #374151;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-btn:hover {
+            background: #f3f4f6;
+        }
+        
+        .export-btn {
+            padding: 10px 16px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .export-btn:hover {
+            background: #059669;
+        }
+        
+        /* Statistics Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            font-size: 24px;
+        }
+        
+        .stat-icon.blue {
+            background: #eff6ff;
+            color: #3b82f6;
+        }
+        
+        .stat-icon.green {
+            background: #f0fdf4;
+            color: #22c55e;
+        }
+        
+        .stat-icon.purple {
+            background: #faf5ff;
+            color: #a855f7;
+        }
+        
+        .stat-icon.orange {
+            background: #fff7ed;
+            color: #f97316;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        /* Inventory Table */
+        .inventory-table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: #f9fafb;
+            padding: 14px;
+            text-align: left;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+        
+        td {
+            padding: 14px;
+            font-size: 14px;
+            color: #6b7280;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        tr:hover {
+            background: #f9fafb;
+        }
+        
+        .fabric-id {
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        
+        .status-available {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-in_use {
+            background: #fed7aa;
+            color: #9a3412;
+        }
+        
+        .status-reserved {
+            background: #ddd6fe;
+            color: #5b21b6;
+        }
+        
+        .status-damaged {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid #e5e7eb;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .action-btn:hover {
+            background: #f3f4f6;
+        }
+        
+        .action-btn.edit {
+            color: #3b82f6;
+        }
+        
+        .action-btn.delete {
+            color: #ef4444;
+        }
+        
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+        }
+        
+        .empty-state i {
+            font-size: 64px;
+            color: #e5e7eb;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state h3 {
+            font-size: 20px;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+        
+        .empty-state p {
+            color: #6b7280;
+        }
+        
+        /* Filter Panel */
+        .filter-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: none;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .filter-panel.show {
+            display: block;
+        }
+        
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .filter-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+        
+        .filter-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .filter-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        .btn-apply {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-apply:hover {
+            background: #5a67d8;
+        }
+        
+        .btn-reset {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .btn-reset:hover {
+            background: #e5e7eb;
+        }
+        
+        /* Loading State */
+        .loading {
+            padding: 40px;
+            text-align: center;
+            color: #6b7280;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .header-actions {
+                flex-direction: column;
+            }
+            
+            .search-box input {
+                width: 100%;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <div class="page-title">
+                <h1>Fabric Inventory</h1>
+                <p>Complete overview of all fabric stock</p>
+            </div>
+            <div class="header-actions">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search fabrics...">
+                </div>
+                <button class="filter-btn" onclick="toggleFilters()">
+                    <i class="fas fa-filter"></i>
+                    Filters
+                </button>
+                <button class="export-btn" onclick="exportData()">
+                    <i class="fas fa-download"></i>
+                    Export
+                </button>
+            </div>
+        </div>
+        
+        <!-- Filter Panel -->
+        <div id="filterPanel" class="filter-panel">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label>Fabric Type</label>
+                    <select id="filterType">
+                        <option value="">All Types</option>
+                        <option value="Cotton">Cotton</option>
+                        <option value="Silk">Silk</option>
+                        <option value="Wool">Wool</option>
+                        <option value="Polyester">Polyester</option>
+                        <option value="Linen">Linen</option>
+                        <option value="Denim">Denim</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Color</label>
+                    <select id="filterColor">
+                        <option value="">All Colors</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Quality</label>
+                    <select id="filterQuality">
+                        <option value="">All Qualities</option>
+                        <option value="Premium">Premium</option>
+                        <option value="Standard">Standard</option>
+                        <option value="Economy">Economy</option>
+                        <option value="Export">Export Quality</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select id="filterStatus">
+                        <option value="">All Status</option>
+                        <option value="available">Available</option>
+                        <option value="in_use">In Use</option>
+                        <option value="reserved">Reserved</option>
+                        <option value="damaged">Damaged</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button class="btn btn-reset" onclick="resetFilters()">Reset</button>
+                <button class="btn btn-apply" onclick="applyFilters()">Apply Filters</button>
+            </div>
+        </div>
+        
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="stat-value" id="totalFabrics">0</div>
+                <div class="stat-label">Total Fabric Types</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-value" id="availableFabrics">0</div>
+                <div class="stat-label">Available Stock</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fas fa-ruler"></i>
+                </div>
+                <div class="stat-value" id="totalQuantity">0</div>
+                <div class="stat-label">Total Quantity</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-value" id="lowStock">0</div>
+                <div class="stat-label">Low Stock Items</div>
+            </div>
+        </div>
+        
+        <!-- Inventory Table -->
+        <div class="inventory-table">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fabric ID</th>
+                            <th>Type</th>
+                            <th>Color</th>
+                            <th>Pattern</th>
+                            <th>Size (LxW)</th>
+                            <th>Quantity</th>
+                            <th>Quality</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th>Registered By</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryBody">
+                        <tr>
+                            <td colspan="12">
+                                <div class="loading">
+                                    <div class="spinner"></div>
+                                    <p>Loading inventory...</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:3001/api';
+        let allFabrics = [];
+        let filteredFabrics = [];
+        
+        // Load inventory on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadInventory();
+            loadStats();
+        });
+        
+        // Load inventory data
+        async function loadInventory() {
+            try {
+                const response = await fetch(`${API_URL}/fabrics`);
+                allFabrics = await response.json();
+                filteredFabrics = [...allFabrics];
+                
+                renderInventory(filteredFabrics);
+                updateColorFilter();
+            } catch (error) {
+                console.error('Error loading inventory:', error);
+                showEmptyState('Error loading inventory data');
+            }
+        }
+        
+        // Load statistics
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/fabrics/stats/summary`);
+                const stats = await response.json();
+                
+                document.getElementById('totalFabrics').textContent = stats.totalFabrics || 0;
+                document.getElementById('totalQuantity').textContent = stats.totalQuantity || 0;
+                
+                // Calculate available and low stock
+                const available = allFabrics.filter(f => f.status === 'available').length;
+                const lowStock = allFabrics.filter(f => f.quantity < 5).length;
+                
+                document.getElementById('availableFabrics').textContent = available;
+                document.getElementById('lowStock').textContent = lowStock;
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+        
+        // Render inventory table
+        function renderInventory(fabrics) {
+            const tbody = document.getElementById('inventoryBody');
+            
+            if (fabrics.length === 0) {
+                showEmptyState('No fabrics found in inventory');
+                return;
+            }
+            
+            tbody.innerHTML = fabrics.map(fabric => `
+                <tr>
+                    <td class="fabric-id">${fabric.fabricId}</td>
+                    <td>${fabric.fabricType}</td>
+                    <td>${fabric.color}</td>
+                    <td>${fabric.pattern || '-'}</td>
+                    <td>${fabric.size.length} x ${fabric.size.width} ${fabric.size.unit}</td>
+                    <td>${fabric.quantity}</td>
+                    <td>${fabric.quality}</td>
+                    <td>${fabric.location || '-'}</td>
+                    <td><span class="status-badge status-${fabric.status}">${fabric.status.replace('_', ' ')}</span></td>
+                    <td>${fabric.registeredBy?.userName || 'Unknown'}</td>
+                    <td>${new Date(fabric.createdAt).toLocaleDateString()}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="action-btn edit" onclick="editFabric('${fabric._id}')" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="action-btn delete" onclick="deleteFabric('${fabric._id}')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // Show empty state
+        function showEmptyState(message) {
+            const tbody = document.getElementById('inventoryBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="12">
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <h3>${message}</h3>
+                            <p>Try adjusting your filters or add new fabrics to the inventory</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            
+            if (searchTerm === '') {
+                filteredFabrics = [...allFabrics];
+            } else {
+                filteredFabrics = allFabrics.filter(fabric => 
+                    fabric.fabricId.toLowerCase().includes(searchTerm) ||
+                    fabric.fabricType.toLowerCase().includes(searchTerm) ||
+                    fabric.color.toLowerCase().includes(searchTerm) ||
+                    (fabric.supplier && fabric.supplier.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            renderInventory(filteredFabrics);
+        });
+        
+        // Toggle filters
+        function toggleFilters() {
+            const panel = document.getElementById('filterPanel');
+            panel.classList.toggle('show');
+        }
+        
+        // Update color filter options
+        function updateColorFilter() {
+            const colors = [...new Set(allFabrics.map(f => f.color))];
+            const colorSelect = document.getElementById('filterColor');
+            
+            colorSelect.innerHTML = '<option value="">All Colors</option>' +
+                colors.map(color => `<option value="${color}">${color}</option>`).join('');
+        }
+        
+        // Apply filters
+        function applyFilters() {
+            const type = document.getElementById('filterType').value;
+            const color = document.getElementById('filterColor').value;
+            const quality = document.getElementById('filterQuality').value;
+            const status = document.getElementById('filterStatus').value;
+            
+            filteredFabrics = allFabrics.filter(fabric => {
+                return (!type || fabric.fabricType === type) &&
+                       (!color || fabric.color === color) &&
+                       (!quality || fabric.quality === quality) &&
+                       (!status || fabric.status === status);
+            });
+            
+            renderInventory(filteredFabrics);
+            toggleFilters();
+        }
+        
+        // Reset filters
+        function resetFilters() {
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterColor').value = '';
+            document.getElementById('filterQuality').value = '';
+            document.getElementById('filterStatus').value = '';
+            
+            filteredFabrics = [...allFabrics];
+            renderInventory(filteredFabrics);
+        }
+        
+        // Delete fabric
+        async function deleteFabric(id) {
+            if (!confirm('Are you sure you want to delete this fabric?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/fabrics/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    loadInventory();
+                    loadStats();
+                }
+            } catch (error) {
+                console.error('Error deleting fabric:', error);
+                alert('Error deleting fabric');
+            }
+        }
+        
+        // Edit fabric (placeholder)
+        function editFabric(id) {
+            alert('Edit functionality will be implemented soon');
+        }
+        
+        // Export data
+        function exportData() {
+            const csvContent = [
+                ['Fabric ID', 'Type', 'Color', 'Pattern', 'Length', 'Width', 'Unit', 'Quantity', 'Quality', 'Location', 'Status', 'Registered By', 'Date'],
+                ...filteredFabrics.map(f => [
+                    f.fabricId,
+                    f.fabricType,
+                    f.color,
+                    f.pattern || '',
+                    f.size.length,
+                    f.size.width,
+                    f.size.unit,
+                    f.quantity,
+                    f.quality,
+                    f.location || '',
+                    f.status,
+                    f.registeredBy?.userName || '',
+                    new Date(f.createdAt).toLocaleDateString()
+                ])
+            ].map(row => row.join(',')).join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `fabric_inventory_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+    </script>
+</body>
+</html>

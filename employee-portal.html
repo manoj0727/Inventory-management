@@ -336,9 +336,14 @@
                         <span>My Tasks</span>
                     </a></li>
                     
+                    <li><a href="#" onclick="showSection('fabric-count', event)" class="nav-item" data-section="fabric-count">
+                        <i class="fas fa-ruler-combined"></i>
+                        <span>Fabric Count</span>
+                    </a></li>
+                    
                     <li><a href="#" onclick="showSection('inventory', event)" class="nav-item" data-section="inventory">
                         <i class="fas fa-boxes"></i>
-                        <span>Inventory</span>
+                        <span>Fabric Inventory</span>
                     </a></li>
                     
                     <li><a href="#" onclick="showSection('qr-scanner', event)" class="nav-item" data-section="qr-scanner">
@@ -421,17 +426,14 @@
                 </div>
             </div>
             
+            <!-- Fabric Count Section -->
+            <div id="fabric-count-section" class="content-section">
+                <iframe src="pages/fabric-count.html" frameborder="0" style="width: 100%; min-height: 100vh;"></iframe>
+            </div>
+            
             <!-- Inventory Section -->
             <div id="inventory-section" class="content-section">
-                <div class="section-header">
-                    <h2>Inventory Management</h2>
-                    <p>View and update inventory items</p>
-                </div>
-                <div class="empty-state">
-                    <i class="fas fa-boxes"></i>
-                    <h3>Inventory Dashboard</h3>
-                    <p>Access inventory management tools here</p>
-                </div>
+                <iframe src="pages/fabric-inventory.html" frameborder="0" style="width: 100%; min-height: 100vh;"></iframe>
             </div>
             
             <!-- QR Scanner Section -->
