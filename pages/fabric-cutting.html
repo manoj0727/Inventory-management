@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fabric Cutting</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            margin-bottom: 30px;
+        }
+        
+        .page-header h1 {
+            color: #ffffff;
+            font-size: 32px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .page-header p {
+            color: #e0e7ff;
+            font-size: 16px;
+        }
+        
+        .cutting-form {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .form-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .section-title i {
+            color: #667eea;
+            font-size: 24px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        input,
+        select,
+        textarea {
+            padding: 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f9fafb;
+        }
+        
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+            transform: translateY(-1px);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .fabric-selector {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .fabric-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            border: 2px solid #667eea;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        
+        .info-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .calculation-info {
+            margin-top: 20px;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 2px solid #0ea5e9;
+            padding: 16px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.1);
+        }
+        
+        .info-box i {
+            color: #0ea5e9;
+            font-size: 20px;
+        }
+        
+        .info-box span {
+            color: #0369a1;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        
+        .calculation-result {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 2px solid #0ea5e9;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.1);
+        }
+        
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .result-label {
+            font-size: 14px;
+            color: #374151;
+        }
+        
+        .result-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0ea5e9;
+        }
+        
+        .waste-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .waste-bar {
+            flex: 1;
+            height: 20px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .waste-fill {
+            height: 100%;
+            background: linear-gradient(to right, #22c55e, #eab308, #ef4444);
+            transition: width 0.3s ease;
+        }
+        
+        .form-buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-verify {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 12px 24px;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+        }
+        
+        .btn-verify:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+        }
+        
+        .btn-calculate {
+            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.2);
+        }
+        
+        .btn-calculate:hover {
+            background: linear-gradient(135deg, #0284c7 0%, #0891b2 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.3);
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 15px;
+            padding: 10px 24px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-submit:hover {
+            background: linear-gradient(135deg, #5567d8 0%, #6a3d8f 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+        
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <h1>Fabric Cutting</h1>
+            <p>Calculate cutting dimensions and track fabric usage</p>
+        </div>
+        
+        <div class="cutting-form">
+            <form id="cuttingForm">
+                <!-- Fabric Selection Section -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-layer-group"></i>
+                        Select Fabric
+                    </div>
+                    
+                    <div class="fabric-selector">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="fabricId">Enter Fabric ID</label>
+                                <input type="text" id="fabricId" placeholder="e.g., FAB00001" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="fabricQuantityAvailable">Available Quantity</label>
+                                <input type="number" id="fabricQuantityAvailable" placeholder="Will be fetched automatically" readonly>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-verify" onclick="verifyFabric()">
+                            <i class="fas fa-search"></i>
+                            Verify Fabric
+                        </button>
+                        
+                        <div id="selectedFabricInfo" class="fabric-info" style="display: none;">
+                            <div class="info-item">
+                                <span class="info-label">Fabric ID</span>
+                                <span class="info-value" id="selectedFabricId">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Type</span>
+                                <span class="info-value" id="selectedFabricType">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Color</span>
+                                <span class="info-value" id="selectedFabricColor">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Available Size</span>
+                                <span class="info-value" id="selectedFabricSize">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Available Quantity</span>
+                                <span class="info-value" id="selectedFabricQuantity">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Cutting Dimensions Section -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-cut"></i>
+                        Cutting Dimensions & Product Details
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="pieceLength">Single Piece Length (meters)</label>
+                            <input type="number" id="pieceLength" step="0.01" min="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="pieceWidth">Single Piece Width (meters)</label>
+                            <input type="number" id="pieceWidth" step="0.01" min="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="numberOfPieces">Number of Pieces to Cut</label>
+                            <input type="number" id="numberOfPieces" min="1" value="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="maxPiecesAvailable">Maximum Pieces Available</label>
+                            <input type="number" id="maxPiecesAvailable" readonly placeholder="Auto-calculated">
+                        </div>
+                        <div class="form-group">
+                            <label for="productType">What Will Be Made</label>
+                            <input type="text" id="productType" placeholder="e.g., Shirt, Dress, Pants, Kurta" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="productName">Product Description</label>
+                            <input type="text" id="productName" placeholder="e.g., Men's Formal Shirt, Ladies Kurti" required>
+                        </div>
+                    </div>
+                    
+                    <div class="calculation-info" id="calculationInfo" style="display: none;">
+                        <div class="info-box">
+                            <i class="fas fa-info-circle"></i>
+                            <span id="calculationMessage"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notes Section -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-sticky-note"></i>
+                        Additional Information
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notes">Cutting Notes (Optional)</label>
+                        <textarea id="notes" placeholder="Any special notes about this cutting..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-buttons">
+                    <button type="submit" class="btn btn-submit">
+                        <i class="fas fa-check"></i>
+                        Submit
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="/js/auth.js"></script>
+    <script>
+        // Protect the page
+        protectPage(['admin', 'employee']);
+        
+        const API_URL = 'http://localhost:3001/api';
+        let selectedFabric = null;
+        let calculationResult = null;
+        
+        // Load page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize page
+        });
+        
+        // Verify fabric by ID
+        async function verifyFabric() {
+            const fabricIdInput = document.getElementById('fabricId').value.trim();
+            
+            if (!fabricIdInput) {
+                showAlert('Please enter a Fabric ID', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/fabrics`);
+                const fabrics = await response.json();
+                
+                // Find fabric by fabricId
+                const fabric = fabrics.find(f => f.fabricId === fabricIdInput);
+                
+                if (!fabric) {
+                    showAlert('Fabric ID not found in inventory', 'error');
+                    selectedFabric = null;
+                    document.getElementById('selectedFabricInfo').style.display = 'none';
+                    document.getElementById('fabricQuantityAvailable').value = '';
+                    return;
+                }
+                
+                if (fabric.status !== 'available') {
+                    showAlert('This fabric is not available for cutting', 'warning');
+                    selectedFabric = null;
+                    document.getElementById('selectedFabricInfo').style.display = 'none';
+                    document.getElementById('fabricQuantityAvailable').value = '';
+                    return;
+                }
+                
+                if (fabric.quantity <= 0) {
+                    showAlert('This fabric has no quantity available', 'warning');
+                    selectedFabric = null;
+                    document.getElementById('selectedFabricInfo').style.display = 'none';
+                    document.getElementById('fabricQuantityAvailable').value = '';
+                    return;
+                }
+                
+                // Fabric found and available
+                selectedFabric = fabric;
+                document.getElementById('fabricQuantityAvailable').value = fabric.quantity;
+                displayFabricInfo(fabric);
+                showAlert('Fabric verified successfully!', 'success');
+                
+                // Trigger auto-calculate if dimensions are already entered
+                autoCalculate();
+                
+            } catch (error) {
+                console.error('Error verifying fabric:', error);
+                showAlert('Error verifying fabric. Please try again.', 'error');
+            }
+        }
+        
+        // Handle Enter key on fabric ID input
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('fabricId').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    verifyFabric();
+                }
+            });
+        });
+        
+        // Display selected fabric info
+        function displayFabricInfo(fabric) {
+            document.getElementById('selectedFabricInfo').style.display = 'grid';
+            document.getElementById('selectedFabricId').textContent = fabric.fabricId;
+            document.getElementById('selectedFabricType').textContent = fabric.fabricType;
+            document.getElementById('selectedFabricColor').textContent = fabric.color;
+            document.getElementById('selectedFabricSize').textContent = `${fabric.size.length} x ${fabric.size.width} ${fabric.size.unit}`;
+            document.getElementById('selectedFabricQuantity').textContent = fabric.quantity;
+        }
+        
+        // Auto-calculate when dimensions change
+        function autoCalculate() {
+            if (!selectedFabric) {
+                return;
+            }
+            
+            const pieceLength = parseFloat(document.getElementById('pieceLength').value);
+            const pieceWidth = parseFloat(document.getElementById('pieceWidth').value);
+            
+            if (!pieceLength || !pieceWidth) {
+                document.getElementById('maxPiecesAvailable').value = '';
+                document.getElementById('calculationInfo').style.display = 'none';
+                calculationResult = null;
+                return;
+            }
+            
+            // Calculate how many pieces can be cut from all available fabric
+            const fabricQuantity = selectedFabric.quantity;
+            let totalPiecesGenerated = 0;
+            
+            for (let qty = 1; qty <= fabricQuantity; qty++) {
+                const fabricLength = selectedFabric.size.length * qty;
+                const fabricWidth = selectedFabric.size.width;
+                
+                // Try different cutting arrangements
+                const arrangement1Cols = Math.floor(fabricLength / pieceLength);
+                const arrangement1Rows = Math.floor(fabricWidth / pieceWidth);
+                const arrangement1Total = arrangement1Cols * arrangement1Rows;
+                
+                const arrangement2Cols = Math.floor(fabricLength / pieceWidth);
+                const arrangement2Rows = Math.floor(fabricWidth / pieceLength);
+                const arrangement2Total = arrangement2Cols * arrangement2Rows;
+                
+                // Choose the best arrangement
+                totalPiecesGenerated = Math.max(arrangement1Total, arrangement2Total);
+                
+                if (totalPiecesGenerated > 0) {
+                    // We found the minimum quantity needed
+                    const totalFabricArea = fabricLength * fabricWidth;
+                    const usedArea = totalPiecesGenerated * pieceLength * pieceWidth;
+                    const wasteArea = totalFabricArea - usedArea;
+                    const wastePercentage = (wasteArea / totalFabricArea * 100).toFixed(2);
+                    
+                    // Store calculation result
+                    calculationResult = {
+                        totalPiecesGenerated,
+                        fabricUsed: totalFabricArea.toFixed(2),
+                        wastePercentage,
+                        pieceLength,
+                        pieceWidth,
+                        fabricQuantityUsed: qty
+                    };
+                    
+                    // Display max pieces available
+                    document.getElementById('maxPiecesAvailable').value = totalPiecesGenerated;
+                    
+                    // Show calculation info
+                    document.getElementById('calculationInfo').style.display = 'block';
+                    document.getElementById('calculationMessage').textContent = 
+                        `Can make ${totalPiecesGenerated} pieces from ${qty} unit(s) of fabric with ${wastePercentage}% waste`;
+                    
+                    // Set max for number of pieces input
+                    document.getElementById('numberOfPieces').max = totalPiecesGenerated;
+                    
+                    break;
+                }
+            }
+            
+            if (totalPiecesGenerated === 0) {
+                document.getElementById('maxPiecesAvailable').value = '0';
+                document.getElementById('calculationInfo').style.display = 'block';
+                document.getElementById('calculationMessage').textContent = 'Piece dimensions too large for available fabric';
+                calculationResult = null;
+            }
+        }
+        
+        // Add event listeners for auto-calculation
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('pieceLength').addEventListener('input', autoCalculate);
+            document.getElementById('pieceWidth').addEventListener('input', autoCalculate);
+        });
+        
+        // Handle form submission
+        document.getElementById('cuttingForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!selectedFabric || !calculationResult) {
+                alert('Please verify a fabric ID and enter cutting dimensions first');
+                return;
+            }
+            
+            const numberOfPieces = parseInt(document.getElementById('numberOfPieces').value);
+            if (numberOfPieces > calculationResult.totalPiecesGenerated) {
+                alert(`Cannot cut ${numberOfPieces} pieces. Maximum available is ${calculationResult.totalPiecesGenerated}`);
+                return;
+            }
+            
+            const user = JSON.parse(localStorage.getItem('user'));
+            const fabricQuantityUsed = calculationResult.fabricQuantityUsed;
+            
+            // Create cutting record
+            const cuttingData = {
+                fabricId: selectedFabric.fabricId,
+                fabricType: selectedFabric.fabricType,
+                fabricColor: selectedFabric.color,
+                fabricQuantityUsed: fabricQuantityUsed,
+                originalSize: selectedFabric.size,
+                pieceSize: {
+                    length: calculationResult.pieceLength,
+                    width: calculationResult.pieceWidth,
+                    unit: 'meters'
+                },
+                numberOfPieces: parseInt(document.getElementById('numberOfPieces').value),
+                totalPiecesGenerated: parseInt(document.getElementById('numberOfPieces').value),
+                wastePercentage: parseFloat(calculationResult.wastePercentage),
+                productType: document.getElementById('productType').value,
+                productDescription: document.getElementById('productName').value,
+                cuttingBy: {
+                    userId: user.id,
+                    userName: user.username,
+                    role: user.role
+                },
+                notes: document.getElementById('notes').value
+            };
+            
+            try {
+                // Save cutting record
+                const cuttingResponse = await fetch(`${API_URL}/cuttings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cuttingData)
+                });
+                
+                if (!cuttingResponse.ok) {
+                    throw new Error('Failed to save cutting record');
+                }
+                
+                const cutting = await cuttingResponse.json();
+                
+                // Create products for the number of pieces requested
+                const productPromises = [];
+                const piecesToCreate = parseInt(document.getElementById('numberOfPieces').value);
+                
+                for (let i = 0; i < piecesToCreate; i++) {
+                    const productData = {
+                        productName: document.getElementById('productName').value,
+                        productType: document.getElementById('productType').value,
+                        cuttingId: cutting.cuttingId,
+                        fabricId: selectedFabric.fabricId,
+                        fabricType: selectedFabric.fabricType,
+                        fabricColor: selectedFabric.color,
+                        dimensions: {
+                            length: calculationResult.pieceLength,
+                            width: calculationResult.pieceWidth,
+                            unit: 'meters'
+                        },
+                        quantity: 1,
+                        status: 'cut_pieces',
+                        notes: `${document.getElementById('notes').value || ''} | Can make ${document.getElementById('productType').value} from this piece`,
+                        location: selectedFabric.location || 'Warehouse',
+                        createdBy: {
+                            userId: user.id,
+                            userName: user.username,
+                            role: user.role
+                        }
+                    };
+                    
+                    productPromises.push(
+                        fetch(`${API_URL}/products`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(productData)
+                        })
+                    );
+                }
+                
+                await Promise.all(productPromises);
+                
+                // Show success message
+                showAlert('Fabric cutting record submitted successfully! Products have been added to inventory.', 'success');
+                
+                // Reset form after delay
+                setTimeout(() => {
+                    resetForm();
+                    loadFabrics();
+                }, 2500);
+                
+            } catch (error) {
+                console.error('Error saving cutting record:', error);
+                showAlert('Error saving cutting record', 'error');
+            }
+        });
+        
+        // Reset form
+        function resetForm() {
+            document.getElementById('cuttingForm').reset();
+            document.getElementById('selectedFabricInfo').style.display = 'none';
+            document.getElementById('calculationInfo').style.display = 'none';
+            document.getElementById('maxPiecesAvailable').value = '';
+            selectedFabric = null;
+            calculationResult = null;
+        }
+        
+        // Show alert message
+        function showAlert(message, type) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                ${message}
+            `;
+            
+            document.querySelector('.cutting-form').insertBefore(alert, document.querySelector('.cutting-form').firstChild);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

@@ -53,6 +53,71 @@ const fabricSchema = new mongoose.Schema({
 
 const Fabric = mongoose.model('Fabric', fabricSchema);
 
+// Cutting Record Schema
+const cuttingSchema = new mongoose.Schema({
+    cuttingId: { type: String, required: true, unique: true },
+    fabricId: { type: String, required: true },
+    fabricType: { type: String, required: true },
+    fabricColor: { type: String, required: true },
+    originalSize: {
+        length: { type: Number, required: true },
+        width: { type: Number, required: true },
+        unit: { type: String, default: 'meters' }
+    },
+    pieceSize: {
+        length: { type: Number, required: true },
+        width: { type: Number, required: true },
+        unit: { type: String, default: 'meters' }
+    },
+    numberOfPieces: { type: Number, required: true },
+    totalPiecesGenerated: { type: Number, required: true },
+    wastePercentage: { type: Number, default: 0 },
+    productType: { type: String, required: true },
+    productDescription: String,
+    cuttingDate: { type: Date, default: Date.now },
+    cuttingBy: {
+        userId: String,
+        userName: String,
+        role: String
+    },
+    status: { type: String, default: 'completed' },
+    notes: String,
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+
+const Cutting = mongoose.model('Cutting', cuttingSchema);
+
+// Product Schema
+const productSchema = new mongoose.Schema({
+    productId: { type: String, required: true, unique: true },
+    productName: { type: String, required: true },
+    productType: { type: String, required: true },
+    cuttingId: { type: String, required: true },
+    fabricId: { type: String, required: true },
+    fabricType: { type: String, required: true },
+    fabricColor: { type: String, required: true },
+    dimensions: {
+        length: { type: Number, required: true },
+        width: { type: Number, required: true },
+        unit: { type: String, default: 'meters' }
+    },
+    quantity: { type: Number, default: 1 },
+    status: { type: String, default: 'cut_pieces' },
+    cuttingDate: { type: Date, default: Date.now },
+    location: String,
+    notes: String,
+    createdBy: {
+        userId: String,
+        userName: String,
+        role: String
+    },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+
+const Product = mongoose.model('Product', productSchema);
+
 // API Routes
 
 // Get all fabrics
@@ -149,6 +214,170 @@ app.get('/api/fabrics/stats/summary', async (req, res) => {
             totalQuantity: totalQuantity[0]?.total || 0,
             fabricsByType,
             fabricsByColor
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Cutting API Routes
+
+// Get all cutting records
+app.get('/api/cuttings', async (req, res) => {
+    try {
+        const cuttings = await Cutting.find().sort({ createdAt: -1 });
+        res.json(cuttings);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get cutting by ID
+app.get('/api/cuttings/:id', async (req, res) => {
+    try {
+        const cutting = await Cutting.findById(req.params.id);
+        if (!cutting) {
+            return res.status(404).json({ error: 'Cutting record not found' });
+        }
+        res.json(cutting);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Create new cutting record
+app.post('/api/cuttings', async (req, res) => {
+    try {
+        // Generate unique cutting ID
+        const count = await Cutting.countDocuments();
+        const cuttingId = `CUT${String(count + 1).padStart(5, '0')}`;
+        
+        // Update fabric quantity
+        const fabric = await Fabric.findOne({ fabricId: req.body.fabricId });
+        if (!fabric) {
+            return res.status(404).json({ error: 'Fabric not found' });
+        }
+        
+        if (fabric.quantity < req.body.fabricQuantityUsed) {
+            return res.status(400).json({ error: 'Insufficient fabric quantity' });
+        }
+        
+        // Update fabric quantity and status
+        fabric.quantity -= req.body.fabricQuantityUsed || 1;
+        if (fabric.quantity > 0) {
+            fabric.status = 'updated';
+        } else {
+            fabric.status = 'out_of_stock';
+        }
+        await fabric.save();
+        
+        const cuttingData = {
+            ...req.body,
+            cuttingId,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        };
+        
+        const cutting = new Cutting(cuttingData);
+        await cutting.save();
+        res.status(201).json(cutting);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Product API Routes
+
+// Get all products
+app.get('/api/products', async (req, res) => {
+    try {
+        const products = await Product.find().sort({ createdAt: -1 });
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get product by ID
+app.get('/api/products/:id', async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+        res.json(product);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Create new product
+app.post('/api/products', async (req, res) => {
+    try {
+        // Generate unique product ID
+        const count = await Product.countDocuments();
+        const productId = `PRD${String(count + 1).padStart(5, '0')}`;
+        
+        const productData = {
+            ...req.body,
+            productId,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        };
+        
+        const product = new Product(productData);
+        await product.save();
+        res.status(201).json(product);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Update product
+app.put('/api/products/:id', async (req, res) => {
+    try {
+        const product = await Product.findByIdAndUpdate(
+            req.params.id,
+            { ...req.body, updatedAt: new Date() },
+            { new: true, runValidators: true }
+        );
+        if (!product) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+        res.json(product);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Delete product
+app.delete('/api/products/:id', async (req, res) => {
+    try {
+        const product = await Product.findByIdAndDelete(req.params.id);
+        if (!product) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+        res.json({ message: 'Product deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get product statistics
+app.get('/api/products/stats/summary', async (req, res) => {
+    try {
+        const totalProducts = await Product.countDocuments();
+        const productsByStatus = await Product.aggregate([
+            { $group: { _id: '$status', count: { $sum: 1 } } }
+        ]);
+        const productsByType = await Product.aggregate([
+            { $group: { _id: '$productType', count: { $sum: 1 } } }
+        ]);
+        
+        res.json({
+            totalProducts,
+            productsByStatus,
+            productsByType
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
