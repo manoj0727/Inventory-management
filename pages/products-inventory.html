@@ -873,7 +873,12 @@
         async function loadProducts() {
             try {
                 const response = await fetch(`${API_URL}/products`);
-                allProducts = await response.json();
+                const allProductsData = await response.json();
+                
+                // Filter out out-of-stock products and zero quantity products from display
+                allProducts = allProductsData.filter(product => 
+                    product.status !== 'out_of_stock' && (product.quantity > 0 || product.quantity === undefined)
+                );
                 filteredProducts = [...allProducts];
                 
                 renderProducts(filteredProducts);
@@ -1034,14 +1039,19 @@
             if (searchTerm === '') {
                 filteredProducts = [...allProducts];
             } else {
-                filteredProducts = allProducts.filter(product => 
-                    product.productId.toLowerCase().includes(searchTerm) ||
-                    product.productName.toLowerCase().includes(searchTerm) ||
-                    product.productType.toLowerCase().includes(searchTerm) ||
-                    product.fabricType.toLowerCase().includes(searchTerm) ||
-                    product.fabricColor.toLowerCase().includes(searchTerm) ||
-                    (product.assignedTo && product.assignedTo.toLowerCase().includes(searchTerm))
-                );
+                filteredProducts = allProducts.filter(product => {
+                    // Exclude out-of-stock and zero quantity products
+                    const isAvailable = product.status !== 'out_of_stock' && (product.quantity > 0 || product.quantity === undefined);
+                    
+                    return isAvailable && (
+                        product.productId.toLowerCase().includes(searchTerm) ||
+                        product.productName.toLowerCase().includes(searchTerm) ||
+                        product.productType.toLowerCase().includes(searchTerm) ||
+                        product.fabricType.toLowerCase().includes(searchTerm) ||
+                        product.fabricColor.toLowerCase().includes(searchTerm) ||
+                        (product.assignedTo && product.assignedTo.toLowerCase().includes(searchTerm))
+                    );
+                });
             }
             
             renderProducts(filteredProducts);
@@ -1073,7 +1083,11 @@
             const status = document.getElementById('filterStatus').value;
             
             filteredProducts = allProducts.filter(product => {
-                return (!type || product.productType.toLowerCase().includes(type)) &&
+                // Exclude out-of-stock and zero quantity products
+                const isAvailable = product.status !== 'out_of_stock' && (product.quantity > 0 || product.quantity === undefined);
+                
+                return isAvailable &&
+                       (!type || product.productType.toLowerCase().includes(type)) &&
                        (!fabricType || product.fabricType.toLowerCase().includes(fabricType)) &&
                        (!status || product.status === status);
             });

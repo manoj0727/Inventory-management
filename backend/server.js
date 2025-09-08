@@ -489,12 +489,36 @@ app.post('/api/manufacturing', async (req, res) => {
         const manufacturing = new Manufacturing(manufacturingData);
         await manufacturing.save();
         
-        // Update product status if needed
+        // Update product inventory - subtract the manufactured quantity
         if (req.body.productId) {
-            await Product.findOneAndUpdate(
-                { productId: req.body.productId },
-                { status: 'in_manufacturing' }
-            );
+            const product = await Product.findOne({ productId: req.body.productId });
+            
+            if (product) {
+                const manufacturingQty = req.body.quantity || 1;
+                const newQuantity = product.quantity - manufacturingQty;
+                
+                if (newQuantity <= 0) {
+                    // Set quantity to 0 and mark as out of stock (but don't delete from DB)
+                    await Product.findOneAndUpdate(
+                        { productId: req.body.productId },
+                        { 
+                            quantity: 0,
+                            status: 'out_of_stock',
+                            updatedAt: new Date()
+                        }
+                    );
+                } else {
+                    // Update quantity and mark as updated
+                    await Product.findOneAndUpdate(
+                        { productId: req.body.productId },
+                        { 
+                            quantity: newQuantity,
+                            status: 'updated',
+                            updatedAt: new Date()
+                        }
+                    );
+                }
+            }
         }
         
         res.status(201).json(manufacturing);

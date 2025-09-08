@@ -154,6 +154,12 @@
             border-radius: 6px;
             margin-bottom: 20px;
             display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            min-width: 300px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         
         .alert.success {
@@ -233,12 +239,12 @@
     </style>
 </head>
 <body>
+    <div id="alertMessage" class="alert"></div>
+    
     <div class="container">
         <div class="header">
             <h1><i class="fas fa-industry"></i> Manufacturing Registration</h1>
         </div>
-        
-        <div id="alertMessage" class="alert"></div>
         
         <form id="manufacturingForm" class="form-container">
             <!-- Product Selection Section -->
@@ -249,9 +255,8 @@
                 </div>
                 <div class="form-group">
                     <label for="productId">Product ID from Cutting *</label>
-                    <select id="productId" required>
-                        <option value="">Select a cut product</option>
-                    </select>
+                    <input type="text" id="productId" placeholder="Enter Product ID (e.g., PRD00001)" required>
+                    <button type="button" onclick="fetchProductDetails()" style="margin-top: 10px; padding: 8px 15px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">Fetch Product Details</button>
                 </div>
                 <div id="productInfo" class="product-info">
                     <h4>Selected Product Details</h4>
@@ -352,47 +357,40 @@
         // Check authentication
         protectPage(['admin', 'employee']);
         
-        // Load available products from cutting
-        async function loadProducts() {
+        // Fetch product details by ID
+        async function fetchProductDetails() {
+            const productIdInput = document.getElementById('productId').value.trim();
+            if (!productIdInput) {
+                showAlert('Please enter a Product ID', 'error');
+                return;
+            }
+            
             try {
                 const response = await fetch(`${API_URL}/products`);
                 const products = await response.json();
                 
-                const productSelect = document.getElementById('productId');
-                productSelect.innerHTML = '<option value="">Select a cut product</option>';
+                const product = products.find(p => p.productId === productIdInput);
                 
-                // Filter products that are cut pieces and not yet manufactured
-                const availableProducts = products.filter(p => 
-                    p.status === 'cut_pieces' && p.quantity > 0
-                );
-                
-                availableProducts.forEach(product => {
-                    const option = document.createElement('option');
-                    option.value = product.productId;
-                    option.textContent = `${product.productId} - ${product.productType} (${product.fabricColor}) - ${product.quantity} pcs`;
-                    option.dataset.product = JSON.stringify(product);
-                    productSelect.appendChild(option);
-                });
+                if (product) {
+                    displayProductInfo(product);
+                    selectedProduct = product;
+                    showAlert('Product details loaded successfully!', 'success');
+                } else {
+                    showAlert(`Product with ID ${productIdInput} not found`, 'error');
+                    document.getElementById('productInfo').style.display = 'none';
+                    selectedProduct = null;
+                }
             } catch (error) {
-                console.error('Error loading products:', error);
-                showAlert('Error loading products', 'error');
+                console.error('Error fetching product:', error);
+                showAlert('Failed to fetch product details', 'error');
             }
         }
         
-        // Handle product selection
-        document.getElementById('productId').addEventListener('change', function(e) {
-            const selectedOption = e.target.options[e.target.selectedIndex];
-            if (selectedOption.value) {
-                selectedProduct = JSON.parse(selectedOption.dataset.product);
-                displayProductInfo(selectedProduct);
-                
-                // Auto-fill some fields
-                document.getElementById('productType').value = selectedProduct.productType || '';
-                document.getElementById('productName').value = selectedProduct.productName || '';
-                document.getElementById('color').value = selectedProduct.fabricColor || '';
-            } else {
-                selectedProduct = null;
-                document.getElementById('productInfo').style.display = 'none';
+        // Allow fetching product details on Enter key
+        document.getElementById('productId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                fetchProductDetails();
             }
         });
         
@@ -402,6 +400,11 @@
             document.getElementById('selectedProductType').textContent = product.productType || '-';
             document.getElementById('selectedFabricInfo').textContent = `${product.fabricType || '-'} - ${product.fabricColor || '-'}`;
             document.getElementById('selectedQuantity').textContent = product.quantity || '-';
+            
+            // Auto-fill some fields
+            document.getElementById('productType').value = product.productType || '';
+            document.getElementById('productName').value = product.productName || '';
+            document.getElementById('color').value = product.fabricColor || '';
         }
         
         function toggleCustomSize() {
@@ -444,23 +447,29 @@
         document.getElementById('manufacturingForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            const productIdValue = document.getElementById('productId').value.trim();
+            if (!productIdValue) {
+                showAlert('Please enter a Product ID', 'error');
+                return;
+            }
+            
             if (!selectedProduct) {
-                showAlert('Please select a product from cutting inventory', 'error');
+                showAlert('Please fetch product details first', 'error');
                 return;
             }
             
             const user = getCurrentUser();
             
             const manufacturingData = {
-                productId: selectedProduct.productId,
+                productId: document.getElementById('productId').value.trim(),
                 productType: document.getElementById('productType').value,
                 productName: document.getElementById('productName').value,
                 size: document.getElementById('size').value,
                 customSizeDetails: document.getElementById('size').value === 'Custom' ? document.getElementById('customSizeDetails').value : null,
                 quantity: parseInt(document.getElementById('quantity').value),
                 color: document.getElementById('color').value,
-                fabricType: selectedProduct.fabricType,
-                fabricId: selectedProduct.fabricId,
+                fabricType: selectedProduct ? selectedProduct.fabricType : '',
+                fabricId: selectedProduct ? selectedProduct.fabricId : '',
                 tailorName: document.getElementById('tailorName').value,
                 notes: document.getElementById('notes').value,
                 createdBy: {
@@ -471,24 +480,6 @@
             };
             
             try {
-                // Generate QR code for this manufacturing data
-                const qrData = {
-                    type: 'manufacturing',
-                    id: null, // Will be set after creation
-                    productType: manufacturingData.productType,
-                    productName: manufacturingData.productName,
-                    size: manufacturingData.size,
-                    customSize: manufacturingData.customSizeDetails,
-                    quantity: manufacturingData.quantity,
-                    color: manufacturingData.color,
-                    fabric: manufacturingData.fabricType,
-                    tailor: manufacturingData.tailorName
-                };
-                
-                // Generate QR code as data URL
-                const qrCodeDataUrl = await generateQRCode(JSON.stringify(qrData));
-                manufacturingData.qrCode = qrCodeDataUrl;
-                
                 const response = await fetch(`${API_URL}/manufacturing`, {
                     method: 'POST',
                     headers: {
@@ -499,22 +490,40 @@
                 
                 if (response.ok) {
                     const result = await response.json();
-                    // Update QR code with actual manufacturing ID
-                    qrData.id = result.manufacturingId;
-                    const updatedQrCode = await generateQRCode(JSON.stringify(qrData));
                     
-                    // Update the record with the correct QR code
-                    await fetch(`${API_URL}/manufacturing/${result._id}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ qrCode: updatedQrCode })
-                    });
+                    // Generate QR code after successful creation
+                    try {
+                        const qrData = {
+                            type: 'manufacturing',
+                            id: result.manufacturingId,
+                            productType: manufacturingData.productType,
+                            productName: manufacturingData.productName,
+                            size: manufacturingData.size,
+                            customSize: manufacturingData.customSizeDetails,
+                            quantity: manufacturingData.quantity,
+                            color: manufacturingData.color,
+                            fabric: manufacturingData.fabricType,
+                            tailor: manufacturingData.tailorName
+                        };
+                        
+                        const qrCodeDataUrl = await generateQRCode(JSON.stringify(qrData));
+                        
+                        // Update the record with QR code
+                        await fetch(`${API_URL}/manufacturing/${result._id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ qrCode: qrCodeDataUrl })
+                        });
+                        
+                        showAlert('Manufacturing record registered successfully with QR code!', 'success');
+                    } catch (qrError) {
+                        console.error('QR Code generation error:', qrError);
+                        showAlert('Manufacturing record registered successfully (QR code generation failed)', 'success');
+                    }
                     
-                    showAlert('Manufacturing record registered successfully with QR code!', 'success');
                     resetForm();
-                    loadProducts(); // Reload products
                 } else {
                     const error = await response.json();
                     showAlert(`Error: ${error.error}`, 'error');
@@ -564,7 +573,7 @@
         
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
-            loadProducts();
+            // Manual product ID entry - no need to load products
         });
     </script>
 </body>

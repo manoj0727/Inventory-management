@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manufactured Products Inventory - QR Inventory System</title>
     <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -106,10 +107,10 @@
             color: #333;
         }
 
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
+        .products-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
         .product-card {
@@ -119,6 +120,47 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             transition: transform 0.3s;
             position: relative;
+        }
+        
+        .action-center {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: opacity 0.3s;
+        }
+        
+        .action-btn:hover {
+            opacity: 0.8;
+        }
+        
+        .btn-edit {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .btn-qr {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-delete {
+            background: #f44336;
+            color: white;
         }
         
         .qr-code-btn {
@@ -447,7 +489,6 @@
                 <div class="products-grid">
                     ${products.map(product => `
                         <div class="product-card">
-                            ${product.qrCode ? `<button class="qr-code-btn" onclick="showQRCode('${product.qrCode}', '${product.manufacturingId}')">QR Code</button>` : ''}
                             <div class="product-header">
                                 <span class="product-id">${product.manufacturingId}</span>
                                 <span class="status-badge" style="background: #E8F5E9; color: #4CAF50;">Qty: ${product.quantity || 1}</span>
@@ -482,6 +523,17 @@
                                     <span class="info-value">${new Date(product.createdAt).toLocaleDateString()}</span>
                                 </div>
                             </div>
+                            <div class="action-center">
+                                <button class="action-btn btn-edit" onclick="editProduct('${product._id}')">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="action-btn btn-qr" onclick="showQRCode('${product.qrCode || ''}', '${product.manufacturingId}', '${product._id}')">
+                                    <i class="fas fa-qrcode"></i> QR
+                                </button>
+                                <button class="action-btn btn-delete" onclick="deleteProduct('${product._id}', '${product.manufacturingId}')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
                         </div>
                     `).join('')}
                 </div>
@@ -504,6 +556,7 @@
                                 <th>Tailor</th>
                                 <th>Quantity</th>
                                 <th>Date</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -517,6 +570,19 @@
                                     <td>${product.tailorName || '-'}</td>
                                     <td>${product.quantity || 1}</td>
                                     <td>${new Date(product.createdAt).toLocaleDateString()}</td>
+                                    <td>
+                                        <div style="display: flex; gap: 5px;">
+                                            <button class="action-btn btn-edit" style="padding: 5px 10px; font-size: 11px;" onclick="editProduct('${product._id}')">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="action-btn btn-qr" style="padding: 5px 10px; font-size: 11px;" onclick="showQRCode('${product.qrCode || ''}', '${product.manufacturingId}', '${product._id}')">
+                                                <i class="fas fa-qrcode"></i>
+                                            </button>
+                                            <button class="action-btn btn-delete" style="padding: 5px 10px; font-size: 11px;" onclick="deleteProduct('${product._id}', '${product.manufacturingId}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -555,8 +621,95 @@
             displayProducts(filtered);
         });
 
+        // Edit Product
+        function editProduct(productId) {
+            // Redirect to QR scanner page for editing
+            window.location.href = `qr-scanner.html?edit=${productId}`;
+        }
+        
+        // Delete Product
+        async function deleteProduct(productId, manufacturingId) {
+            if (!confirm(`Are you sure you want to delete product ${manufacturingId}?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`http://localhost:3001/api/manufacturing/${productId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    alert('Product deleted successfully!');
+                    loadManufacturedProducts();
+                } else {
+                    alert('Failed to delete product');
+                }
+            } catch (error) {
+                console.error('Error deleting product:', error);
+                alert('Error deleting product');
+            }
+        }
+        
+        // Generate QR Code for product without existing QR
+        async function generateQRForProduct(product) {
+            const qrData = {
+                type: 'manufacturing',
+                id: product.manufacturingId,
+                productType: product.productType,
+                productName: product.productName,
+                size: product.size,
+                customSize: product.customSizeDetails,
+                quantity: product.quantity,
+                color: product.color,
+                fabric: product.fabricType,
+                tailor: product.tailorName
+            };
+            
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js';
+                script.onload = () => {
+                    QRCode.toDataURL(JSON.stringify(qrData), {
+                        width: 200,
+                        margin: 1,
+                        color: {
+                            dark: '#000000',
+                            light: '#ffffff'
+                        }
+                    }, (err, url) => {
+                        if (err) reject(err);
+                        else resolve(url);
+                    });
+                };
+                document.head.appendChild(script);
+            });
+        }
+        
         // Show QR Code Modal
-        function showQRCode(qrCodeDataUrl, productId) {
+        async function showQRCode(qrCodeDataUrl, productId, dbId) {
+            // If no QR code exists, generate one
+            if (!qrCodeDataUrl || qrCodeDataUrl === '') {
+                try {
+                    const product = allProducts.find(p => p._id === dbId);
+                    if (product) {
+                        qrCodeDataUrl = await generateQRForProduct(product);
+                        
+                        // Save the generated QR code to database
+                        await fetch(`http://localhost:3001/api/manufacturing/${dbId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ qrCode: qrCodeDataUrl })
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error generating QR code:', error);
+                    alert('Failed to generate QR code');
+                    return;
+                }
+            }
+            
             const modal = document.createElement('div');
             modal.className = 'qr-modal';
             modal.innerHTML = `
