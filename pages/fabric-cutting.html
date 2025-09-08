@@ -507,7 +507,18 @@
                     return;
                 }
                 
-                if (fabric.status !== 'available') {
+                // Check if fabric has remaining area (allow 'available' and 'updated' status)
+                const remainingArea = fabric.remainingArea || (fabric.size.length * fabric.size.width * fabric.quantity);
+                if (remainingArea <= 0) {
+                    showAlert('This fabric has no remaining area for cutting', 'warning');
+                    selectedFabric = null;
+                    document.getElementById('selectedFabricInfo').style.display = 'none';
+                    document.getElementById('fabricQuantityAvailable').value = '';
+                    return;
+                }
+                
+                // Allow both 'available' and 'updated' status
+                if (fabric.status !== 'available' && fabric.status !== 'updated') {
                     showAlert('This fabric is not available for cutting', 'warning');
                     selectedFabric = null;
                     document.getElementById('selectedFabricInfo').style.display = 'none';
@@ -515,13 +526,7 @@
                     return;
                 }
                 
-                if (fabric.quantity <= 0) {
-                    showAlert('This fabric has no quantity available', 'warning');
-                    selectedFabric = null;
-                    document.getElementById('selectedFabricInfo').style.display = 'none';
-                    document.getElementById('fabricQuantityAvailable').value = '';
-                    return;
-                }
+                // Remove quantity check since we're using area-based tracking
                 
                 // Fabric found and available
                 selectedFabric = fabric;
@@ -555,7 +560,10 @@
             document.getElementById('selectedFabricType').textContent = fabric.fabricType;
             document.getElementById('selectedFabricColor').textContent = fabric.color;
             document.getElementById('selectedFabricSize').textContent = `${fabric.size.length} x ${fabric.size.width} ${fabric.size.unit}`;
-            document.getElementById('selectedFabricQuantity').textContent = fabric.quantity;
+            
+            // Display remaining area instead of just quantity
+            const remainingArea = fabric.remainingArea || (fabric.size.length * fabric.size.width * fabric.quantity);
+            document.getElementById('selectedFabricQuantity').textContent = `${fabric.quantity} units (${remainingArea.toFixed(2)} m² remaining)`;
         }
         
         // Auto-calculate when dimensions change
@@ -574,12 +582,15 @@
                 return;
             }
             
-            // Calculate how many pieces can be cut from all available fabric
-            const fabricQuantity = selectedFabric.quantity;
-            let totalPiecesGenerated = 0;
+            // Calculate how many pieces can be cut from remaining area
+            const remainingArea = selectedFabric.remainingArea || (selectedFabric.size.length * selectedFabric.size.width * selectedFabric.quantity);
+            const pieceArea = pieceLength * pieceWidth;
             
-            for (let qty = 1; qty <= fabricQuantity; qty++) {
-                const fabricLength = selectedFabric.size.length * qty;
+            // Calculate maximum pieces from remaining area
+            const maxPiecesFromArea = Math.floor(remainingArea / pieceArea);
+            
+            if (maxPiecesFromArea > 0) {
+                const fabricLength = selectedFabric.size.length;
                 const fabricWidth = selectedFabric.size.width;
                 
                 // Try different cutting arrangements
@@ -591,42 +602,31 @@
                 const arrangement2Rows = Math.floor(fabricWidth / pieceLength);
                 const arrangement2Total = arrangement2Cols * arrangement2Rows;
                 
-                // Choose the best arrangement
-                totalPiecesGenerated = Math.max(arrangement1Total, arrangement2Total);
-                
-                if (totalPiecesGenerated > 0) {
-                    // We found the minimum quantity needed
-                    const totalFabricArea = fabricLength * fabricWidth;
-                    const usedArea = totalPiecesGenerated * pieceLength * pieceWidth;
-                    const wasteArea = totalFabricArea - usedArea;
-                    const wastePercentage = (wasteArea / totalFabricArea * 100).toFixed(2);
+                // Calculate based on remaining area
+                const usedArea = maxPiecesFromArea * pieceArea;
+                const wastePercentage = 10; // Approximate waste
                     
                     // Store calculation result
                     calculationResult = {
-                        totalPiecesGenerated,
-                        fabricUsed: totalFabricArea.toFixed(2),
+                        totalPiecesGenerated: maxPiecesFromArea,
+                        fabricUsed: usedArea.toFixed(2),
                         wastePercentage,
                         pieceLength,
                         pieceWidth,
-                        fabricQuantityUsed: qty
+                        fabricQuantityUsed: 1 // Using area-based tracking
                     };
                     
                     // Display max pieces available
-                    document.getElementById('maxPiecesAvailable').value = totalPiecesGenerated;
+                    document.getElementById('maxPiecesAvailable').value = maxPiecesFromArea;
                     
                     // Show calculation info
                     document.getElementById('calculationInfo').style.display = 'block';
                     document.getElementById('calculationMessage').textContent = 
-                        `Can make ${totalPiecesGenerated} pieces from ${qty} unit(s) of fabric with ${wastePercentage}% waste`;
+                        `Can make up to ${maxPiecesFromArea} pieces from ${remainingArea.toFixed(2)} m² remaining area`;
                     
                     // Set max for number of pieces input
-                    document.getElementById('numberOfPieces').max = totalPiecesGenerated;
-                    
-                    break;
-                }
-            }
-            
-            if (totalPiecesGenerated === 0) {
+                    document.getElementById('numberOfPieces').max = maxPiecesFromArea;
+            } else {
                 document.getElementById('maxPiecesAvailable').value = '0';
                 document.getElementById('calculationInfo').style.display = 'block';
                 document.getElementById('calculationMessage').textContent = 'Piece dimensions too large for available fabric';
@@ -706,44 +706,41 @@
                 
                 const cutting = await cuttingResponse.json();
                 
-                // Create products for the number of pieces requested
-                const productPromises = [];
+                // Create a single product record with the total quantity
                 const piecesToCreate = parseInt(document.getElementById('numberOfPieces').value);
                 
-                for (let i = 0; i < piecesToCreate; i++) {
-                    const productData = {
-                        productName: document.getElementById('productName').value,
-                        productType: document.getElementById('productType').value,
-                        cuttingId: cutting.cuttingId,
-                        fabricId: selectedFabric.fabricId,
-                        fabricType: selectedFabric.fabricType,
-                        fabricColor: selectedFabric.color,
-                        dimensions: {
-                            length: calculationResult.pieceLength,
-                            width: calculationResult.pieceWidth,
-                            unit: 'meters'
-                        },
-                        quantity: 1,
-                        status: 'cut_pieces',
-                        notes: `${document.getElementById('notes').value || ''} | Can make ${document.getElementById('productType').value} from this piece`,
-                        location: selectedFabric.location || 'Warehouse',
-                        createdBy: {
-                            userId: user.id,
-                            userName: user.username,
-                            role: user.role
-                        }
-                    };
-                    
-                    productPromises.push(
-                        fetch(`${API_URL}/products`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(productData)
-                        })
-                    );
-                }
+                const productData = {
+                    productName: document.getElementById('productName').value,
+                    productType: document.getElementById('productType').value,
+                    cuttingId: cutting.cuttingId,
+                    fabricId: selectedFabric.fabricId,
+                    fabricType: selectedFabric.fabricType,
+                    fabricColor: selectedFabric.color,
+                    dimensions: {
+                        length: calculationResult.pieceLength,
+                        width: calculationResult.pieceWidth,
+                        unit: 'meters'
+                    },
+                    quantity: piecesToCreate, // Set quantity to total pieces
+                    status: 'cut_pieces',
+                    notes: `${document.getElementById('notes').value || ''} | Can make ${document.getElementById('productType').value} from these pieces`,
+                    location: selectedFabric.location || 'Warehouse',
+                    createdBy: {
+                        userId: user.id || user.username,
+                        userName: user.name || user.username,
+                        role: user.role
+                    }
+                };
                 
-                await Promise.all(productPromises);
+                const productResponse = await fetch(`${API_URL}/products`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(productData)
+                });
+                
+                if (!productResponse.ok) {
+                    throw new Error('Failed to create product record');
+                }
                 
                 // Show success message
                 showAlert('Fabric cutting record submitted successfully! Products have been added to inventory.', 'success');
