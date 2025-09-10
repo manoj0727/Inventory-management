@@ -604,10 +604,6 @@
                 <div class="stat-value" id="activeEmployees">0</div>
                 <div class="stat-label">Active Employees</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="newThisMonth">0</div>
-                <div class="stat-label">New This Month</div>
-            </div>
         </div>
         
         <div class="main-content">
@@ -633,7 +629,12 @@
                             
                             <div class="form-group">
                                 <label for="password">Password *</label>
-                                <input type="password" id="password" required placeholder="Set password">
+                                <div style="position: relative;">
+                                    <input type="password" id="password" required placeholder="Set password" style="padding-right: 40px;">
+                                    <button type="button" onclick="togglePassword()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #6b7280; padding: 5px;">
+                                        <i class="fas fa-eye" id="passwordToggle"></i>
+                                    </button>
+                                </div>
                             </div>
                             
                             <div class="form-group">
@@ -644,18 +645,6 @@
                             <div class="form-group">
                                 <label for="phone">Phone Number</label>
                                 <input type="tel" id="phone" placeholder="+91 XXXXX XXXXX">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="department">Department</label>
-                                <select id="department">
-                                    <option value="">Select Department</option>
-                                    <option value="Production">Production</option>
-                                    <option value="Quality Control">Quality Control</option>
-                                    <option value="Inventory">Inventory</option>
-                                    <option value="HR">Human Resources</option>
-                                    <option value="Management">Management</option>
-                                </select>
                             </div>
                             
                             <div class="form-group">
@@ -676,6 +665,11 @@
                             <div class="form-group">
                                 <label for="joiningDate">Joining Date</label>
                                 <input type="date" id="joiningDate" value="${new Date().toISOString().split('T')[0]}">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="address">Address</label>
+                                <input type="text" id="address" placeholder="Enter complete address">
                             </div>
                         </div>
                     </div>
@@ -709,7 +703,7 @@
                             </div>
                             <div class="action-section">
                                 <button type="submit" class="btn btn-success">
-                                    <i class="fas fa-save"></i> Register Employee
+                                    <i class="fas fa-save"></i> Register
                                 </button>
                                 <button type="button" class="btn btn-secondary" onclick="resetForm()">
                                     <i class="fas fa-redo"></i> Reset
@@ -730,17 +724,9 @@
                     <div class="search-controls">
                         <div class="search-bar">
                             <i class="fas fa-search"></i>
-                            <input type="text" id="searchInput" placeholder="Search by name, username, department..." onkeyup="searchEmployees()">
+                            <input type="text" id="searchInput" placeholder="Search by name, username, position..." onkeyup="searchEmployees()">
                         </div>
                         <div class="search-filters">
-                            <select id="departmentFilter" onchange="filterEmployees()">
-                                <option value="">All Departments</option>
-                                <option value="Production">Production</option>
-                                <option value="Quality Control">Quality Control</option>
-                                <option value="Inventory">Inventory</option>
-                                <option value="HR">Human Resources</option>
-                                <option value="Management">Management</option>
-                            </select>
                             <button class="btn btn-primary" onclick="refreshEmployeeList()">
                                 <i class="fas fa-sync"></i> Refresh
                             </button>
@@ -755,14 +741,13 @@
                                 <th>Employee ID</th>
                                 <th>Name</th>
                                 <th>Username</th>
-                                <th>Department</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="employeesBody">
                             <tr>
-                                <td colspan="7">
+                                <td colspan="6">
                                     <div class="loading">
                                         <div class="spinner"></div>
                                         <p>Loading employees...</p>
@@ -795,33 +780,24 @@
         // Search employees
         function searchEmployees() {
             const searchInput = document.getElementById('searchInput').value.toLowerCase();
-            const departmentFilter = document.getElementById('departmentFilter').value;
             
             let filteredEmployees = allEmployees.filter(employee => {
                 const matchesSearch = !searchInput || 
                     (employee.name && employee.name.toLowerCase().includes(searchInput)) ||
                     (employee.username && employee.username.toLowerCase().includes(searchInput)) ||
-                    (employee.department && employee.department.toLowerCase().includes(searchInput)) ||
                     (employee.position && employee.position.toLowerCase().includes(searchInput));
                 
-                const matchesDepartment = !departmentFilter || employee.department === departmentFilter;
-                
-                return matchesSearch && matchesDepartment;
+                return matchesSearch;
             });
             
             renderEmployees(filteredEmployees);
         }
         
-        // Filter employees by department
-        function filterEmployees() {
-            searchEmployees();
-        }
         
         // Refresh employee list
         function refreshEmployeeList() {
             loadEmployees();
             document.getElementById('searchInput').value = '';
-            document.getElementById('departmentFilter').value = '';
         }
         
         // Load page data
@@ -851,16 +827,9 @@
                 
                 const total = employees.length;
                 const active = employees.filter(emp => emp.isActive).length;
-                const thisMonth = employees.filter(emp => {
-                    const joinDate = new Date(emp.joinDate);
-                    const now = new Date();
-                    return joinDate.getMonth() === now.getMonth() && 
-                           joinDate.getFullYear() === now.getFullYear();
-                }).length;
                 
                 document.getElementById('totalEmployees').textContent = total;
                 document.getElementById('activeEmployees').textContent = active;
-                document.getElementById('newThisMonth').textContent = thisMonth;
             } catch (error) {
                 console.error('Error loading stats:', error);
             }
@@ -888,7 +857,7 @@
             if (employees.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" style="text-align: center; padding: 40px; color: #666;">
+                        <td colspan="6" style="text-align: center; padding: 40px; color: #666;">
                             <i class="fas fa-users" style="font-size: 48px; margin-bottom: 15px; display: block;"></i>
                             <h3>No employees registered</h3>
                             <p>Register your first employee to get started</p>
@@ -907,7 +876,6 @@
                     <td><strong>${employee.employeeId}</strong></td>
                     <td>${employee.name}</td>
                     <td>${employee.username}</td>
-                    <td>${employee.department || '-'}</td>
                     <td>
                         <span class="status-badge ${employee.isActive ? 'status-active' : 'status-inactive'}">
                             ${employee.isActive ? 'Active' : 'Inactive'}
@@ -1010,10 +978,10 @@
                 password: document.getElementById('password').value,
                 email: document.getElementById('email').value,
                 phone: document.getElementById('phone').value,
-                department: document.getElementById('department').value,
                 position: document.getElementById('position').value,
                 employeeType: document.getElementById('employeeType').value,
                 joiningDate: document.getElementById('joiningDate').value,
+                address: document.getElementById('address').value,
                 profilePhoto: photoData,
                 faceDescriptor: faceDescriptor,
                 createdBy: {
@@ -1110,6 +1078,20 @@
             setTimeout(() => {
                 alert.style.display = 'none';
             }, 4000);
+        }
+        
+        // Toggle password visibility
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('passwordToggle');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.className = 'fas fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.className = 'fas fa-eye';
+            }
         }
     </script>
 </body>
