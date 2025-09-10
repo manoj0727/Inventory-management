@@ -3,14 +3,18 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Serve static files from frontend directory
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -1057,6 +1061,11 @@ async function createTransaction(type, itemType, itemId, itemName, quantity, pre
         console.error('Error creating transaction:', error);
     }
 }
+
+// Catch-all route - Must be after all API routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
+});
 
 // Start server
 app.listen(PORT, () => {
