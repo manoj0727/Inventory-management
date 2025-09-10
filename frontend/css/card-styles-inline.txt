@@ -1,0 +1,91 @@
+/* ADD THIS CSS TO ALL PAGES FOR CONSISTENT CARD STYLING */
+
+/* Common Card Styles */
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.content-card,
+.filter-card,
+.table-card,
+.info-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+    margin-bottom: 20px;
+}
+
+.header-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+}
+
+.header-card h1 {
+    margin: 0 0 4px 0;
+    font-size: 24px;
+    color: #111827;
+    font-weight: 600;
+}
+
+.header-card p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+/* Statistics Values */
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+/* Color Classes */
+.stat-primary { color: #3b82f6; }
+.stat-success { color: #10b981; }
+.stat-danger { color: #ef4444; }
+.stat-warning { color: #f59e0b; }
+.stat-purple { color: #8b5cf6; }
+
+/* Responsive */
+@media (max-width: 480px) {
+    .stat-card,
+    .content-card,
+    .header-card,
+    .filter-card,
+    .table-card,
+    .info-card {
+        padding: 15px;
+        border-radius: 8px;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+    }
+    
+    .header-card h1 {
+        font-size: 20px;
+    }
+}

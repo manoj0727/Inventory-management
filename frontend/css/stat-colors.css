@@ -1,0 +1,63 @@
+/* Standard Color System for Statistics Cards */
+/* Add this to any page with stat cards */
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+/* Primary Colors for Different Stat Types */
+.stat-primary .stat-value,
+.stat-total .stat-value { 
+    color: #3b82f6 !important;  /* Blue */
+}
+
+.stat-success .stat-value,
+.stat-active .stat-value,
+.stat-present .stat-value { 
+    color: #10b981 !important;  /* Green */
+}
+
+.stat-danger .stat-value,
+.stat-absent .stat-value,
+.stat-critical .stat-value { 
+    color: #ef4444 !important;  /* Red */
+}
+
+.stat-warning .stat-value,
+.stat-pending .stat-value,
+.stat-custom .stat-value { 
+    color: #f59e0b !important;  /* Orange */
+}
+
+.stat-info .stat-value { 
+    color: #06b6d4 !important;  /* Cyan */
+}
+
+.stat-purple .stat-value,
+.stat-monthly .stat-value,
+.stat-unique .stat-value { 
+    color: #8b5cf6 !important;  /* Purple */
+}
+
+.stat-indigo .stat-value { 
+    color: #6366f1 !important;  /* Indigo */
+}
+
+.stat-pink .stat-value { 
+    color: #ec4899 !important;  /* Pink */
+}
+
+/* Alternative naming for common use cases */
+.stat-inventory .stat-value { color: #3b82f6 !important; }
+.stat-production .stat-value { color: #10b981 !important; }
+.stat-tailors .stat-value { color: #8b5cf6 !important; }
+.stat-orders .stat-value { color: #f59e0b !important; }
+.stat-revenue .stat-value { color: #10b981 !important; }
+.stat-quantity .stat-value { color: #06b6d4 !important; }

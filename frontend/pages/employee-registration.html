@@ -67,8 +67,11 @@
             font-size: 2rem;
             font-weight: bold;
             margin-bottom: 5px;
-            color: #667eea;
         }
+        
+        /* Stat colors */
+        .stat-total .stat-value { color: #3b82f6 !important; }
+        .stat-active .stat-value { color: #10b981 !important; }
         
         .stat-label {
             color: #666;
@@ -596,11 +599,11 @@
         
         <!-- Statistics Cards -->
         <div class="stats-container">
-            <div class="stat-card">
+            <div class="stat-card stat-total">
                 <div class="stat-value" id="totalEmployees">0</div>
                 <div class="stat-label">Total Employees</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card stat-active">
                 <div class="stat-value" id="activeEmployees">0</div>
                 <div class="stat-label">Active Employees</div>
             </div>

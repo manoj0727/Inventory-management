@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Card Style Reference</title>
+    <link rel="stylesheet" href="css/common-styles.css">
+    <style>
+        /* This file shows how to update existing pages with the new common card styles */
+        
+        /* INSTRUCTIONS FOR UPDATING EACH PAGE:
+        
+        1. Add this line to the <head> section:
+           <link rel="stylesheet" href="/css/common-styles.css">
+        
+        2. Replace existing card classes:
+           - Statistics cards: Use class="stat-card"
+           - Headers: Use class="header-card"  
+           - Forms: Use class="form-card"
+           - Tables: Use class="table-card"
+           - Filters: Use class="filter-card"
+           - Info/Product cards: Use class="info-card"
+        
+        3. For stat values, use:
+           - class="stat-value stat-primary" (blue)
+           - class="stat-value stat-success" (green)
+           - class="stat-value stat-danger" (red)
+           - class="stat-value stat-warning" (orange)
+           - class="stat-value stat-purple" (purple)
+        
+        4. For grids:
+           - 4 columns: class="cards-grid cards-grid-4"
+           - 3 columns: class="cards-grid cards-grid-3"
+           - 2 columns: class="cards-grid cards-grid-2"
+        */
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f9fafb;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        h2 {
+            color: #111827;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-card">
+            <h1>Standardized Card Styles</h1>
+            <p>Reference implementation for consistent card styling across all pages</p>
+        </div>
+        
+        <div class="section">
+            <h2>Statistics Cards</h2>
+            <div class="cards-grid cards-grid-4">
+                <div class="stat-card">
+                    <div class="stat-value stat-primary">150</div>
+                    <div class="stat-label">Total Items</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value stat-success">85</div>
+                    <div class="stat-label">Active</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value stat-danger">12</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value stat-purple">234</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="filter-card">
+                <h3>Filter Section</h3>
+                <p>This is how filter sections should look</p>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="content-card">
+                <h3>Content Card</h3>
+                <p>Use this for general content sections</p>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="table-card">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f8f9fa;">
+                            <th style="padding: 12px; text-align: left;">Column 1</th>
+                            <th style="padding: 12px; text-align: left;">Column 2</th>
+                            <th style="padding: 12px; text-align: left;">Column 3</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 12px; border-top: 1px solid #e5e7eb;">Data 1</td>
+                            <td style="padding: 12px; border-top: 1px solid #e5e7eb;">Data 2</td>
+                            <td style="padding: 12px; border-top: 1px solid #e5e7eb;">Data 3</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Info Cards Grid</h2>
+            <div class="cards-grid cards-grid-3">
+                <div class="info-card">
+                    <h4 style="margin: 0 0 10px 0;">Info Card 1</h4>
+                    <p style="margin: 0; color: #6b7280;">This is an info card with hover effect</p>
+                </div>
+                <div class="info-card">
+                    <h4 style="margin: 0 0 10px 0;">Info Card 2</h4>
+                    <p style="margin: 0; color: #6b7280;">Hover to see the elevation change</p>
+                </div>
+                <div class="info-card">
+                    <h4 style="margin: 0 0 10px 0;">Info Card 3</h4>
+                    <p style="margin: 0; color: #6b7280;">Consistent styling across all cards</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
