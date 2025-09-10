@@ -8,45 +8,60 @@
     <link rel="stylesheet" href="../css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: white;
+            background: #f9fafb;
             min-height: 100vh;
-            padding: 20px;
+            padding: 15px;
+            margin: 0;
         }
         
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            width: 100%;
         }
         
         .header {
             background: white;
-            border-radius: 10px;
+            border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
         }
         
         .header h1 {
-            color: #333;
+            color: #111827;
+            font-size: 24px;
+            margin: 0 0 4px 0;
+            font-weight: 600;
+        }
+        
+        .header p {
+            color: #6b7280;
+            font-size: 14px;
             margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
         
         .form-container {
             background: white;
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
         }
         
         .form-section {
             margin-bottom: 30px;
             padding-bottom: 20px;
             border-bottom: 1px solid #e5e7eb;
+            width: 100%;
+            overflow: hidden;
         }
         
         .form-section:last-child {
@@ -67,11 +82,14 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
+            width: 100%;
         }
         
         .form-group {
             display: flex;
             flex-direction: column;
+            width: 100%;
+            min-width: 0;
         }
         
         .form-group label {
@@ -84,19 +102,38 @@
         .form-group input,
         .form-group select,
         .form-group textarea {
-            padding: 10px;
+            padding: 12px;
             border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 14px;
-            transition: border-color 0.3s;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        
+        .form-group select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 12px center;
+            background-repeat: no-repeat;
+            background-size: 20px;
+            padding-right: 40px;
         }
         
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background-color: #ffffff;
+        }
+        
+        .form-group select:hover {
+            border-color: #9ca3af;
         }
         
         .form-group textarea {
@@ -108,6 +145,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 15px;
+            width: 100%;
         }
         
         .btn-container {
@@ -131,13 +169,14 @@
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #3b82f6;
             color: white;
         }
         
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
         }
         
         .btn-secondary {
@@ -179,6 +218,8 @@
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 20px;
+            width: 100%;
+            overflow: hidden;
         }
         
         .product-info {
@@ -198,6 +239,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 10px;
+            width: 100%;
             margin-top: 10px;
         }
         
@@ -218,7 +260,71 @@
             font-size: 13px;
         }
         
-        @media (max-width: 768px) {
+        /* Mobile First Responsive Design */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 15px;
+                border-radius: 8px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .header p {
+                font-size: 12px;
+            }
+            
+            .form-container {
+                padding: 15px;
+                border-radius: 8px;
+            }
+            
+            .form-section {
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+            }
+            
+            .section-title {
+                font-size: 16px;
+                margin-bottom: 15px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .measurements-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .btn-container {
+                flex-direction: column;
+                margin-top: 15px;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+                padding: 14px 20px;
+            }
+            
+            .product-info {
+                padding: 12px;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (min-width: 481px) and (max-width: 768px) {
             .form-grid {
                 grid-template-columns: 1fr;
             }
@@ -228,12 +334,37 @@
             }
             
             .btn-container {
-                flex-direction: column;
+                flex-direction: row;
+                flex-wrap: wrap;
             }
             
             .btn {
-                width: 100%;
-                justify-content: center;
+                flex: 1;
+                min-width: 150px;
+            }
+        }
+        
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .form-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .measurements-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (min-width: 1025px) {
+            .header h1 {
+                font-size: 28px;
+            }
+            
+            .header p {
+                font-size: 16px;
+            }
+            
+            .form-container {
+                padding: 30px;
             }
         }
     </style>
@@ -243,7 +374,8 @@
     
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-industry"></i> Manufacturing Registration</h1>
+            <h1>Manufacturing Registration</h1>
+            <p>Register and track manufacturing process for cut products</p>
         </div>
         
         <form id="manufacturingForm" class="form-container">
