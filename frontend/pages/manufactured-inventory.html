@@ -270,34 +270,132 @@
             display: none;
         }
 
-        @media (max-width: 768px) {
+        /* Mobile First Responsive Design */
+        @media (max-width: 480px) {
             .container {
                 padding: 10px;
             }
+            
+            .header {
+                padding: 15px;
+                border-radius: 8px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .header p {
+                font-size: 12px;
+            }
+            
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .stat-card {
+                padding: 12px;
+            }
+            
+            .stat-card h3 {
+                font-size: 12px;
+            }
+            
+            .stat-card .value {
+                font-size: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            
+            .search-bar {
+                max-width: 100%;
+            }
+            
+            .view-toggle {
+                justify-content: center;
+            }
+            
+            .action-center {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .action-btn {
+                padding: 10px;
+                width: 100%;
+            }
+            
+            .table-view {
+                overflow-x: auto;
+            }
+            
+            .table-view table {
+                min-width: 500px;
+                font-size: 12px;
+            }
+        }
+        
+        @media (min-width: 481px) and (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
 
             .header {
-                padding: 20px;
+                padding: 18px;
             }
 
             .header h1 {
-                font-size: 1.5rem;
+                font-size: 22px;
             }
 
             .controls {
-                flex-direction: column;
+                flex-wrap: wrap;
             }
 
             .search-bar {
                 max-width: 100%;
+                flex-basis: 100%;
             }
-
-
+            
+            .stats-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
             .table-view {
                 overflow-x: auto;
             }
 
             .table-view table {
                 min-width: 600px;
+            }
+        }
+        
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .stats-container {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        @media (min-width: 1025px) {
+            .header h1 {
+                font-size: 28px;
+            }
+            
+            .header p {
+                font-size: 16px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            .stat-card {
+                padding: 20px;
             }
         }
     </style>
