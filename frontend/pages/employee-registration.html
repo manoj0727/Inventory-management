@@ -76,9 +76,9 @@
         }
         
         .main-content {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
         
         .registration-form {
@@ -87,7 +87,7 @@
             border-radius: 12px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             border: 1px solid #e5e7eb;
-            height: fit-content;
+            width: 100%;
             overflow: hidden;
         }
         
@@ -100,13 +100,27 @@
             border-bottom: none;
         }
         
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .form-horizontal {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+        
         .section-title {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e5e7eb;
             color: #111827;
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 600;
         }
         
@@ -144,38 +158,78 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
         
+        .photo-action-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 40px;
+        }
+        
+        .photo-section {
+            flex: 1;
+            max-width: 400px;
+        }
+        
+        .action-section {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
         .photo-capture {
-            text-align: center;
-            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 15px;
             border: 2px dashed #e5e7eb;
             border-radius: 10px;
-            margin-bottom: 20px;
-            background: #f9fafb;
+            background: white;
+        }
+        
+        .photo-capture.compact {
+            padding: 12px;
+        }
+        
+        .photo-left {
+            flex-shrink: 0;
+        }
+        
+        .photo-right {
+            flex: 1;
         }
         
         .photo-preview {
-            width: 150px;
-            height: 150px;
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
             object-fit: cover;
-            margin: 0 auto 15px;
             display: none;
+            border: 3px solid #e5e7eb;
         }
         
         .camera-icon {
-            font-size: 48px;
-            color: #ddd;
-            margin-bottom: 15px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: #9ca3af;
         }
         
         .btn {
             padding: 12px 24px;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
-            margin-right: 10px;
-            margin-bottom: 10px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .btn-primary {
@@ -185,20 +239,30 @@
         
         .btn-primary:hover {
             background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
         }
         
         .btn-secondary {
-            background: #6c757d;
-            color: white;
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        .btn-secondary:hover {
+            background: #d1d5db;
         }
         
         .btn-success {
-            background: #28a745;
+            background: #10b981;
             color: white;
+            padding: 14px 28px;
+            font-size: 15px;
         }
         
-        .btn:hover {
-            opacity: 0.9;
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
         }
         
         .employees-list {
@@ -207,6 +271,7 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             border: 1px solid #e5e7eb;
             overflow: hidden;
+            width: 100%;
         }
         
         .search-section {
@@ -442,6 +507,23 @@
                 padding: 15px;
             }
             
+            .form-horizontal {
+                grid-template-columns: 1fr;
+            }
+            
+            .photo-action-container {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .photo-section {
+                max-width: 100%;
+            }
+            
+            .action-section {
+                width: 100%;
+            }
+            
             .section-title {
                 font-size: 16px;
             }
@@ -470,12 +552,37 @@
                 grid-template-columns: repeat(3, 1fr);
             }
             
+            .form-horizontal {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .photo-action-container {
+                flex-direction: column;
+            }
+            
+            .photo-section {
+                max-width: 100%;
+            }
+            
             .employees-table {
                 font-size: 14px;
             }
             
             .actions {
                 flex-direction: column;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .form-horizontal {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (min-width: 1440px) {
+            .form-horizontal {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 30px;
             }
         }
     </style>
@@ -507,94 +614,108 @@
             <!-- Employee Registration Form -->
             <div class="registration-form">
                 <form id="employeeForm">
-                    <!-- Account Details Section -->
+                    <!-- All Information in One Section -->
                     <div class="form-section">
                         <div class="section-title">
-                            <i class="fas fa-key"></i>
-                            <span>Account Details</span>
+                            <i class="fas fa-user-plus"></i>
+                            <span>Register New Employee</span>
                         </div>
-                        <div class="form-group">
-                            <label for="name">Full Name *</label>
-                            <input type="text" id="name" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="username">Username *</label>
-                            <input type="text" id="username" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="password">Password *</label>
-                            <input type="password" id="password" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="email">Email</label>
-                            <input type="email" id="email">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="phone">Phone</label>
-                            <input type="tel" id="phone">
-                        </div>
-                    </div>
-                    
-                    <!-- Employment Details Section -->
-                    <div class="form-section">
-                        <div class="section-title">
-                            <i class="fas fa-briefcase"></i>
-                            <span>Employment Details</span>
-                        </div>
-                        <div class="form-group">
-                            <label for="department">Department</label>
-                            <select id="department">
-                                <option value="">Select Department</option>
-                                <option value="Production">Production</option>
-                                <option value="Quality Control">Quality Control</option>
-                                <option value="Inventory">Inventory</option>
-                                <option value="HR">Human Resources</option>
-                                <option value="Management">Management</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="position">Position</label>
-                            <input type="text" id="position" placeholder="e.g. Operator, Supervisor">
-                        </div>
-                    </div>
-                    
-                    <!-- Photo & Face Recognition Section -->
-                    <div class="form-section">
-                        <div class="section-title">
-                            <i class="fas fa-camera"></i>
-                            <span>Photo & Face Recognition</span>
-                        </div>
-                        <div class="photo-capture" id="photoCapture">
-                            <img id="photoPreview" class="photo-preview" alt="Preview">
-                            <div id="cameraIcon" class="camera-icon">
-                                <i class="fas fa-camera"></i>
+                        <div class="form-horizontal">
+                            <div class="form-group">
+                                <label for="name">Full Name *</label>
+                                <input type="text" id="name" required placeholder="Enter full name">
                             </div>
-                            <p>Take a photo for face recognition</p>
-                            <button type="button" class="btn btn-primary" onclick="startCamera()">
-                                <i class="fas fa-video"></i> Start Camera
-                            </button>
-                            <button type="button" class="btn btn-secondary" onclick="capturePhoto()" id="captureBtn" style="display: none;">
-                                <i class="fas fa-camera"></i> Capture
-                            </button>
-                        </div>
-                        <video id="video" width="300" height="200" autoplay style="display: none; margin: 10px auto; border-radius: 8px;"></video>
-                        <canvas id="canvas" style="display: none;"></canvas>
+                            
+                            <div class="form-group">
+                                <label for="username">Username *</label>
+                                <input type="text" id="username" required placeholder="Choose username">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="password">Password *</label>
+                                <input type="password" id="password" required placeholder="Set password">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="email">Email Address</label>
+                                <input type="email" id="email" placeholder="email@example.com">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="phone">Phone Number</label>
+                                <input type="tel" id="phone" placeholder="+91 XXXXX XXXXX">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="department">Department</label>
+                                <select id="department">
+                                    <option value="">Select Department</option>
+                                    <option value="Production">Production</option>
+                                    <option value="Quality Control">Quality Control</option>
+                                    <option value="Inventory">Inventory</option>
+                                    <option value="HR">Human Resources</option>
+                                    <option value="Management">Management</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="position">Job Position</label>
+                                <input type="text" id="position" placeholder="e.g. Operator, Supervisor">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="employeeType">Employee Type</label>
+                                <select id="employeeType">
+                                    <option value="full-time">Full Time</option>
+                                    <option value="part-time">Part Time</option>
+                                    <option value="contract">Contract</option>
+                                    <option value="intern">Intern</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="joiningDate">Joining Date</label>
+                                <input type="date" id="joiningDate" value="${new Date().toISOString().split('T')[0]}">
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- Submit Section -->
-                    <div class="form-section" style="background: #f9fafb; text-align: center; border-bottom: none;">
-                        <button type="submit" class="btn btn-success" style="min-width: 200px;">
-                            <i class="fas fa-user-plus"></i> Register Employee
-                        </button>
-                        <button type="button" class="btn btn-secondary" onclick="resetForm()" style="min-width: 150px;">
-                            <i class="fas fa-times"></i> Reset
-                        </button>
+                    <!-- Photo & Actions Section -->
+                    <div class="form-section" style="background: #f9fafb;">
+                        <div class="photo-action-container">
+                            <div class="photo-section">
+                                <div class="photo-capture compact" id="photoCapture">
+                                    <div class="photo-left">
+                                        <img id="photoPreview" class="photo-preview" alt="Preview">
+                                        <div id="cameraIcon" class="camera-icon">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                    </div>
+                                    <div class="photo-right">
+                                        <h4 style="margin: 0 0 8px 0; color: #111827; font-size: 16px;">Employee Photo</h4>
+                                        <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 14px;">Capture photo for face recognition</p>
+                                        <div style="display: flex; gap: 10px;">
+                                            <button type="button" class="btn btn-primary btn-sm" onclick="startCamera()">
+                                                <i class="fas fa-camera"></i> Capture Photo
+                                            </button>
+                                            <button type="button" class="btn btn-secondary btn-sm" onclick="capturePhoto()" id="captureBtn" style="display: none;">
+                                                <i class="fas fa-check"></i> Take Photo
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <video id="video" width="300" height="200" autoplay style="display: none; margin: 10px auto; border-radius: 8px;"></video>
+                                <canvas id="canvas" style="display: none;"></canvas>
+                            </div>
+                            <div class="action-section">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Register Employee
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                                    <i class="fas fa-redo"></i> Reset
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -891,6 +1012,8 @@
                 phone: document.getElementById('phone').value,
                 department: document.getElementById('department').value,
                 position: document.getElementById('position').value,
+                employeeType: document.getElementById('employeeType').value,
+                joiningDate: document.getElementById('joiningDate').value,
                 profilePhoto: photoData,
                 faceDescriptor: faceDescriptor,
                 createdBy: {
