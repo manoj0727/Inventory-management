@@ -8,6 +8,8 @@
     <!-- Sidebar CSS -->
     <link rel="stylesheet" href="assets/css/sidebar-white.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Universal Scroll Fix -->
+    <link rel="stylesheet" href="css/scroll-fix.css">
     
     <style>
         * {
@@ -23,16 +25,19 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f9fafb;
-            overflow-x: hidden;
             width: 100%;
-            min-height: 100vh;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Keep hidden as container handles scrolling */
         }
         
         .dashboard-container {
             display: flex;
-            min-height: 100vh;
+            height: 100vh;
             position: relative;
             width: 100%;
+            overflow: hidden; /* Keep hidden as sections handle scrolling */
         }
         
         /* Main content area with better positioning */
@@ -42,9 +47,9 @@
             margin-left: 250px;
             padding: 0;
             background: #f9fafb;
-            min-height: 100vh;
+            height: 100vh;
             transition: margin-left 0.3s ease;
-            overflow-y: auto;
+            overflow: hidden;
             position: relative;
         }
         
@@ -149,31 +154,34 @@
         .content-section {
             display: none;
             width: 100%;
-            min-height: 100vh;
+            height: 100vh;
             position: relative;
+            overflow: auto; /* Changed from hidden to auto */
         }
         
         .content-section.active {
-            display: flex;
-            flex-direction: column;
+            display: block;
         }
         
         .content-section iframe {
             width: 100%;
-            min-height: 100vh;
             height: 100%;
+            min-height: 100vh;
             border: none;
-            flex: 1;
+            display: block;
+            /* Removed absolute positioning */
         }
         
         @media (max-width: 768px) {
             .content-section {
-                min-height: calc(100vh - 60px);
+                height: calc(100vh - 60px);
                 margin-top: 60px;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
             }
             
             .content-section iframe {
-                min-height: calc(100vh - 60px);
+                height: calc(100vh - 60px);
             }
         }
         
@@ -189,10 +197,12 @@
             z-index: 9998;
             opacity: 0;
             transition: opacity 0.3s ease;
+            pointer-events: none; /* Allow scrolling through overlay when not active */
         }
         
         .mobile-overlay.active {
             opacity: 1;
+            pointer-events: auto; /* Enable clicks only when active */
         }
         
         /* Admin info and logout */
@@ -297,6 +307,14 @@
         
         /* Mobile responsive */
         @media (max-width: 768px) {
+            /* Ensure scrolling works on mobile */
+            html, body {
+                overflow-x: hidden !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                height: auto !important;
+                min-height: 100vh !important;
+            }
             .mobile-menu-btn {
                 display: flex;
             }
@@ -346,6 +364,12 @@
         
         /* Smaller mobile devices */
         @media (max-width: 480px) {
+            /* Ensure scrolling on small devices */
+            html, body {
+                overflow-x: hidden !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
             html {
                 font-size: 14px;
             }
@@ -483,50 +507,50 @@
         <main id="main-content-area" class="main-content-empty">
             <!-- Dashboard Section -->
             <div id="dashboard-section" class="content-section active">
-                <iframe src="pages/dashboard.html" frameborder="0"></iframe>
+                <iframe scrolling="yes" style="overflow: auto;" src="pages/dashboard.html" frameborder="0"></iframe>
             </div>
             
             <!-- Tailor Management Section -->
             <div id="tailor-management-section" class="content-section">
-                <iframe src="pages/tailor-management.html" frameborder="0"></iframe>
+                <iframe scrolling="yes" style="overflow: auto;" src="pages/tailor-management.html" frameborder="0"></iframe>
             </div>
             
             <!-- Fabric Inventory Section -->
             <div id="fabric-inventory-section" class="content-section">
-                <iframe src="pages/fabric-inventory.html" frameborder="0"></iframe>
+                <iframe scrolling="yes" style="overflow: auto;" src="pages/fabric-inventory.html" frameborder="0"></iframe>
             </div>
             
             <!-- Fabric Cutting Section -->
             <div id="fabric-cutting-section" class="content-section">
-                <iframe src="pages/fabric-cutting.html" frameborder="0"></iframe>
+                <iframe scrolling="yes" style="overflow: auto;" src="pages/fabric-cutting.html" frameborder="0"></iframe>
             </div>
             
             <!-- Products Inventory Section -->
             <div id="products-inventory-section" class="content-section">
-                <iframe src="pages/products-inventory.html" frameborder="0"></iframe>
+                <iframe scrolling="yes" style="overflow: auto;" src="pages/products-inventory.html" frameborder="0"></iframe>
             </div>
             
             <!-- Manufacturing Section -->
             <div id="manufacturing-section" class="content-section">
-                <iframe src="pages/manufacturing.html" frameborder="0"></iframe>
+                <iframe scrolling="yes" style="overflow: auto;" src="pages/manufacturing.html" frameborder="0"></iframe>
             </div>
             
             <!-- Manufactured Inventory Section -->
             <div id="manufactured-inventory-section" class="content-section">
-                <iframe src="pages/manufactured-inventory.html" frameborder="0"></iframe>
+                <iframe scrolling="yes" style="overflow: auto;" src="pages/manufactured-inventory.html" frameborder="0"></iframe>
             </div>
             
             <!-- Transaction History Section -->
             <div id="transactions-section" class="content-section">
-                <iframe src="pages/transactions.html" frameborder="0"></iframe>
+                <iframe scrolling="yes" style="overflow: auto;" src="pages/transactions.html" frameborder="0"></iframe>
             </div>
             
             <div id="employee-registration-section" class="content-section">
-                <iframe src="pages/employee-registration.html" frameborder="0"></iframe>
+                <iframe scrolling="yes" style="overflow: auto;" src="pages/employee-registration.html" frameborder="0"></iframe>
             </div>
             
             <div id="attendance-dashboard-section" class="content-section">
-                <iframe src="pages/attendance-dashboard.html" frameborder="0"></iframe>
+                <iframe scrolling="yes" style="overflow: auto;" src="pages/attendance-dashboard.html" frameborder="0"></iframe>
             </div>
         </main>
     </div>
@@ -563,7 +587,8 @@
             // Only open the sidebar, don't toggle
             sidebar.classList.add('active');
             overlay.classList.add('active');
-            document.body.style.overflow = 'hidden';
+            // Don't block scrolling on mobile
+            // document.body.style.overflow = 'hidden';
         }
         
         // Close sidebar
@@ -604,6 +629,23 @@
             const targetSection = document.getElementById(sectionName + '-section');
             if (targetSection) {
                 targetSection.classList.add('active');
+                
+                // Handle iframe properly
+                const iframe = targetSection.querySelector('iframe');
+                if (iframe) {
+                    // Set scrolling attribute
+                    iframe.setAttribute('scrolling', 'yes');
+                    
+                    // Force reload only if needed
+                    if (!iframe.hasAttribute('data-loaded')) {
+                        const src = iframe.src;
+                        iframe.src = '';
+                        setTimeout(() => {
+                            iframe.src = src;
+                            iframe.setAttribute('data-loaded', 'true');
+                        }, 10);
+                    }
+                }
             }
             
             // Close sidebar on mobile after selection
@@ -622,7 +664,9 @@
             if (window.innerWidth > 768) {
                 sidebar.classList.remove('active');
                 overlay.classList.remove('active');
-                document.body.style.overflow = '';
+                document.body.style.overflow = ''; /* Ensure scrolling is restored */
+                document.body.style.position = ''; /* Reset position */
+                document.body.style.height = ''; /* Reset height */
             }
         });
         
@@ -647,7 +691,8 @@
                 if (touchEndX - touchStartX > 100 && touchStartX < 50) {
                     sidebar.classList.add('active');
                     document.getElementById('mobile-overlay').classList.add('active');
-                    document.body.style.overflow = 'hidden';
+                    // Don't block scrolling on mobile
+                    // document.body.style.overflow = 'hidden';
                 }
                 
                 // Swipe left to close sidebar
@@ -656,6 +701,40 @@
                 }
             }
         }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure dashboard iframe is properly loaded
+            const dashboardSection = document.getElementById('dashboard-section');
+            if (dashboardSection && dashboardSection.classList.contains('active')) {
+                const iframe = dashboardSection.querySelector('iframe');
+                if (iframe) {
+                    iframe.style.height = '100vh';
+                    iframe.scrolling = 'yes';
+                    
+                    // Handle iframe load
+                    iframe.onload = function() {
+                        try {
+                            // Try to access iframe content (will fail for cross-origin)
+                            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                            iframeDoc.body.style.overflow = 'auto';
+                        } catch (e) {
+                            // Cross-origin, can't access but iframe should still scroll
+                            console.log('Iframe loaded, scrolling enabled');
+                        }
+                    };
+                }
+            }
+        });
+        
+        // Fix for all iframes
+        document.querySelectorAll('iframe').forEach(iframe => {
+            iframe.setAttribute('scrolling', 'yes');
+            iframe.style.overflow = 'auto';
+        });
     </script>
+    
+    <!-- Global Scroll Fix -->
+    <script src="js/global-scroll-fix.js"></script>
 </body>
 </html>

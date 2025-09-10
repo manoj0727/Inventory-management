@@ -23,8 +23,8 @@ mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 })
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('MongoDB connection error:', err));
+.then(() => console.log('✅ Connected to MongoDB Database'))
+.catch(err => console.error('❌ MongoDB connection error:', err));
 
 // Fabric Schema
 const fabricSchema = new mongoose.Schema({
@@ -1069,5 +1069,14 @@ app.get('*', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`
+╔════════════════════════════════════════════════╗
+║   🚀 Server is running successfully!           ║
+╠════════════════════════════════════════════════╣
+║   📦 Application:  http://localhost:${PORT}      ║
+║   🔧 API Endpoint: http://localhost:${PORT}/api  ║
+╠════════════════════════════════════════════════╣
+║   Press Ctrl+C to stop the server              ║
+╚════════════════════════════════════════════════╝
+    `);
 });

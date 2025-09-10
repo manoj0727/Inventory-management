@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Dashboard Test - Scroll & Grid</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            height: 100%;
+            width: 100%;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        
+        .info-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0,0,0,0.15);
+        }
+        
+        .card h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+        
+        .card p {
+            font-size: 48px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .long-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .long-content h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .long-content p {
+            line-height: 1.8;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .grid-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+            
+            body {
+                padding: 10px;
+            }
+            
+            .card {
+                min-height: 150px;
+            }
+        }
+        
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Dashboard Layout Test - 3x2 Grid</h1>
+        
+        <div class="info-box">
+            <h2>✅ Test Features:</h2>
+            <ul>
+                <li>Perfect 3x2 grid on desktop (3 columns, 2 rows)</li>
+                <li>Responsive: 2 columns on tablet, 1 column on mobile</li>
+                <li>Smooth scrolling on all devices</li>
+                <li>Touch-friendly on mobile devices</li>
+                <li>Hover effects on desktop</li>
+            </ul>
+        </div>
+        
+        <h2 style="margin-bottom: 20px;">Stats Grid (3x2 Layout)</h2>
+        
+        <div class="grid-container">
+            <div class="card">
+                <h3>Total Fabric</h3>
+                <p>1,245</p>
+            </div>
+            
+            <div class="card">
+                <h3>Fabric Cut</h3>
+                <p>856</p>
+            </div>
+            
+            <div class="card">
+                <h3>Products</h3>
+                <p>342</p>
+            </div>
+            
+            <div class="card">
+                <h3>Manufacturing</h3>
+                <p>127</p>
+            </div>
+            
+            <div class="card">
+                <h3>Active Tailors</h3>
+                <p>45</p>
+            </div>
+            
+            <div class="card">
+                <h3>Employees</h3>
+                <p>89</p>
+            </div>
+        </div>
+        
+        <div class="long-content">
+            <h2>📜 Scroll Test Content</h2>
+            <p>This is a long content section to test scrolling functionality. The page should scroll smoothly on all devices including desktop, tablet, and mobile.</p>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+            <p>The dashboard features a responsive grid layout that adapts to different screen sizes. On desktop, you'll see a perfect 3x2 grid. On tablet, it becomes 2x3, and on mobile, all cards stack vertically.</p>
+            <p>Scrolling should be smooth and natural, with touch support on mobile devices. The scrollbar is styled for a better visual experience.</p>
+        </div>
+        
+        <div class="long-content">
+            <h2>🎯 Additional Content</h2>
+            <p>More content to ensure the page is scrollable. This helps test the scrolling functionality across different devices and browsers.</p>
+            <p>The grid system uses CSS Grid for modern, flexible layouts. Each card has hover effects on desktop for better interactivity.</p>
+            <p>Mobile users will see optimized touch targets and smooth scrolling with momentum.</p>
+        </div>
+        
+        <div class="long-content">
+            <h2>🔧 Technical Details</h2>
+            <p>The layout uses modern CSS features including:</p>
+            <ul>
+                <li>CSS Grid for layout</li>
+                <li>Flexbox for card content alignment</li>
+                <li>Media queries for responsiveness</li>
+                <li>Transform animations for hover effects</li>
+                <li>Custom scrollbar styling</li>
+                <li>Touch-optimized scrolling</li>
+            </ul>
+        </div>
+        
+        <div style="text-align: center; padding: 40px 0; color: #999;">
+            <p>End of page - Scroll test successful if you can see this! ✅</p>
+        </div>
+    </div>
+    
+    <script>
+        // Log viewport info for debugging
+        console.log('Viewport Width:', window.innerWidth);
+        console.log('Viewport Height:', window.innerHeight);
+        console.log('Document Height:', document.documentElement.scrollHeight);
+        console.log('Scrollable:', document.documentElement.scrollHeight > window.innerHeight);
+        
+        // Add scroll event listener for testing
+        let scrollCount = 0;
+        window.addEventListener('scroll', function() {
+            scrollCount++;
+            if (scrollCount === 1) {
+                console.log('✅ Scroll is working!');
+            }
+        });
+        
+        // Test touch events on mobile
+        document.addEventListener('touchstart', function() {
+            console.log('Touch detected - mobile scrolling should work');
+        }, { once: true });
+    </script>
+</body>
+</html>
