@@ -12,6 +12,7 @@ body {
     padding: 0;
     width: 100%;
     overflow-x: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .main-content {
@@ -616,6 +617,7 @@ body {
     justify-content: flex-end;
     margin-top: 24px;
     padding-top: 20px;
+    flex-wrap: wrap;
     border-top: 1px solid #e5e7eb;
 }
 
@@ -645,6 +647,17 @@ body {
     
     .tailors-grid {
         grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    }
+}
+
+/* Desktop specific fix for button alignment */
+@media (min-width: 769px) {
+    .form-actions {
+        flex-wrap: nowrap;
+    }
+    
+    .form-actions .btn {
+        min-width: 120px;
     }
 }
 
@@ -694,6 +707,26 @@ body {
     .stat-icon {
         width: 3rem;
         height: 3rem;
+    }
+    
+    /* Fix form actions on mobile */
+    .form-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 20px;
+    }
+    
+    .form-actions .btn-secondary {
+        order: 2;
+    }
+    
+    .form-actions .btn-primary {
+        order: 1;
     }
     
     .stat-icon i {
