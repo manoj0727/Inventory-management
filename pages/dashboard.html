@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - QR Inventory System</title>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f9fafb;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .dashboard-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .dashboard-header {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            animation: slideDown 0.5s ease;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .dashboard-title {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .dashboard-title i {
+            font-size: 36px;
+        }
+        
+        .datetime {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            color: #6b7280;
+        }
+        
+        .time {
+            font-size: 24px;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .date {
+            font-size: 14px;
+            color: #9ca3af;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            border-color: #d1d5db;
+        }
+        
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            margin-bottom: 15px;
+        }
+        
+        .stat-icon.blue { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .stat-icon.green { background: linear-gradient(135deg, #10b981, #059669); }
+        .stat-icon.orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .stat-icon.red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .stat-icon.purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .stat-icon.teal { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+        
+        .stat-content h3 {
+            font-size: 14px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1f2937;
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+        
+        .stat-change {
+            font-size: 14px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        
+        .stat-change.positive {
+            background: #d1fae5;
+            color: #059669;
+        }
+        
+        .stat-change.negative {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        /* Charts Section */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            animation: fadeInUp 0.6s ease;
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .chart-options {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chart-option {
+            padding: 6px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            color: #6b7280;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .chart-option:hover,
+        .chart-option.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: transparent;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        
+        /* Activity Feed */
+        .activity-section {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            animation: fadeInUp 0.7s ease;
+        }
+        
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .activity-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .activity-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 15px;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background 0.3s ease;
+        }
+        
+        .activity-item:hover {
+            background: #f9fafb;
+        }
+        
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .activity-icon.add { background: #d1fae5; color: #059669; }
+        .activity-icon.edit { background: #dbeafe; color: #2563eb; }
+        .activity-icon.delete { background: #fee2e2; color: #dc2626; }
+        .activity-icon.complete { background: #e9d5ff; color: #9333ea; }
+        
+        .activity-content {
+            flex: 1;
+        }
+        
+        .activity-text {
+            font-size: 14px;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+        
+        .activity-time {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+        
+        /* Loading Spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f4f6;
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        /* Animations */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .dashboard-header {
+                padding: 20px;
+            }
+            
+            .dashboard-title {
+                font-size: 24px;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .datetime {
+                align-items: flex-start;
+            }
+        }
+        
+        @media (max-width: 500px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <h1 class="dashboard-title">
+                    <i class="fas fa-chart-line"></i>
+                    Dashboard Analytics
+                </h1>
+                <div class="datetime">
+                    <div class="time" id="time">00:00:00</div>
+                    <div class="date" id="date">Loading...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fas fa-boxes"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Total Fabric</h3>
+                    <div class="stat-value">
+                        <span id="totalFabric">0</span>
+                        <span class="stat-change positive">+12%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fas fa-cut"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Fabric Cut</h3>
+                    <div class="stat-value">
+                        <span id="fabricCut">0</span>
+                        <span class="stat-change positive">+8%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon orange">
+                    <i class="fas fa-tshirt"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Products</h3>
+                    <div class="stat-value">
+                        <span id="totalProducts">0</span>
+                        <span class="stat-change positive">+15%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon red">
+                    <i class="fas fa-industry"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Manufacturing</h3>
+                    <div class="stat-value">
+                        <span id="manufacturing">0</span>
+                        <span class="stat-change negative">-3%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Active Tailors</h3>
+                    <div class="stat-value">
+                        <span id="activeTailors">0</span>
+                        <span class="stat-change positive">+5%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon teal">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Employees</h3>
+                    <div class="stat-value">
+                        <span id="totalEmployees">0</span>
+                        <span class="stat-change positive">+2%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h2 class="chart-title">Inventory Overview</h2>
+                    <div class="chart-options">
+                        <button class="chart-option active" onclick="updateChart('inventory', 'week')">Week</button>
+                        <button class="chart-option" onclick="updateChart('inventory', 'month')">Month</button>
+                        <button class="chart-option" onclick="updateChart('inventory', 'year')">Year</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="inventoryChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h2 class="chart-title">Production Distribution</h2>
+                    <div class="chart-options">
+                        <button class="chart-option active" onclick="refreshPieChart()">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="productionChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h2 class="chart-title">Manufacturing Trends</h2>
+                    <div class="chart-options">
+                        <button class="chart-option active" onclick="updateChart('manufacturing', 'daily')">Daily</button>
+                        <button class="chart-option" onclick="updateChart('manufacturing', 'weekly')">Weekly</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="manufacturingChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h2 class="chart-title">Employee Performance</h2>
+                    <div class="chart-options">
+                        <button class="chart-option active" onclick="updateChart('employee', 'today')">Today</button>
+                        <button class="chart-option" onclick="updateChart('employee', 'week')">Week</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="employeeChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Activity Feed -->
+        <div class="activity-section">
+            <div class="activity-header">
+                <h2 class="activity-title">Recent Activity</h2>
+                <div class="loading-spinner" id="activityLoader"></div>
+            </div>
+            <div class="activity-list" id="activityList">
+                <!-- Activities will be loaded here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDjbdj0cR8Bzc2s_pNLkJpEJhUkuZSgb8Q",
+            authDomain: "qr-based-inventory-management.firebaseapp.com",
+            databaseURL: "https://qr-based-inventory-management-default-rtdb.firebaseio.com",
+            projectId: "qr-based-inventory-management",
+            storageBucket: "qr-based-inventory-management.appspot.com",
+            messagingSenderId: "480265065476",
+            appId: "1:480265065476:web:ab1c99f3b2e9e5c3a0a7f3"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        // Chart instances
+        let inventoryChart, productionChart, manufacturingChart, employeeChart;
+        
+        // Initialize charts
+        function initCharts() {
+            // Inventory Chart (Line Chart)
+            const inventoryCtx = document.getElementById('inventoryChart').getContext('2d');
+            inventoryChart = new Chart(inventoryCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Fabric Inventory',
+                        data: [65, 78, 90, 81, 86, 95, 104],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Products',
+                        data: [45, 52, 48, 58, 63, 71, 79],
+                        borderColor: '#764ba2',
+                        backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Production Chart (Doughnut Chart)
+            const productionCtx = document.getElementById('productionChart').getContext('2d');
+            productionChart = new Chart(productionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Shirts', 'Pants', 'Dresses', 'Suits', 'Others'],
+                    datasets: [{
+                        data: [300, 250, 180, 120, 150],
+                        backgroundColor: [
+                            '#667eea',
+                            '#764ba2',
+                            '#10b981',
+                            '#f59e0b',
+                            '#ef4444'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+            
+            // Manufacturing Chart (Bar Chart)
+            const manufacturingCtx = document.getElementById('manufacturingChart').getContext('2d');
+            manufacturingChart = new Chart(manufacturingCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Cutting', 'Stitching', 'Finishing', 'Packaging', 'Quality Check'],
+                    datasets: [{
+                        label: 'Completed',
+                        data: [42, 38, 35, 40, 36],
+                        backgroundColor: '#10b981'
+                    }, {
+                        label: 'In Progress',
+                        data: [12, 15, 10, 8, 14],
+                        backgroundColor: '#f59e0b'
+                    }, {
+                        label: 'Pending',
+                        data: [8, 5, 7, 6, 4],
+                        backgroundColor: '#ef4444'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Employee Chart (Radar Chart)
+            const employeeCtx = document.getElementById('employeeChart').getContext('2d');
+            employeeChart = new Chart(employeeCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Productivity', 'Quality', 'Attendance', 'Efficiency', 'Team Work'],
+                    datasets: [{
+                        label: 'Tailors',
+                        data: [85, 90, 88, 82, 86],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)'
+                    }, {
+                        label: 'Cutters',
+                        data: [78, 85, 92, 88, 80],
+                        borderColor: '#764ba2',
+                        backgroundColor: 'rgba(118, 75, 162, 0.2)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update date and time
+        function updateDateTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
+            const dateStr = now.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            document.getElementById('time').textContent = timeStr;
+            document.getElementById('date').textContent = dateStr;
+        }
+        
+        // Load real-time data from Firebase
+        function loadRealtimeData() {
+            // Load fabric inventory
+            database.ref('fabric_inventory').on('value', (snapshot) => {
+                const data = snapshot.val();
+                const count = data ? Object.keys(data).length : 0;
+                document.getElementById('totalFabric').textContent = count;
+                animateValue('totalFabric', 0, count, 1000);
+            });
+            
+            // Load fabric cutting
+            database.ref('fabric_cutting').on('value', (snapshot) => {
+                const data = snapshot.val();
+                const count = data ? Object.keys(data).length : 0;
+                document.getElementById('fabricCut').textContent = count;
+                animateValue('fabricCut', 0, count, 1000);
+            });
+            
+            // Load products
+            database.ref('products').on('value', (snapshot) => {
+                const data = snapshot.val();
+                const count = data ? Object.keys(data).length : 0;
+                document.getElementById('totalProducts').textContent = count;
+                animateValue('totalProducts', 0, count, 1000);
+            });
+            
+            // Load manufacturing
+            database.ref('manufacturing').on('value', (snapshot) => {
+                const data = snapshot.val();
+                const count = data ? Object.keys(data).length : 0;
+                document.getElementById('manufacturing').textContent = count;
+                animateValue('manufacturing', 0, count, 1000);
+            });
+            
+            // Load tailors
+            database.ref('tailors').on('value', (snapshot) => {
+                const data = snapshot.val();
+                const count = data ? Object.keys(data).length : 0;
+                document.getElementById('activeTailors').textContent = count;
+                animateValue('activeTailors', 0, count, 1000);
+            });
+            
+            // Load employees
+            database.ref('employees').on('value', (snapshot) => {
+                const data = snapshot.val();
+                const count = data ? Object.keys(data).length : 0;
+                document.getElementById('totalEmployees').textContent = count;
+                animateValue('totalEmployees', 0, count, 1000);
+            });
+            
+            // Load recent activities
+            loadRecentActivities();
+        }
+        
+        // Animate number counting
+        function animateValue(id, start, end, duration) {
+            const element = document.getElementById(id);
+            const range = end - start;
+            const increment = range / (duration / 16);
+            let current = start;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= end) {
+                    current = end;
+                    clearInterval(timer);
+                }
+                element.textContent = Math.floor(current);
+            }, 16);
+        }
+        
+        // Load recent activities
+        function loadRecentActivities() {
+            const activities = [
+                { icon: 'add', text: 'New fabric roll added to inventory', time: '2 minutes ago', type: 'add' },
+                { icon: 'edit', text: 'Product details updated for SKU #1234', time: '15 minutes ago', type: 'edit' },
+                { icon: 'complete', text: 'Manufacturing batch #78 completed', time: '1 hour ago', type: 'complete' },
+                { icon: 'add', text: 'New tailor registered: John Doe', time: '2 hours ago', type: 'add' },
+                { icon: 'delete', text: 'Defective fabric removed from inventory', time: '3 hours ago', type: 'delete' },
+                { icon: 'edit', text: 'Employee attendance updated', time: '4 hours ago', type: 'edit' },
+                { icon: 'complete', text: 'Quality check passed for batch #77', time: '5 hours ago', type: 'complete' },
+                { icon: 'add', text: 'New cutting pattern added', time: '6 hours ago', type: 'add' }
+            ];
+            
+            const activityList = document.getElementById('activityList');
+            activityList.innerHTML = '';
+            
+            activities.forEach(activity => {
+                const item = document.createElement('div');
+                item.className = 'activity-item';
+                item.innerHTML = `
+                    <div class="activity-icon ${activity.type}">
+                        <i class="fas fa-${activity.type === 'add' ? 'plus' : activity.type === 'edit' ? 'edit' : activity.type === 'delete' ? 'trash' : 'check'}"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-text">${activity.text}</div>
+                        <div class="activity-time">${activity.time}</div>
+                    </div>
+                `;
+                activityList.appendChild(item);
+            });
+            
+            // Hide loader
+            document.getElementById('activityLoader').style.display = 'none';
+        }
+        
+        // Update chart data
+        function updateChart(chartType, period) {
+            // Update button states
+            event.target.parentElement.querySelectorAll('.chart-option').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Here you would normally fetch new data based on the period
+            // For demo, we'll just update with random data
+            if (chartType === 'inventory') {
+                const newData = period === 'week' ? 
+                    [65, 78, 90, 81, 86, 95, 104] :
+                    period === 'month' ?
+                    [165, 178, 190, 181, 186, 195, 204, 210, 198, 205, 215, 225, 230, 235] :
+                    [565, 578, 590, 581, 586, 595, 604, 610, 598, 605, 615, 625];
+                
+                inventoryChart.data.datasets[0].data = newData;
+                inventoryChart.update();
+            }
+        }
+        
+        // Refresh pie chart
+        function refreshPieChart() {
+            const newData = [
+                Math.floor(Math.random() * 100) + 200,
+                Math.floor(Math.random() * 100) + 150,
+                Math.floor(Math.random() * 100) + 100,
+                Math.floor(Math.random() * 100) + 80,
+                Math.floor(Math.random() * 100) + 100
+            ];
+            productionChart.data.datasets[0].data = newData;
+            productionChart.update();
+        }
+        
+        // Initialize everything
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            initCharts();
+            loadRealtimeData();
+        });
+    </script>
+</body>
+</html>
