@@ -35,19 +35,44 @@ export default function MarkAttendance() {
 
   const startCamera = async () => {
     try {
+      // Check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera API not available. Please use HTTPS or localhost.')
+      }
+
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user' },
+        video: true,
         audio: false 
       })
+      
       setStream(mediaStream)
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream
-        await videoRef.current.play()
-      }
       setShowCamera(true)
-    } catch (error) {
+      
+      // Set up video element after state updates
+      setTimeout(() => {
+        if (videoRef.current && mediaStream) {
+          videoRef.current.srcObject = mediaStream
+          videoRef.current.play().catch(err => {
+            console.warn('Auto-play prevented:', err)
+          })
+        }
+      }, 100)
+    } catch (error: any) {
       console.error('Error accessing camera:', error)
-      alert('Could not access camera. Please check permissions.')
+      
+      let errorMessage = 'Could not access camera. '
+      
+      if (error.name === 'NotAllowedError') {
+        errorMessage += 'Please allow camera permissions in your browser.'
+      } else if (error.name === 'NotFoundError') {
+        errorMessage += 'No camera found on this device.'
+      } else if (error.name === 'NotReadableError') {
+        errorMessage += 'Camera is already in use by another application.'
+      } else {
+        errorMessage += error.message || 'Please check permissions.'
+      }
+      
+      alert(errorMessage)
     }
   }
 

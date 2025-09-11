@@ -40,8 +40,7 @@ const employeeSchema = new mongoose.Schema({
   },
   work: {
     type: String,
-    required: true,
-    enum: ['Tailor', 'Cutter', 'Helper', 'Supervisor', 'Manager', 'Other']
+    required: true
   },
   photo: {
     type: String, // Base64 encoded photo
@@ -86,8 +85,12 @@ employeeSchema.pre('save', async function(next) {
 // Generate employee ID
 employeeSchema.pre('save', async function(next) {
   if (!this.employeeId) {
-    const count = await this.constructor.countDocuments();
-    this.employeeId = `EMP${String(count + 1).padStart(4, '0')}`;
+    try {
+      const count = await this.constructor.countDocuments();
+      this.employeeId = `EMP${String(count + 1).padStart(4, '0')}`;
+    } catch (error) {
+      return next(error);
+    }
   }
   next();
 });

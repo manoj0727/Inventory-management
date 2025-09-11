@@ -21,6 +21,8 @@ import Employees from './pages/Employees'
 import TailorManagement from './pages/TailorManagement'
 import GenerateQR from './pages/GenerateQR'
 import QRScanner from './pages/QRScanner'
+import MarkAttendance from './pages/MarkAttendance'
+import AttendanceView from './pages/AttendanceView'
 
 function App() {
   const isAuthenticated = useAuthStore(state => state.isAuthenticated)
@@ -48,6 +50,8 @@ function App() {
           <Route path="/employees" element={<Employees />} />
           <Route path="/tailor-management" element={<TailorManagement />} />
           <Route path="/qr-scanner" element={<QRScanner />} />
+          <Route path="/mark-attendance" element={<MarkAttendance />} />
+          <Route path="/attendance-view" element={<AttendanceView />} />
         </Route>
       </Route>
       

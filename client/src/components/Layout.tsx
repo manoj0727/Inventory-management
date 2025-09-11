@@ -42,12 +42,14 @@ export default function Layout() {
   const adminOnlyItems = [
     { path: '/admin-dashboard', name: 'Admin Dashboard', icon: HomeIcon },
     { path: '/employees', name: 'Employees', icon: UsersIcon },
+    { path: '/attendance-view', name: 'Attendance Records', icon: ClipboardDocumentListIcon },
     { path: '/tailor-management', name: 'Tailor Management', icon: UsersIcon },
   ]
 
   // Employee-only menu items
   const employeeOnlyItems = [
     { path: '/employee-portal', name: 'My Dashboard', icon: HomeIcon },
+    { path: '/mark-attendance', name: 'Mark Attendance', icon: ClipboardDocumentListIcon },
   ]
 
   // Combine menu items based on role

@@ -28,16 +28,38 @@ router.get('/:id', async (req, res) => {
 // Create employee
 router.post('/', async (req, res) => {
   try {
+    console.log('Creating employee with data:', req.body);
+    
+    // Ensure required fields are present
+    if (!req.body.username || !req.body.password || !req.body.name) {
+      return res.status(400).json({ 
+        message: 'Username, password, and name are required' 
+      });
+    }
+    
     const employee = new Employee(req.body);
     await employee.save();
     
     const savedEmployee = await Employee.findById(employee._id).select('-password');
     res.status(201).json(savedEmployee);
   } catch (error) {
+    console.error('Error creating employee:', error);
+    
     if (error.code === 11000) {
-      return res.status(400).json({ message: 'Username or email already exists' });
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({ 
+        message: `${field === 'username' ? 'Username' : 'Email'} already exists` 
+      });
     }
-    res.status(400).json({ message: error.message });
+    
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ 
+        message: `Validation failed: ${messages.join(', ')}` 
+      });
+    }
+    
+    res.status(400).json({ message: error.message || 'Failed to create employee' });
   }
 });
 
@@ -45,6 +67,15 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { password, ...updateData } = req.body;
+    
+    // If password is provided and not empty, update it separately
+    if (password && password.trim() !== '') {
+      const employee = await Employee.findById(req.params.id);
+      if (employee) {
+        employee.password = password;
+        await employee.save();
+      }
+    }
     
     const employee = await Employee.findByIdAndUpdate(
       req.params.id,
