@@ -9,6 +9,8 @@ interface User {
   email: string
   role: 'admin' | 'employee' | 'manager'
   avatar?: string
+  employeeId?: string
+  username?: string
 }
 
 interface AuthState {

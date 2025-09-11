@@ -44,7 +44,7 @@ export default function Cutting() {
     notes: ''
   })
 
-  const [fabrics, setFabrics] = useState<Fabric[]>([])
+  const [, setFabrics] = useState<Fabric[]>([])
   const [selectedFabric, setSelectedFabric] = useState<Fabric | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [recentCuttingRecords, setRecentCuttingRecords] = useState<any[]>([])

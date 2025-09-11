@@ -19,6 +19,7 @@ interface ManufacturingRecord {
   status: string
   notes?: string
   createdAt: string
+  updatedAt?: string
 }
 
 export default function GenerateQR() {
@@ -99,7 +100,6 @@ export default function GenerateQR() {
         qrCodeDataUrl = await QRCode.toDataURL(JSON.stringify(qrData), {
           errorCorrectionLevel: 'M',
           type: 'image/png',
-          quality: 0.92,
           margin: 1,
           color: {
             dark: '#000000',
@@ -367,7 +367,7 @@ export default function GenerateQR() {
                       <td>{record.productName}</td>
                       <td>{record.quantityProduced > 0 ? record.quantityProduced : record.quantity}</td>
                       <td>{record.tailorName}</td>
-                      <td>{formatDate(record.completedDate || record.updatedAt)}</td>
+                      <td>{formatDate(record.completedDate || record.updatedAt || '')}</td>
                       <td style={{ textAlign: 'center' }}>
                         <div className="action-buttons" style={{ justifyContent: 'center' }}>
                           <button 

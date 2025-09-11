@@ -8,11 +8,9 @@ import {
   ClipboardDocumentListIcon,
   QrCodeIcon,
   ChartBarIcon,
-  Cog6ToothIcon,
   Bars3Icon,
   XMarkIcon,
-  ArrowRightOnRectangleIcon,
-  UserCircleIcon
+  ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline'
 
 export default function Layout() {

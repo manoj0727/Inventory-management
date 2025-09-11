@@ -125,13 +125,7 @@ export default function TailorManagement() {
     setShowForm(false)
   }
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    })
-  }
+  // Removed unused function
 
   return (
     <div className="page-container">

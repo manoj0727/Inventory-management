@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { QrCodeIcon, PlusIcon, ScissorsIcon, EyeIcon } from '@heroicons/react/24/outline'
+import { ScissorsIcon } from '@heroicons/react/24/outline'
 
 type TabType = 'register' | 'dashboard' | 'cutting' | 'viewCutting'
 

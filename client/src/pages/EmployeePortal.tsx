@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useAuthStore } from '@/stores/authStore'
-import { ClockIcon, CalendarIcon, UserIcon, BriefcaseIcon, CheckCircleIcon, XCircleIcon, CameraIcon } from '@heroicons/react/24/outline'
+import { ClockIcon, CalendarIcon, BriefcaseIcon, CheckCircleIcon, XCircleIcon, CameraIcon } from '@heroicons/react/24/outline'
 import { API_ENDPOINTS } from '@/config/api'
 
 export default function EmployeePortal() {

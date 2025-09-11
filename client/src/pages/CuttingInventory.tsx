@@ -42,12 +42,7 @@ export default function CuttingInventory() {
     }
   }
 
-  const generateCuttingId = (productName: string, color: string) => {
-    const productCode = productName.substring(0, 3).toUpperCase()
-    const colorCode = color.substring(0, 2).toUpperCase()
-    const randomNumber = Math.floor(Math.random() * 9000) + 1000 // 4-digit random number
-    return `CUT${productCode}${colorCode}${randomNumber}`
-  }
+  // Removed unused function
 
   const fetchCuttingRecords = async () => {
     setIsLoading(true)

@@ -136,7 +136,7 @@ export default function Employees() {
           // Add event listeners for debugging
           videoRef.current.onloadedmetadata = () => {
             // Video metadata loaded
-            videoRef.current?.play().catch(err => {
+            videoRef.current?.play().catch(() => {
               // Play error
             })
           }
@@ -146,7 +146,7 @@ export default function Employees() {
           }
           
           // Force play
-          videoRef.current.play().catch(err => {
+          videoRef.current.play().catch(() => {
             // Initial play failed, will retry
             // Retry play after a short delay
             setTimeout(() => {

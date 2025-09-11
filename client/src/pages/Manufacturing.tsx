@@ -1,13 +1,6 @@
 import { useState, useEffect } from 'react'
 import '../styles/common.css'
 
-// Extend window interface for debounce timer
-declare global {
-  interface Window {
-    debounceTimer: number
-  }
-}
-
 interface ManufacturingOrder {
   cuttingId: string
   productName: string
@@ -50,7 +43,7 @@ export default function Manufacturing() {
     status: 'Pending',
     notes: ''
   })
-  const [cuttingRecords, setCuttingRecords] = useState<CuttingRecord[]>([])
+  const [, setCuttingRecords] = useState<CuttingRecord[]>([])
   const [manufacturingRecords, setManufacturingRecords] = useState<ManufacturingRecord[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingRecords, setIsLoadingRecords] = useState(false)

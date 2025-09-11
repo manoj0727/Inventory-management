@@ -304,19 +304,7 @@ export default function QRScanner() {
     }
   }
 
-  const toggleFacingMode = async () => {
-    if (qrScanner) {
-      await qrScanner.turnFlashOff()
-      const cameras = await QrScanner.listCameras(true)
-      const currentCam = cameras.find(c => c.id === selectedCamera)
-      const otherCams = cameras.filter(c => c.id !== selectedCamera)
-      if (otherCams.length > 0) {
-        const newCam = otherCams[0]
-        setSelectedCamera(newCam.id)
-        await qrScanner.setCamera(newCam.id)
-      }
-    }
-  }
+  // Removed unused function
 
   // Flash control
   const toggleFlash = async () => {
