@@ -24,7 +24,6 @@ interface ManufacturingRecord {
 export default function ManufacturingInventory() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
-  const [filterPriority, setFilterPriority] = useState('')
   const [manufacturingRecords, setManufacturingRecords] = useState<ManufacturingRecord[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [editingRecord, setEditingRecord] = useState<ManufacturingRecord | null>(null)
@@ -120,9 +119,8 @@ export default function ManufacturingInventory() {
                           record.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           record.tailorName.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = !filterStatus || record.status === filterStatus
-    const matchesPriority = !filterPriority || record.priority === filterPriority
     
-    return matchesSearch && matchesStatus && matchesPriority
+    return matchesSearch && matchesStatus
   })
 
 
@@ -136,15 +134,6 @@ export default function ManufacturingInventory() {
     }
   }
 
-  const getPriorityBadgeClass = (priority: string) => {
-    switch(priority) {
-      case 'Urgent': return 'badge-danger'
-      case 'High': return 'badge-warning'
-      case 'Normal': return 'badge-info'
-      case 'Low': return 'badge-success'
-      default: return 'badge-info'
-    }
-  }
 
   return (
     <div className="page-container">
@@ -175,16 +164,6 @@ export default function ManufacturingInventory() {
               <option value="In Progress">In Progress</option>
               <option value="Pending">Pending</option>
             </select>
-            <select
-              value={filterPriority}
-              onChange={(e) => setFilterPriority(e.target.value)}
-            >
-              <option value="">All Priority</option>
-              <option value="Urgent">Urgent</option>
-              <option value="High">High</option>
-              <option value="Normal">Normal</option>
-              <option value="Low">Low</option>
-            </select>
             <button 
               className="btn btn-secondary"
               onClick={fetchManufacturingRecords}
@@ -208,7 +187,6 @@ export default function ManufacturingInventory() {
                 <th>Remaining</th>
                 <th>Tailor</th>
                 <th>Due Date</th>
-                <th>Priority</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -226,11 +204,6 @@ export default function ManufacturingInventory() {
                     <td>{record.tailorName}</td>
                     <td>{formatDate(record.dueDate)}</td>
                     <td>
-                      <span className={`badge ${getPriorityBadgeClass(record.priority)}`}>
-                        {record.priority}
-                      </span>
-                    </td>
-                    <td>
                       <span className={`badge ${getStatusBadgeClass(record.status)}`}>
                         {record.status}
                       </span>
@@ -245,7 +218,7 @@ export default function ManufacturingInventory() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     {isLoading ? 'Loading manufacturing inventory...' : 'No manufacturing inventory records found'}
                   </td>
                 </tr>
@@ -286,7 +259,6 @@ export default function ManufacturingInventory() {
                 quantityProduced: parseInt(formData.get('quantityProduced') as string),
                 tailorName: formData.get('tailorName') as string,
                 dueDate: formData.get('dueDate') as string,
-                priority: formData.get('priority') as string,
                 status: formData.get('status') as string
               }
               handleSaveEdit(updatedRecord)
@@ -329,20 +301,6 @@ export default function ManufacturingInventory() {
                 />
               </div>
 
-              <div className="form-group">
-                <label htmlFor="priority">Priority *</label>
-                <select
-                  id="priority"
-                  name="priority"
-                  defaultValue={editingRecord.priority}
-                  required
-                >
-                  <option value="Low">Low</option>
-                  <option value="Normal">Normal</option>
-                  <option value="High">High</option>
-                  <option value="Urgent">Urgent</option>
-                </select>
-              </div>
 
               <div className="form-group">
                 <label htmlFor="status">Status *</label>

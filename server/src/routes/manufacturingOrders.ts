@@ -70,12 +70,20 @@ router.post('/', async (req, res) => {
       const cuttingRecord = await CuttingRecord.findOne({ id: cuttingId })
       const productId = cuttingRecord?.productId || `PROD${Date.now()}`
 
+      // Generate manufacturing inventory ID
+      const productCode = productName.substring(0, 3).toUpperCase()
+      const tailorCode = tailorName.substring(0, 2).toUpperCase()
+      const randomNumber = Math.floor(Math.random() * 9000) + 1000
+      const manufacturingId = `MFG${productCode}${tailorCode}${randomNumber}`
+
       const manufacturingInventory = new ManufacturingInventory({
+        id: manufacturingId,
         productId,
         productName,
         cuttingId,
         quantity: parseInt(quantity),
         quantityProduced: 0,
+        quantityRemaining: parseInt(quantity),
         tailorName,
         tailorMobile,
         startDate: new Date().toISOString().split('T')[0],

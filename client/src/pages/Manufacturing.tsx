@@ -35,7 +35,6 @@ interface ManufacturingRecord {
   dueDate: string
   tailorName: string
   tailorMobile: string
-  priority: string
   status: string
   createdAt: string
 }
@@ -320,20 +319,6 @@ export default function Manufacturing() {
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="priority">Priority</label>
-              <select
-                id="priority"
-                name="priority"
-                value={formData.priority}
-                onChange={handleChange}
-              >
-                <option value="Low">Low</option>
-                <option value="Normal">Normal</option>
-                <option value="High">High</option>
-                <option value="Urgent">Urgent</option>
-              </select>
-            </div>
           </div>
 
           <div className="form-group">
