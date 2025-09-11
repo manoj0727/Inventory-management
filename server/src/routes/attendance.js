@@ -57,11 +57,18 @@ router.post('/checkin', async (req, res) => {
   try {
     const { employeeId, photo, location } = req.body;
     
-    // Get employee details
-    const employee = await Employee.findOne({ employeeId });
+    // Get employee details - check by employeeId or username
+    const employee = await Employee.findOne({ 
+      $or: [
+        { employeeId: employeeId },
+        { username: employeeId }
+      ]
+    });
     if (!employee) {
       return res.status(404).json({ message: 'Employee not found' });
     }
+    
+    const actualEmployeeId = employee.employeeId || employee.username;
     
     // Check if already checked in today
     const today = new Date();
@@ -70,7 +77,7 @@ router.post('/checkin', async (req, res) => {
     tomorrow.setDate(tomorrow.getDate() + 1);
     
     const existingAttendance = await Attendance.findOne({
-      employeeId,
+      employeeId: actualEmployeeId,
       date: { $gte: today, $lt: tomorrow }
     });
     
@@ -80,7 +87,7 @@ router.post('/checkin', async (req, res) => {
     
     // Create new attendance record
     const attendance = new Attendance({
-      employeeId,
+      employeeId: actualEmployeeId,
       employeeName: employee.name,
       date: today,
       checkIn: new Date(),

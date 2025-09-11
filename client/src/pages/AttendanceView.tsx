@@ -129,7 +129,7 @@ export default function AttendanceView() {
       </div>
 
       {/* Filters */}
-      <div className="content-card">
+      <div className="content-card" style={{ background: 'white' }}>
         <div className="toolbar">
           <div className="filter-group">
             <select 
@@ -186,29 +186,29 @@ export default function AttendanceView() {
 
       {/* Statistics */}
       <div className="stats-grid">
-        <div className="stat-card">
-          <h3>Total Present</h3>
-          <p className="stat-value">{stats.present}</p>
+        <div className="stat-card" style={{ background: 'white', color: 'black' }}>
+          <h3 style={{ color: 'black' }}>Total Present</h3>
+          <p className="stat-value" style={{ color: 'black', fontSize: '24px', fontWeight: 'bold' }}>{stats.present}</p>
         </div>
-        <div className="stat-card">
-          <h3>Late Arrivals</h3>
-          <p className="stat-value">{stats.late}</p>
+        <div className="stat-card" style={{ background: 'white', color: 'black' }}>
+          <h3 style={{ color: 'black' }}>Late Arrivals</h3>
+          <p className="stat-value" style={{ color: 'black', fontSize: '24px', fontWeight: 'bold' }}>{stats.late}</p>
         </div>
-        <div className="stat-card">
-          <h3>Absent</h3>
-          <p className="stat-value">{stats.absent}</p>
+        <div className="stat-card" style={{ background: 'white', color: 'black' }}>
+          <h3 style={{ color: 'black' }}>Absent</h3>
+          <p className="stat-value" style={{ color: 'black', fontSize: '24px', fontWeight: 'bold' }}>{stats.absent}</p>
         </div>
-        <div className="stat-card">
-          <h3>Total Hours</h3>
-          <p className="stat-value">{calculateTotalHours().toFixed(1)}</p>
+        <div className="stat-card" style={{ background: 'white', color: 'black' }}>
+          <h3 style={{ color: 'black' }}>Total Hours</h3>
+          <p className="stat-value" style={{ color: 'black', fontSize: '24px', fontWeight: 'bold' }}>{calculateTotalHours().toFixed(1)}</p>
         </div>
       </div>
 
       {/* Attendance Table */}
-      <div className="content-card">
-        <h2 style={{ marginBottom: '20px' }}>Attendance Records</h2>
+      <div className="content-card" style={{ background: 'white', color: 'black' }}>
+        <h2 style={{ marginBottom: '20px', color: 'black' }}>Attendance Records</h2>
         <div className="table-container">
-          <table className="data-table">
+          <table className="data-table" style={{ color: 'black' }}>
             <thead>
               <tr>
                 <th>Employee ID</th>
@@ -225,24 +225,24 @@ export default function AttendanceView() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px' }}>
+                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: 'black' }}>
                     Loading attendance records...
                   </td>
                 </tr>
               ) : attendance.length > 0 ? (
                 attendance.map(record => (
                   <tr key={record._id}>
-                    <td style={{ fontWeight: '600' }}>{record.employeeId}</td>
-                    <td>{record.employeeName}</td>
-                    <td>{formatDate(record.date)}</td>
-                    <td>{formatTime(record.checkIn)}</td>
-                    <td>{record.checkOut ? formatTime(record.checkOut) : '-'}</td>
+                    <td style={{ fontWeight: '600', color: 'black' }}>{record.employeeId}</td>
+                    <td style={{ color: 'black' }}>{record.employeeName}</td>
+                    <td style={{ color: 'black' }}>{formatDate(record.date)}</td>
+                    <td style={{ color: 'black' }}>{formatTime(record.checkIn)}</td>
+                    <td style={{ color: 'black' }}>{record.checkOut ? formatTime(record.checkOut) : '-'}</td>
                     <td>
                       <span className={`badge ${getStatusBadgeClass(record.status)}`}>
                         {record.status}
                       </span>
                     </td>
-                    <td>{record.workHours ? `${record.workHours.toFixed(2)}h` : '-'}</td>
+                    <td style={{ color: 'black' }}>{record.workHours ? `${record.workHours.toFixed(2)}h` : '-'}</td>
                     <td>
                       <button 
                         className="btn btn-secondary"

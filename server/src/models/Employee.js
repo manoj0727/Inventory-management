@@ -35,7 +35,6 @@ const employeeSchema = new mongoose.Schema({
   },
   salary: {
     type: Number,
-    required: true,
     default: 0
   },
   work: {
@@ -48,8 +47,7 @@ const employeeSchema = new mongoose.Schema({
   },
   employeeId: {
     type: String,
-    unique: true,
-    required: true
+    unique: true
   },
   role: {
     type: String,

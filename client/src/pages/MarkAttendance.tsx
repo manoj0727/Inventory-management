@@ -23,7 +23,8 @@ export default function MarkAttendance() {
 
   const checkTodayAttendance = async () => {
     try {
-      const response = await fetch(`http://localhost:4000/api/attendance/today/${user?.employeeId || user?.id}`)
+      const employeeIdentifier = user?.employeeId || user?.username || user?.id
+      const response = await fetch(`http://localhost:4000/api/attendance/today/${employeeIdentifier}`)
       if (response.ok) {
         const data = await response.json()
         setAttendanceStatus(data)
@@ -106,11 +107,12 @@ export default function MarkAttendance() {
 
     setIsLoading(true)
     try {
+      const employeeIdentifier = user?.employeeId || user?.username || user?.id
       const response = await fetch('http://localhost:4000/api/attendance/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          employeeId: user?.employeeId || user?.id,
+          employeeId: employeeIdentifier,
           photo: photoData,
           location: {
             latitude: null,
@@ -138,11 +140,12 @@ export default function MarkAttendance() {
   const markCheckOut = async () => {
     setIsLoading(true)
     try {
+      const employeeIdentifier = user?.employeeId || user?.username || user?.id
       const response = await fetch('http://localhost:4000/api/attendance/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          employeeId: user?.employeeId || user?.id
+          employeeId: employeeIdentifier
         })
       })
 
@@ -177,31 +180,32 @@ export default function MarkAttendance() {
       {/* Current Status */}
       {attendanceStatus && (
         <div className="content-card" style={{ 
-          background: attendanceStatus.checkOut ? '#f0fdf4' : '#fef3c7',
-          border: `1px solid ${attendanceStatus.checkOut ? '#10b981' : '#f59e0b'}`
+          background: 'white',
+          border: `2px solid ${attendanceStatus.checkOut ? '#10b981' : '#f59e0b'}`,
+          color: 'black'
         }}>
-          <h2 style={{ marginBottom: '20px' }}>Today's Attendance</h2>
+          <h2 style={{ marginBottom: '20px', color: 'black' }}>Today's Attendance</h2>
           <div className="form-grid">
             <div className="form-group">
-              <label>Status</label>
-              <div style={{ fontSize: '18px', fontWeight: '600' }}>
+              <label style={{ color: 'black' }}>Status</label>
+              <div style={{ fontSize: '18px', fontWeight: '600', color: 'black' }}>
                 {attendanceStatus.checkOut ? '✅ Completed' : '⏰ Checked In'}
               </div>
             </div>
             <div className="form-group">
-              <label>Check-in Time</label>
-              <div>{formatTime(attendanceStatus.checkIn)}</div>
+              <label style={{ color: 'black' }}>Check-in Time</label>
+              <div style={{ color: 'black' }}>{formatTime(attendanceStatus.checkIn)}</div>
             </div>
             {attendanceStatus.checkOut && (
               <div className="form-group">
-                <label>Check-out Time</label>
-                <div>{formatTime(attendanceStatus.checkOut)}</div>
+                <label style={{ color: 'black' }}>Check-out Time</label>
+                <div style={{ color: 'black' }}>{formatTime(attendanceStatus.checkOut)}</div>
               </div>
             )}
             {attendanceStatus.workHours > 0 && (
               <div className="form-group">
-                <label>Work Hours</label>
-                <div>{attendanceStatus.workHours.toFixed(2)} hours</div>
+                <label style={{ color: 'black' }}>Work Hours</label>
+                <div style={{ color: 'black' }}>{attendanceStatus.workHours.toFixed(2)} hours</div>
               </div>
             )}
           </div>
@@ -210,8 +214,8 @@ export default function MarkAttendance() {
 
       {/* Photo Capture Section */}
       {!attendanceStatus && (
-        <div className="content-card">
-          <h2 style={{ marginBottom: '24px' }}>Capture Photo for Check-in</h2>
+        <div className="content-card" style={{ background: 'white', color: 'black' }}>
+          <h2 style={{ marginBottom: '24px', color: 'black' }}>Capture Photo for Check-in</h2>
           
           {showCamera ? (
             <div style={{ textAlign: 'center' }}>
@@ -267,8 +271,8 @@ export default function MarkAttendance() {
           ) : (
             <div style={{ textAlign: 'center', padding: '40px' }}>
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>📷</div>
-              <h3 style={{ marginBottom: '8px' }}>Ready to Check-in</h3>
-              <p style={{ marginBottom: '24px', color: '#6b7280' }}>
+              <h3 style={{ marginBottom: '8px', color: 'black' }}>Ready to Check-in</h3>
+              <p style={{ marginBottom: '24px', color: 'black' }}>
                 Take a photo to mark your attendance
               </p>
               <button onClick={startCamera} className="btn btn-primary" style={{ fontSize: '16px', padding: '12px 24px' }}>
@@ -281,9 +285,9 @@ export default function MarkAttendance() {
 
       {/* Check-out Button */}
       {attendanceStatus && !attendanceStatus.checkOut && (
-        <div className="content-card">
-          <h2 style={{ marginBottom: '20px' }}>Ready to leave?</h2>
-          <p style={{ marginBottom: '20px', color: '#6b7280' }}>
+        <div className="content-card" style={{ background: 'white', color: 'black' }}>
+          <h2 style={{ marginBottom: '20px', color: 'black' }}>Ready to leave?</h2>
+          <p style={{ marginBottom: '20px', color: 'black' }}>
             Mark your check-out time to complete today's attendance
           </p>
           <button 
@@ -298,8 +302,8 @@ export default function MarkAttendance() {
       )}
 
       {/* Attendance History */}
-      <div className="content-card">
-        <h2 style={{ marginBottom: '20px' }}>Recent Attendance</h2>
+      <div className="content-card" style={{ background: 'white', color: 'black' }}>
+        <h2 style={{ marginBottom: '20px', color: 'black' }}>Recent Attendance</h2>
         <div className="empty-state">
           <div className="empty-state-icon">📅</div>
           <h3>Attendance History</h3>
