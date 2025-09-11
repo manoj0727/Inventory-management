@@ -36,7 +36,6 @@ export default function Layout() {
     { path: '/manufacturing-inventory', name: 'Manufacturing Inventory', icon: ChartBarIcon },
     { path: '/generate-qr', name: 'Generate QR', icon: QrCodeIcon },
     { path: '/qr-scanner', name: 'QR Scanner', icon: QrCodeIcon },
-    { path: '/settings', name: 'Settings', icon: Cog6ToothIcon },
   ]
 
   // Admin-only menu items
@@ -44,8 +43,6 @@ export default function Layout() {
     { path: '/admin-dashboard', name: 'Admin Dashboard', icon: HomeIcon },
     { path: '/employees', name: 'Employees', icon: UsersIcon },
     { path: '/tailor-management', name: 'Tailor Management', icon: UsersIcon },
-    { path: '/qr-generator', name: 'QR Generator', icon: QrCodeIcon },
-    { path: '/reports', name: 'Reports', icon: ChartBarIcon },
   ]
 
   // Employee-only menu items
