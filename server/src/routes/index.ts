@@ -10,6 +10,7 @@ const router = Router()
 // Import JS routes for employees and attendance
 const employeesRoutes = require('./employees')
 const attendanceRoutes = require('./attendance')
+const tailorsRoutes = require('./tailors')
 
 router.use('/auth', authRoutes)
 router.use('/fabrics', fabricRoutes)
@@ -18,6 +19,7 @@ router.use('/manufacturing-orders', manufacturingOrdersRoutes)
 router.use('/manufacturing-inventory', manufacturingInventoryRoutes)
 router.use('/employees', employeesRoutes)
 router.use('/attendance', attendanceRoutes)
+router.use('/tailors', tailorsRoutes)
 
 // Health check
 router.get('/health', (req, res) => {

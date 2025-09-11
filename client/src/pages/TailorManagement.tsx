@@ -1,284 +1,352 @@
-import { useState } from 'react'
-import { PlusIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { useState, useEffect } from 'react'
+import '../styles/common.css'
 
 interface Tailor {
-  id: string
+  _id: string
+  tailorId: string
   name: string
-  specialization: string
-  experience: string
-  currentOrders: number
+  mobile: string
+  address: string
+  work: string
+  status: string
+  joiningDate: string
+  totalOrders: number
   completedOrders: number
-  rating: number
-  status: 'Active' | 'On Leave' | 'Inactive'
-  phone: string
-  joinDate: string
+  pendingOrders: number
 }
 
 export default function TailorManagement() {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [showAddModal, setShowAddModal] = useState(false)
+  const [tailors, setTailors] = useState<Tailor[]>([])
+  const [showForm, setShowForm] = useState(false)
+  const [editingTailor, setEditingTailor] = useState<Tailor | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   
-  const [tailors] = useState<Tailor[]>([
-    {
-      id: 'TLR001',
-      name: 'Rajesh Kumar',
-      specialization: 'Shirts & Formal Wear',
-      experience: '8 years',
-      currentOrders: 5,
-      completedOrders: 245,
-      rating: 4.8,
-      status: 'Active',
-      phone: '+91 9876543210',
-      joinDate: '2020-01-15'
-    },
-    {
-      id: 'TLR002',
-      name: 'Priya Sharma',
-      specialization: 'Ladies Garments',
-      experience: '12 years',
-      currentOrders: 3,
-      completedOrders: 389,
-      rating: 4.9,
-      status: 'Active',
-      phone: '+91 9876543211',
-      joinDate: '2019-06-20'
-    },
-    {
-      id: 'TLR003',
-      name: 'Mohammad Ali',
-      specialization: 'Traditional Wear',
-      experience: '15 years',
-      currentOrders: 7,
-      completedOrders: 567,
-      rating: 4.7,
-      status: 'Active',
-      phone: '+91 9876543212',
-      joinDate: '2018-03-10'
-    },
-    {
-      id: 'TLR004',
-      name: 'Sunita Devi',
-      specialization: 'Kids Wear',
-      experience: '6 years',
-      currentOrders: 2,
-      completedOrders: 156,
-      rating: 4.6,
-      status: 'On Leave',
-      phone: '+91 9876543213',
-      joinDate: '2021-02-05'
-    }
-  ])
+  const [formData, setFormData] = useState({
+    name: '',
+    mobile: '',
+    address: '',
+    work: ''
+  })
 
-  const filteredTailors = tailors.filter(tailor =>
-    tailor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    tailor.specialization.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    tailor.id.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  useEffect(() => {
+    fetchTailors()
+  }, [])
 
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      'Active': 'bg-green-100 text-green-800',
-      'On Leave': 'bg-yellow-100 text-yellow-800',
-      'Inactive': 'bg-red-100 text-red-800'
+  const fetchTailors = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch('http://localhost:4000/api/tailors')
+      if (response.ok) {
+        const data = await response.json()
+        setTailors(data)
+      }
+    } catch (error) {
+      console.error('Error fetching tailors:', error)
+    } finally {
+      setIsLoading(false)
     }
-    return styles[status as keyof typeof styles] || 'bg-gray-100 text-gray-800'
   }
 
-  const getRatingStars = (rating: number) => {
-    return '⭐'.repeat(Math.floor(rating)) + (rating % 1 >= 0.5 ? '⭐' : '')
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!formData.name.trim() || !formData.mobile.trim() || !formData.address.trim() || !formData.work.trim()) {
+      alert('Please fill all fields')
+      return
+    }
+    
+    setIsLoading(true)
+    
+    try {
+      const url = editingTailor 
+        ? `http://localhost:4000/api/tailors/${editingTailor._id}`
+        : 'http://localhost:4000/api/tailors'
+      
+      const method = editingTailor ? 'PUT' : 'POST'
+      
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+
+      if (response.ok) {
+        alert(editingTailor ? 'Tailor updated successfully!' : 'Tailor added successfully!')
+        await fetchTailors()
+        resetForm()
+      } else {
+        const error = await response.json()
+        alert(error.message || 'Failed to save tailor')
+      }
+    } catch (error) {
+      console.error('Error saving tailor:', error)
+      alert('Error saving tailor')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleEdit = (tailor: Tailor) => {
+    setEditingTailor(tailor)
+    setFormData({
+      name: tailor.name,
+      mobile: tailor.mobile,
+      address: tailor.address,
+      work: tailor.work
+    })
+    setShowForm(true)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this tailor?')) return
+    
+    try {
+      const response = await fetch(`http://localhost:4000/api/tailors/${id}`, {
+        method: 'DELETE'
+      })
+      
+      if (response.ok) {
+        alert('Tailor deleted successfully!')
+        fetchTailors()
+      }
+    } catch (error) {
+      alert('Error deleting tailor')
+    }
+  }
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      mobile: '',
+      address: '',
+      work: ''
+    })
+    setEditingTailor(null)
+    setShowForm(false)
+  }
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    })
   }
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Tailor Management</h1>
-        <p className="text-gray-600 mt-2">Manage your tailors and track their performance</p>
+    <div className="page-container">
+      <div className="page-header">
+        <h1>Tailor Management</h1>
+        <p>Manage tailor records and their work details</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Tailors</p>
-              <p className="text-2xl font-bold text-gray-800">{tailors.length}</p>
-            </div>
-            <div className="bg-blue-100 p-3 rounded-full">
-              <UsersIcon className="h-6 w-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Active</p>
-              <p className="text-2xl font-bold text-green-600">
-                {tailors.filter(t => t.status === 'Active').length}
-              </p>
-            </div>
-            <div className="bg-green-100 p-3 rounded-full">
-              <UsersIcon className="h-6 w-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">On Leave</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {tailors.filter(t => t.status === 'On Leave').length}
-              </p>
-            </div>
-            <div className="bg-yellow-100 p-3 rounded-full">
-              <UsersIcon className="h-6 w-6 text-yellow-600" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Avg Rating</p>
-              <p className="text-2xl font-bold text-purple-600">4.75</p>
-            </div>
-            <div className="bg-purple-100 p-3 rounded-full">
-              <span className="text-2xl">⭐</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Search and Actions */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-          <div className="relative flex-1 max-w-md w-full">
-            <input
-              type="text"
-              placeholder="Search tailors by name, ID, or specialization..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500"
-            />
-            <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-          </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="btn-primary flex items-center space-x-2"
-          >
-            <PlusIcon className="h-5 w-5" />
-            <span>Add New Tailor</span>
+      {/* Add Tailor Button */}
+      {!showForm && (
+        <div className="content-card" style={{ background: 'white' }}>
+          <button onClick={() => setShowForm(true)} className="btn btn-primary">
+            + Add New Tailor
           </button>
         </div>
+      )}
 
-        {/* Tailors Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
+      {/* Tailor Form */}
+      {showForm && (
+        <div className="content-card" style={{ background: 'white' }}>
+          <h2 style={{ marginBottom: '24px', color: 'black' }}>
+            {editingTailor ? 'Edit Tailor' : 'Add New Tailor'}
+          </h2>
+          
+          <form onSubmit={handleSubmit}>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(2, 1fr)', 
+              gap: '24px',
+              marginBottom: '24px'
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontWeight: '500', fontSize: '14px', color: 'black' }}>Name *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  required
+                  style={{ 
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '15px',
+                    color: 'black'
+                  }}
+                  placeholder="Enter tailor name"
+                />
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontWeight: '500', fontSize: '14px', color: 'black' }}>Mobile Number *</label>
+                <input
+                  type="tel"
+                  value={formData.mobile}
+                  onChange={(e) => setFormData({...formData, mobile: e.target.value})}
+                  required
+                  style={{ 
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '15px',
+                    color: 'black'
+                  }}
+                  placeholder="Enter mobile number"
+                />
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontWeight: '500', fontSize: '14px', color: 'black' }}>Work Type *</label>
+                <input
+                  type="text"
+                  value={formData.work}
+                  onChange={(e) => setFormData({...formData, work: e.target.value})}
+                  required
+                  style={{ 
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '15px',
+                    color: 'black'
+                  }}
+                  placeholder="e.g., Shirts, Pants, Traditional Wear"
+                />
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontWeight: '500', fontSize: '14px', color: 'black' }}>Address *</label>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                  required
+                  style={{ 
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '15px',
+                    color: 'black'
+                  }}
+                  placeholder="Enter complete address"
+                />
+              </div>
+            </div>
+
+            <div className="btn-group">
+              <button type="submit" className="btn btn-primary" disabled={isLoading}>
+                {isLoading ? 'Saving...' : editingTailor ? 'Update Tailor' : 'Add Tailor'}
+              </button>
+              <button type="button" onClick={resetForm} className="btn btn-secondary">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Statistics */}
+      <div className="stats-grid">
+        <div className="stat-card" style={{ background: 'white', color: 'black' }}>
+          <h3 style={{ color: 'black' }}>Total Tailors</h3>
+          <p className="stat-value" style={{ color: 'black', fontSize: '24px', fontWeight: 'bold' }}>
+            {tailors.length}
+          </p>
+        </div>
+        <div className="stat-card" style={{ background: 'white', color: 'black' }}>
+          <h3 style={{ color: 'black' }}>Active</h3>
+          <p className="stat-value" style={{ color: 'black', fontSize: '24px', fontWeight: 'bold' }}>
+            {tailors.filter(t => t.status === 'active').length}
+          </p>
+        </div>
+        <div className="stat-card" style={{ background: 'white', color: 'black' }}>
+          <h3 style={{ color: 'black' }}>Total Orders</h3>
+          <p className="stat-value" style={{ color: 'black', fontSize: '24px', fontWeight: 'bold' }}>
+            {tailors.reduce((sum, t) => sum + t.totalOrders, 0)}
+          </p>
+        </div>
+        <div className="stat-card" style={{ background: 'white', color: 'black' }}>
+          <h3 style={{ color: 'black' }}>Completed</h3>
+          <p className="stat-value" style={{ color: 'black', fontSize: '24px', fontWeight: 'bold' }}>
+            {tailors.reduce((sum, t) => sum + t.completedOrders, 0)}
+          </p>
+        </div>
+      </div>
+
+      {/* Tailors List */}
+      <div className="content-card" style={{ background: 'white', color: 'black' }}>
+        <h2 style={{ marginBottom: '20px', color: 'black' }}>Tailor List</h2>
+        <div className="table-container">
+          <table className="data-table" style={{ color: 'black' }}>
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tailor ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Specialization
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Experience
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Current Orders
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Completed
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Rating
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th style={{ color: 'black' }}>ID</th>
+                <th style={{ color: 'black' }}>Name</th>
+                <th style={{ color: 'black' }}>Mobile</th>
+                <th style={{ color: 'black' }}>Address</th>
+                <th style={{ color: 'black' }}>Work Type</th>
+                <th style={{ color: 'black' }}>Total Orders</th>
+                <th style={{ color: 'black' }}>Completed</th>
+                <th style={{ color: 'black' }}>Pending</th>
+                <th style={{ color: 'black' }}>Status</th>
+                <th style={{ color: 'black' }}>Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredTailors.map((tailor) => (
-                <tr key={tailor.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {tailor.id}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{tailor.name}</div>
-                      <div className="text-xs text-gray-500">{tailor.phone}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {tailor.specialization}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {tailor.experience}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-semibold text-blue-600">
-                      {tailor.currentOrders}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {tailor.completedOrders}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <span className="text-sm">{getRatingStars(tailor.rating)}</span>
-                      <span className="ml-1 text-sm text-gray-500">({tailor.rating})</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(tailor.status)}`}>
-                      {tailor.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-primary-600 hover:text-primary-900 mr-3">
-                      <PencilIcon className="h-4 w-4" />
-                    </button>
-                    <button className="text-red-600 hover:text-red-900">
-                      <TrashIcon className="h-4 w-4" />
-                    </button>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: 'black' }}>
+                    Loading tailors...
                   </td>
                 </tr>
-              ))}
+              ) : tailors.length > 0 ? (
+                tailors.map(tailor => (
+                  <tr key={tailor._id}>
+                    <td style={{ fontWeight: '600', color: 'black' }}>{tailor.tailorId}</td>
+                    <td style={{ color: 'black' }}>{tailor.name}</td>
+                    <td style={{ color: 'black' }}>{tailor.mobile}</td>
+                    <td style={{ color: 'black' }}>{tailor.address}</td>
+                    <td style={{ color: 'black' }}>{tailor.work}</td>
+                    <td style={{ color: 'black' }}>{tailor.totalOrders}</td>
+                    <td style={{ color: 'black' }}>{tailor.completedOrders}</td>
+                    <td style={{ color: 'black' }}>{tailor.pendingOrders}</td>
+                    <td>
+                      <span className={`badge ${tailor.status === 'active' ? 'badge-success' : 'badge-danger'}`}>
+                        {tailor.status}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="action-buttons">
+                        <button onClick={() => handleEdit(tailor)} className="action-btn edit">
+                          Edit
+                        </button>
+                        <button onClick={() => handleDelete(tailor._id)} className="action-btn delete">
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={10} className="empty-state">
+                    <div className="empty-state-icon">✂️</div>
+                    <h3 style={{ color: 'black' }}>No Tailors</h3>
+                    <p style={{ color: 'black' }}>Click "Add New Tailor" to get started</p>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
-
-      {/* Add Modal (placeholder) */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Add New Tailor</h2>
-            <p className="text-gray-600 mb-4">Tailor registration form will appear here</p>
-            <button
-              onClick={() => setShowAddModal(false)}
-              className="btn-secondary"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
     </div>
-  )
-}
-
-function UsersIcon({ className }: { className: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
   )
 }
