@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
-import Attendance from '../models/Attendance';
-import Employee from '../models/Employee';
+const Attendance = require('../models/Attendance');
+const Employee = require('../models/Employee');
 const router = express.Router();
 
 // Get all attendance records

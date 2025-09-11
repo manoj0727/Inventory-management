@@ -1,10 +1,10 @@
 import express, { Request, Response } from 'express';
-import Fabric from '../models/Fabric';
-import Employee from '../models/Employee';
-import Attendance from '../models/Attendance';
-import Tailor from '../models/Tailor';
-import ManufacturingOrderOrder from '../models/ManufacturingOrderOrder';
-import CuttingRecord from '../models/CuttingRecord';
+const Fabric = require('../models/Fabric');
+const Employee = require('../models/Employee');
+const Attendance = require('../models/Attendance');
+const Tailor = require('../models/Tailor');
+const ManufacturingOrder = require('../models/ManufacturingOrder');
+const CuttingRecord = require('../models/CuttingRecord');
 const router = express.Router();
 
 // Get dashboard statistics
