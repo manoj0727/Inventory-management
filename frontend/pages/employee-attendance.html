@@ -14,79 +14,99 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: white;
-            padding: 20px;
+            background: #f9fafb;
+            padding: 0;
+            margin: 0;
             min-height: 100vh;
         }
         
         .container {
-            max-width: 800px;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .content-wrapper {
+            padding: 20px;
+            max-width: 1200px;
             margin: 0 auto;
         }
         
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            text-align: center;
+        .page-header {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         
-        .header h1 {
+        .page-header h1 {
             margin: 0;
-            font-size: 2rem;
+            font-size: 24px;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .page-header h1 i {
+            color: #6366f1;
+            font-size: 20px;
         }
         
         .current-time {
-            font-size: 1.2rem;
-            margin-top: 10px;
-            opacity: 0.9;
+            margin-top: 8px;
+            font-size: 14px;
+            color: #6b7280;
         }
         
         .attendance-card {
             background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 24px;
         }
         
         .attendance-status {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
         }
         
         .status-display {
             display: inline-block;
-            padding: 15px 30px;
-            border-radius: 25px;
-            font-size: 18px;
-            font-weight: bold;
-            margin: 10px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 8px;
         }
         
         .status-not-marked {
-            background: #f8d7da;
-            color: #721c24;
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
         }
         
         .status-checked-in {
-            background: #d4edda;
-            color: #155724;
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
         }
         
         .status-checked-out {
-            background: #cce5ff;
-            color: #004085;
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
         }
         
         .face-recognition {
             text-align: center;
-            padding: 20px;
-            border: 2px dashed #ddd;
+            padding: 24px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
             border-radius: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
         
         .camera-container {
@@ -103,45 +123,66 @@
         
         .camera-icon {
             font-size: 48px;
-            color: #ddd;
-            margin-bottom: 15px;
+            color: #9ca3af;
+            margin-bottom: 16px;
         }
         
         .btn {
-            padding: 12px 24px;
+            padding: 10px 20px;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            margin: 5px;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 4px;
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            transition: all 0.2s;
         }
         
         .btn-primary {
-            background: #667eea;
+            background: #6366f1;
             color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #4f46e5;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
         
         .btn-success {
-            background: #28a745;
+            background: #10b981;
             color: white;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
         
         .btn-danger {
-            background: #dc3545;
+            background: #ef4444;
             color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
         
         .btn-secondary {
-            background: #6c757d;
+            background: #6b7280;
             color: white;
         }
         
-        .btn:hover {
-            opacity: 0.9;
+        .btn-secondary:hover {
+            background: #4b5563;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
         }
         
         .btn:disabled {
@@ -151,16 +192,27 @@
         
         .attendance-history {
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
         
         .attendance-history h3 {
-            padding: 20px;
+            padding: 20px 24px;
             margin: 0;
-            background: #f8f9fa;
-            border-bottom: 1px solid #eee;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 18px;
+            color: #111827;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .attendance-history h3 i {
+            color: #6366f1;
+            font-size: 16px;
         }
         
         .history-table {
@@ -169,42 +221,50 @@
         }
         
         .history-table th {
-            background: #f8f9fa;
-            padding: 15px;
+            background: #f9fafb;
+            padding: 12px 16px;
             text-align: left;
-            font-weight: 600;
+            font-weight: 500;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #6b7280;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #e5e7eb;
         }
         
         .history-table td {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 14px;
+            color: #374151;
         }
         
         .history-table tr:hover {
-            background: #f8f9fa;
+            background: #f9fafb;
         }
         
         .status-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .status-p {
-            background: #d4edda;
-            color: #155724;
+            background: #d1fae5;
+            color: #065f46;
         }
         
         .status-a {
-            background: #f8d7da;
-            color: #721c24;
+            background: #fee2e2;
+            color: #991b1b;
         }
         
         .status-l {
-            background: #fff3cd;
-            color: #856404;
+            background: #fed7aa;
+            color: #9a3412;
         }
         
         .alert {
@@ -248,30 +308,83 @@
             100% { transform: rotate(360deg); }
         }
         
+        video {
+            max-width: 100%;
+            height: auto;
+            margin: 20px auto;
+            border-radius: 8px;
+            border: 2px solid #e5e7eb;
+        }
+        
         @media (max-width: 768px) {
-            .container {
-                padding: 10px;
+            .content-wrapper {
+                padding: 12px;
+            }
+            
+            .page-header {
+                padding: 16px;
+                margin-bottom: 16px;
+            }
+            
+            .page-header h1 {
+                font-size: 20px;
+            }
+            
+            .attendance-card {
+                padding: 16px;
+                margin-bottom: 16px;
             }
             
             .btn {
                 width: 100%;
-                margin: 5px 0;
+                margin: 4px 0;
+                justify-content: center;
             }
             
             .history-table {
+                font-size: 12px;
+            }
+            
+            .history-table th,
+            .history-table td {
+                padding: 8px 12px;
+            }
+            
+            .status-display {
                 font-size: 14px;
+                padding: 10px 20px;
+            }
+            
+            video {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .page-header h1 {
+                font-size: 18px;
+            }
+            
+            .history-table th {
+                font-size: 11px;
+            }
+            
+            .attendance-history {
+                overflow-x: auto;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1><i class="fas fa-clock"></i> Mark Attendance</h1>
-            <div class="current-time" id="currentTime"></div>
-        </div>
-        
-        <div class="attendance-card">
+        <div class="content-wrapper">
+            <div class="page-header">
+                <h1><i class="fas fa-clock"></i> Mark Attendance</h1>
+                <div class="current-time" id="currentTime"></div>
+            </div>
+            
+            <div class="attendance-card">
             <div class="attendance-status">
                 <div id="attendanceStatus" class="status-display status-not-marked">
                     <i class="fas fa-clock"></i> Attendance Not Marked
@@ -290,7 +403,7 @@
                 </button>
             </div>
             
-            <video id="video" width="400" height="300" autoplay style="display: none; margin: 20px auto; border-radius: 8px;"></video>
+            <video id="video" autoplay style="display: none;"></video>
             <canvas id="canvas" style="display: none;"></canvas>
             
             <div style="text-align: center;" id="attendanceActions">
@@ -332,6 +445,7 @@
                     </tbody>
                 </table>
             </div>
+        </div>
         </div>
     </div>
     

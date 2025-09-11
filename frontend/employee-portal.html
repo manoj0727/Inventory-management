@@ -316,6 +316,18 @@
             
             .main-content-empty {
                 margin-left: 0 !important;
+                width: 100%;
+                padding: 0;
+                min-height: 100vh;
+                margin-top: 0;
+            }
+            
+            .sidebar.collapsed ~ .main-content-empty {
+                margin-left: 0 !important;
+            }
+            
+            .dashboard-container {
+                flex-direction: column;
             }
             
             .welcome-section {
@@ -517,18 +529,10 @@
             
             <!-- Transaction History Section -->
             <div id="transactions-section" class="content-section">
-                <div class="section-header">
-                    <h2>Transaction History</h2>
-                    <p>View all inventory transactions and changes</p>
-                </div>
                 <iframe scrolling="yes" style="overflow: auto;" src="pages/transactions.html" frameborder="0"></iframe>
             </div>
             
             <div id="attendance-section" class="content-section">
-                <div class="section-header">
-                    <h2>Mark Attendance</h2>
-                    <p>Use face recognition to mark your daily attendance</p>
-                </div>
                 <iframe scrolling="yes" style="overflow: auto;" src="pages/employee-attendance.html" frameborder="0"></iframe>
             </div>
             
