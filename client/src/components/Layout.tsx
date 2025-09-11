@@ -26,11 +26,10 @@ export default function Layout() {
     navigate('/login')
   }
 
-  // Common menu items for both admin and employees (removed fabric-tracking)
+  // Common menu items for both admin and employees (removed fabric-tracking and view-fabrics)
   const commonMenuItems = [
     { path: '/fabric-registration', name: 'Register Fabric', icon: ClipboardDocumentListIcon },
-    { path: '/inventory', name: 'Inventory', icon: CubeIcon },
-    { path: '/view-fabrics', name: 'View Fabrics', icon: CubeIcon },
+    { path: '/inventory', name: 'Fabric Inventory', icon: CubeIcon },
     { path: '/cutting', name: 'Cutting', icon: ClipboardDocumentListIcon },
     { path: '/cutting-inventory', name: 'Cutting Inventory', icon: ChartBarIcon },
     { path: '/manufacturing-inventory', name: 'Manufacturing Inventory', icon: ChartBarIcon },

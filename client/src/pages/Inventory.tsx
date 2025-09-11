@@ -41,7 +41,7 @@ export default function Inventory() {
       if (response.ok) {
         const fabrics = await response.json()
         const inventoryItems = fabrics.map((fabric: any) => ({
-          id: generateProductId(fabric.fabricType, fabric.color, Math.floor(fabric.quantity)),
+          id: fabric.productId || generateProductId(fabric.fabricType, fabric.color, Math.floor(fabric.quantity)),
           name: fabric.fabricType,
           color: fabric.color,
           category: 'Fabric',
@@ -158,8 +158,8 @@ export default function Inventory() {
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1>Inventory Management</h1>
-        <p>Manage your products and stock levels</p>
+        <h1>Fabric Inventory Management</h1>
+        <p>Manage your fabric products and stock levels</p>
       </div>
 
       <div className="content-card">

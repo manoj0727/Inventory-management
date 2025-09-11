@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose'
 
 export interface IFabric extends Document {
-  fabricId: string
+  productId: string
   fabricType: string
   color: string
   quality: 'Premium' | 'Standard' | 'Economy'
@@ -19,7 +19,7 @@ export interface IFabric extends Document {
 }
 
 const FabricSchema: Schema = new Schema({
-  fabricId: {
+  productId: {
     type: String,
     unique: true
   },
@@ -84,26 +84,53 @@ const FabricSchema: Schema = new Schema({
   timestamps: true
 })
 
-// Generate unique fabric ID before saving
+// Generate unique product ID before saving
 FabricSchema.pre('save', async function(next) {
-  if (this.isNew && !this.fabricId) {
+  if (this.isNew && !this.productId) {
     try {
-      const count = await this.constructor.countDocuments()
-      this.fabricId = `FAB${String(count + 1).padStart(3, '0')}`
+      const nameCode = this.fabricType.substring(0, 3).toUpperCase()
+      const colorCode = this.color.substring(0, 2).toUpperCase()
+      const quantityCode = Math.floor(this.quantity).toString().padStart(3, '0')
+      const baseProductId = `${nameCode}${colorCode}${quantityCode}`
+      
+      let productId = baseProductId
+      let isUnique = false
+      let attempts = 0
+      const maxAttempts = 10
+      
+      while (!isUnique && attempts < maxAttempts) {
+        // Check if this ID already exists
+        const existingFabric = await this.constructor.findOne({ productId })
+        if (!existingFabric) {
+          isUnique = true
+        } else {
+          attempts++
+          // Add attempt number to make it unique
+          productId = `${baseProductId}${attempts}`
+        }
+      }
+      
+      // Fallback to timestamp-based ID if all attempts failed
+      if (!isUnique) {
+        productId = `${nameCode}${colorCode}${String(Date.now()).slice(-3)}`
+      }
+      
+      this.productId = productId
     } catch (error) {
-      // Fallback ID generation
-      this.fabricId = `FAB${String(Date.now()).slice(-3)}`
-    }
-    
-    // Auto-set status based on quantity
-    if (this.quantity === 0) {
-      this.status = 'Out of Stock'
-    } else if (this.quantity <= 20) {
-      this.status = 'Low Stock'
-    } else {
-      this.status = 'In Stock'
+      // Ultimate fallback ID generation
+      this.productId = `FAB${String(Date.now()).slice(-6)}`
     }
   }
+  
+  // Auto-set status based on quantity
+  if (this.quantity === 0) {
+    this.status = 'Out of Stock'
+  } else if (this.quantity <= 20) {
+    this.status = 'Low Stock'
+  } else {
+    this.status = 'In Stock'
+  }
+  
   next()
 })
 

@@ -26,8 +26,8 @@ export const typeDefs = `#graphql
 
   type Fabric {
     id: ID!
-    fabricId: String!
-    type: String!
+    productId: String!
+    fabricType: String!
     color: String!
     quantity: Float!
     unit: String!
@@ -84,7 +84,7 @@ export const typeDefs = `#graphql
   }
 
   type FabricUsage {
-    fabricId: String!
+    productId: String!
     quantity: Float!
     unit: String!
   }
@@ -263,7 +263,7 @@ export const typeDefs = `#graphql
   }
 
   type Subscription {
-    fabricUpdated(fabricId: ID): Fabric!
+    fabricUpdated(productId: ID): Fabric!
     productStatusChanged(productId: ID): Product!
     newManufacturingOrder: Manufacturing!
     inventoryAlert: Alert!
@@ -303,7 +303,7 @@ export const typeDefs = `#graphql
   }
 
   input FabricInput {
-    type: String!
+    fabricType: String!
     color: String!
     quantity: Float!
     unit: String!
@@ -324,7 +324,7 @@ export const typeDefs = `#graphql
   }
 
   input FabricUsageInput {
-    fabricId: String!
+    productId: String!
     quantity: Float!
     unit: String!
   }

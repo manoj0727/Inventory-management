@@ -15,7 +15,7 @@ interface FabricForm {
 }
 
 interface RecentFabric {
-  fabricId: string
+  productId: string
   fabricType: string
   color: string
   quality: string
@@ -48,7 +48,7 @@ export default function FabricRegistration() {
       if (response.ok) {
         const fabrics = await response.json()
         const recentFabrics = fabrics.slice(0, 10).map((fabric: any) => ({
-          fabricId: fabric.fabricId,
+          productId: fabric.productId,
           fabricType: fabric.fabricType,
           color: fabric.color,
           quality: fabric.quality,
@@ -320,7 +320,7 @@ export default function FabricRegistration() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Fabric ID</th>
+                <th>Product ID</th>
                 <th>Type</th>
                 <th>Color</th>
                 <th>Quality</th>
@@ -332,8 +332,8 @@ export default function FabricRegistration() {
             <tbody>
               {recentFabrics.length > 0 ? (
                 recentFabrics.map((fabric) => (
-                  <tr key={fabric.fabricId}>
-                    <td>{fabric.fabricId}</td>
+                  <tr key={fabric.productId}>
+                    <td>{fabric.productId}</td>
                     <td>{fabric.fabricType}</td>
                     <td>{fabric.color}</td>
                     <td>{fabric.quality}</td>

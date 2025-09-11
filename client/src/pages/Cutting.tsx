@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import '../styles/common.css'
 
 interface CuttingForm {
-  fabricId: string
+  productId: string
   productName: string
+  pieceLength: string
+  pieceWidth: string
   piecesCount: string
-  meterPerPiece: string
-  totalMetersUsed: string
+  totalSquareMetersUsed: string
   usageLocation: string
   cuttingEmployee: string
   cuttingDate: string
@@ -14,78 +15,225 @@ interface CuttingForm {
 }
 
 interface Fabric {
-  id: string
-  type: string
+  _id: string
+  productId: string
+  fabricType: string
   color: string
-  available: number
+  quality: string
+  length: number
+  width: number
+  quantity: number
+  supplier: string
+  purchasePrice: number
+  location: string
+  notes: string
+  status: string
 }
 
 export default function Cutting() {
   const [formData, setFormData] = useState<CuttingForm>({
-    fabricId: '',
+    productId: '',
     productName: '',
+    pieceLength: '',
+    pieceWidth: '',
     piecesCount: '',
-    meterPerPiece: '',
-    totalMetersUsed: '0',
+    totalSquareMetersUsed: '0',
     usageLocation: '',
     cuttingEmployee: '',
     cuttingDate: new Date().toISOString().split('T')[0],
     notes: ''
   })
 
-  const [fabrics] = useState<Fabric[]>([
-    { id: 'FAB001', type: 'Cotton', color: 'White', available: 100 },
-    { id: 'FAB002', type: 'Silk', color: 'Red', available: 50 },
-    { id: 'FAB003', type: 'Denim', color: 'Blue', available: 10 },
-    { id: 'FAB005', type: 'Linen', color: 'Beige', available: 75 }
-  ])
+  const [fabrics, setFabrics] = useState<Fabric[]>([])
+  const [selectedFabric, setSelectedFabric] = useState<Fabric | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  
+  const generateCuttingId = (productName: string, color: string) => {
+    const productCode = productName.substring(0, 3).toUpperCase()
+    const colorCode = color.substring(0, 2).toUpperCase()
+    const randomNumber = Math.floor(Math.random() * 9000) + 1000 // 4-digit random number
+    return `CUT${productCode}${colorCode}${randomNumber}`
+  }
+
+  const generateProductId = (name: string, color: string, quantity: number) => {
+    const nameCode = name.substring(0, 3).toUpperCase()
+    const colorCode = color.substring(0, 2).toUpperCase()
+    const quantityCode = quantity.toString().padStart(3, '0')
+    return `${nameCode}${colorCode}${quantityCode}`
+  }
+
+  const fetchFabrics = async () => {
+    try {
+      const response = await fetch('http://localhost:4000/api/fabrics')
+      if (response.ok) {
+        const fabricsData = await response.json()
+        setFabrics(fabricsData)
+      }
+    } catch (error) {
+      console.error('Error fetching fabrics:', error)
+    }
+  }
+
+  const fetchFabricByProductId = async (productId: string) => {
+    if (!productId.trim()) {
+      setSelectedFabric(null)
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch('http://localhost:4000/api/fabrics')
+      if (response.ok) {
+        const fabricsData = await response.json()
+        const fabric = fabricsData.find((f: Fabric) => 
+          f.productId === productId.toUpperCase() || 
+          generateProductId(f.fabricType, f.color, Math.floor(f.quantity)) === productId.toUpperCase()
+        )
+        
+        if (fabric) {
+          setSelectedFabric(fabric)
+        } else {
+          setSelectedFabric(null)
+          alert('❌ Fabric not found with this Product ID')
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching fabric:', error)
+      setSelectedFabric(null)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchFabrics()
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     const newFormData = { ...formData, [name]: value }
     
-    // Calculate total meters when pieces or meter per piece changes
-    if (name === 'piecesCount' || name === 'meterPerPiece') {
+    // Fetch fabric when product ID changes
+    if (name === 'productId') {
+      fetchFabricByProductId(value)
+    }
+    
+    // Calculate total square meters when piece dimensions or count changes
+    if (name === 'pieceLength' || name === 'pieceWidth' || name === 'piecesCount') {
+      const length = name === 'pieceLength' ? parseFloat(value) : parseFloat(formData.pieceLength)
+      const width = name === 'pieceWidth' ? parseFloat(value) : parseFloat(formData.pieceWidth)
       const pieces = name === 'piecesCount' ? parseFloat(value) : parseFloat(formData.piecesCount)
-      const meterPerPiece = name === 'meterPerPiece' ? parseFloat(value) : parseFloat(formData.meterPerPiece)
       
-      if (!isNaN(pieces) && !isNaN(meterPerPiece)) {
-        newFormData.totalMetersUsed = (pieces * meterPerPiece).toFixed(2)
+      if (!isNaN(length) && !isNaN(width) && !isNaN(pieces) && length > 0 && width > 0 && pieces > 0) {
+        const squareMetersPerPiece = length * width
+        const totalSquareMeters = squareMetersPerPiece * pieces
+        newFormData.totalSquareMetersUsed = totalSquareMeters.toFixed(2)
       } else {
-        newFormData.totalMetersUsed = '0'
+        newFormData.totalSquareMetersUsed = '0'
       }
     }
     
     setFormData(newFormData)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    const selectedFabric = fabrics.find(f => f.id === formData.fabricId)
-    if (selectedFabric && parseFloat(formData.totalMetersUsed) > selectedFabric.available) {
+    if (!selectedFabric) {
+      alert('❌ Please select a valid fabric first!')
+      return
+    }
+    
+    const totalUsed = parseFloat(formData.totalSquareMetersUsed)
+    if (totalUsed > selectedFabric.quantity) {
       alert('❌ Error: Not enough fabric available!')
       return
     }
     
-    console.log('Cutting Record:', formData)
-    alert('✅ Cutting record added successfully!')
-    
-    // Reset form
-    setFormData({
-      fabricId: '',
-      productName: '',
-      piecesCount: '',
-      meterPerPiece: '',
-      totalMetersUsed: '0',
-      usageLocation: '',
-      cuttingEmployee: '',
-      cuttingDate: new Date().toISOString().split('T')[0],
-      notes: ''
-    })
+    try {
+      // Generate unique cutting ID
+      const cuttingId = generateCuttingId(formData.productName, selectedFabric.color)
+      
+      // Create cutting record
+      const cuttingRecord = {
+        id: cuttingId,
+        productId: formData.productId,
+        fabricType: selectedFabric.fabricType,
+        fabricColor: selectedFabric.color,
+        productName: formData.productName,
+        piecesCount: parseInt(formData.piecesCount),
+        pieceLength: parseFloat(formData.pieceLength),
+        pieceWidth: parseFloat(formData.pieceWidth),
+        totalSquareMetersUsed: totalUsed,
+        usageLocation: formData.usageLocation,
+        cuttingEmployee: formData.cuttingEmployee,
+        date: formData.cuttingDate,
+        time: new Date().toLocaleTimeString(),
+        status: 'Completed',
+        notes: formData.notes
+      }
+      
+      // Save the cutting record to database
+      const cuttingResponse = await fetch('http://localhost:4000/api/cutting-records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cuttingRecord)
+      })
+      
+      if (!cuttingResponse.ok) {
+        console.error('Failed to save cutting record')
+      }
+      
+      // Update fabric inventory by reducing the quantity
+      const newQuantity = selectedFabric.quantity - totalUsed
+      const updateResponse = await fetch(`http://localhost:4000/api/fabrics/${selectedFabric._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fabricType: selectedFabric.fabricType,
+          color: selectedFabric.color,
+          quality: selectedFabric.quality,
+          length: selectedFabric.length,
+          width: selectedFabric.width,
+          quantity: newQuantity,
+          supplier: selectedFabric.supplier,
+          purchasePrice: selectedFabric.purchasePrice,
+          location: selectedFabric.location,
+          notes: selectedFabric.notes
+        })
+      })
+      
+      if (updateResponse.ok) {
+        alert(`✅ Cutting record ${cuttingId} added successfully! Fabric inventory updated.`)
+        
+        // Reset form
+        setFormData({
+          productId: '',
+          productName: '',
+          pieceLength: '',
+          pieceWidth: '',
+          piecesCount: '',
+          totalSquareMetersUsed: '0',
+          usageLocation: '',
+          cuttingEmployee: '',
+          cuttingDate: new Date().toISOString().split('T')[0],
+          notes: ''
+        })
+        setSelectedFabric(null)
+        
+        // Refresh fabric list
+        fetchFabrics()
+      } else {
+        alert('❌ Error updating fabric inventory. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error updating fabric inventory:', error)
+      alert('❌ Error updating fabric inventory. Please try again.')
+    }
   }
 
-  const selectedFabric = fabrics.find(f => f.id === formData.fabricId)
 
   return (
     <div className="page-container">
@@ -98,21 +246,22 @@ export default function Cutting() {
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
             <div className="form-group">
-              <label htmlFor="fabricId">Select Fabric *</label>
-              <select
-                id="fabricId"
-                name="fabricId"
-                value={formData.fabricId}
+              <label htmlFor="productId">Fabric Product ID *</label>
+              <input
+                type="text"
+                id="productId"
+                name="productId"
+                value={formData.productId}
                 onChange={handleChange}
+                placeholder="Enter Product ID (e.g., COTBL025)"
                 required
-              >
-                <option value="">Choose a fabric</option>
-                {fabrics.map(fabric => (
-                  <option key={fabric.id} value={fabric.id}>
-                    {fabric.id} - {fabric.type} ({fabric.color}) - {fabric.available}m available
-                  </option>
-                ))}
-              </select>
+              />
+              {isLoading && <small style={{ color: '#6b7280' }}>Looking up fabric...</small>}
+              {selectedFabric && (
+                <small style={{ color: '#10b981', fontWeight: '500' }}>
+                  ✓ Found: {selectedFabric.fabricType} - {selectedFabric.color} ({selectedFabric.quantity} sq.m available)
+                </small>
+              )}
             </div>
 
             <div className="form-group">
@@ -129,28 +278,14 @@ export default function Cutting() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="piecesCount">Number of Pieces *</label>
+              <label htmlFor="pieceLength">Piece Length (meters) *</label>
               <input
                 type="number"
-                id="piecesCount"
-                name="piecesCount"
-                value={formData.piecesCount}
+                id="pieceLength"
+                name="pieceLength"
+                value={formData.pieceLength}
                 onChange={handleChange}
-                placeholder="Number of pieces to cut"
-                min="1"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="meterPerPiece">Meters per Piece *</label>
-              <input
-                type="number"
-                id="meterPerPiece"
-                name="meterPerPiece"
-                value={formData.meterPerPiece}
-                onChange={handleChange}
-                placeholder="Meters required per piece"
+                placeholder="Length of each piece"
                 min="0.1"
                 step="0.1"
                 required
@@ -158,12 +293,42 @@ export default function Cutting() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="totalMetersUsed">Total Meters Used</label>
+              <label htmlFor="pieceWidth">Piece Width (meters) *</label>
+              <input
+                type="number"
+                id="pieceWidth"
+                name="pieceWidth"
+                value={formData.pieceWidth}
+                onChange={handleChange}
+                placeholder="Width of each piece"
+                min="0.1"
+                step="0.1"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="piecesCount">Number of Pieces *</label>
+              <input
+                type="number"
+                id="piecesCount"
+                name="piecesCount"
+                value={formData.piecesCount}
+                onChange={handleChange}
+                placeholder="How many pieces to cut"
+                min="1"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="totalSquareMetersUsed">Total Square Meters Used</label>
               <input
                 type="text"
-                id="totalMetersUsed"
-                name="totalMetersUsed"
-                value={formData.totalMetersUsed + 'm'}
+                id="totalSquareMetersUsed"
+                name="totalSquareMetersUsed"
+                value={formData.totalSquareMetersUsed + ' sq.m'}
+                placeholder="Calculated automatically"
                 readOnly
               />
             </div>
@@ -220,17 +385,25 @@ export default function Cutting() {
             />
           </div>
 
-          {selectedFabric && parseFloat(formData.totalMetersUsed) > 0 && (
+          {selectedFabric && parseFloat(formData.totalSquareMetersUsed) > 0 && (
             <div className="content-card" style={{ background: '#f0f9ff', border: '1px solid #0284c7', marginBottom: '20px' }}>
               <h3 style={{ marginTop: 0, color: '#0284c7' }}>Fabric Availability Check</h3>
-              <p>Selected Fabric: <strong>{selectedFabric.type} - {selectedFabric.color}</strong></p>
-              <p>Available: <strong>{selectedFabric.available}m</strong></p>
-              <p>Required: <strong>{formData.totalMetersUsed}m</strong></p>
-              <p>Remaining After Cut: <strong>{(selectedFabric.available - parseFloat(formData.totalMetersUsed)).toFixed(2)}m</strong></p>
-              {parseFloat(formData.totalMetersUsed) > selectedFabric.available && (
+              <p>Selected Fabric: <strong>{selectedFabric.fabricType} - {selectedFabric.color}</strong></p>
+              <p>Available: <strong>{selectedFabric.quantity} sq.m</strong></p>
+              <p>Required: <strong>{formData.totalSquareMetersUsed} sq.m</strong></p>
+              <p>Remaining After Cut: <strong>{(selectedFabric.quantity - parseFloat(formData.totalSquareMetersUsed)).toFixed(2)} sq.m</strong></p>
+              {parseFloat(formData.totalSquareMetersUsed) > selectedFabric.quantity && (
                 <p style={{ color: '#dc2626', fontWeight: 'bold' }}>
                   ⚠️ Not enough fabric available!
                 </p>
+              )}
+              {formData.pieceLength && formData.pieceWidth && formData.piecesCount && (
+                <div style={{ marginTop: '10px', padding: '10px', background: '#ffffff', borderRadius: '5px' }}>
+                  <strong>Cutting Details:</strong>
+                  <p>Each piece: {formData.pieceLength}m × {formData.pieceWidth}m = {(parseFloat(formData.pieceLength) * parseFloat(formData.pieceWidth)).toFixed(2)} sq.m</p>
+                  <p>Total pieces: {formData.piecesCount}</p>
+                  <p>Product: {formData.productName}</p>
+                </div>
               )}
             </div>
           )}
@@ -242,17 +415,21 @@ export default function Cutting() {
             <button 
               type="button" 
               className="btn btn-secondary"
-              onClick={() => setFormData({
-                fabricId: '',
-                productName: '',
-                piecesCount: '',
-                meterPerPiece: '',
-                totalMetersUsed: '0',
-                usageLocation: '',
-                cuttingEmployee: '',
-                cuttingDate: new Date().toISOString().split('T')[0],
-                notes: ''
-              })}
+              onClick={() => {
+                setFormData({
+                  productId: '',
+                  productName: '',
+                  pieceLength: '',
+                  pieceWidth: '',
+                  piecesCount: '',
+                  totalSquareMetersUsed: '0',
+                  usageLocation: '',
+                  cuttingEmployee: '',
+                  cuttingDate: new Date().toISOString().split('T')[0],
+                  notes: ''
+                })
+                setSelectedFabric(null)
+              }}
             >
               Clear Form
             </button>
@@ -262,7 +439,7 @@ export default function Cutting() {
 
       {/* Recent Cutting Records */}
       <div className="content-card">
-        <h2 style={{ marginBottom: '20px', color: '#374151' }}>Today's Cutting Records</h2>
+        <h2 style={{ marginBottom: '20px', color: '#374151' }}>Recent Cutting Records</h2>
         <div className="table-container">
           <table className="data-table">
             <thead>
@@ -273,30 +450,15 @@ export default function Cutting() {
                 <th>Pieces</th>
                 <th>Total Used</th>
                 <th>Employee</th>
-                <th>Time</th>
+                <th>Date</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>CUT001</td>
-                <td>Cotton - White</td>
-                <td>T-Shirt</td>
-                <td>50</td>
-                <td>25m</td>
-                <td>John Doe</td>
-                <td>09:30 AM</td>
-                <td><span className="badge badge-success">Completed</span></td>
-              </tr>
-              <tr>
-                <td>CUT002</td>
-                <td>Silk - Red</td>
-                <td>Dress</td>
-                <td>20</td>
-                <td>30m</td>
-                <td>Jane Smith</td>
-                <td>11:15 AM</td>
-                <td><span className="badge badge-success">Completed</span></td>
+                <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  No cutting records found
+                </td>
               </tr>
             </tbody>
           </table>
