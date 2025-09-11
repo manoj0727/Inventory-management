@@ -4,14 +4,12 @@ import fabricRoutes from './fabrics'
 import cuttingRecordsRoutes from './cuttingRecords'
 import manufacturingOrdersRoutes from './manufacturingOrders'
 import manufacturingInventoryRoutes from './manufacturingInventory'
+import employeesRoutes from './employees'
+import attendanceRoutes from './attendance'
+import tailorsRoutes from './tailors'
+import dashboardRoutes from './dashboard'
 
 const router = Router()
-
-// Import JS routes for employees and attendance
-const employeesRoutes = require('./employees')
-const attendanceRoutes = require('./attendance')
-const tailorsRoutes = require('./tailors')
-const dashboardRoutes = require('./dashboard')
 
 router.use('/auth', authRoutes)
 router.use('/fabrics', fabricRoutes)

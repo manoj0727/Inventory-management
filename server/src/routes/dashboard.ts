@@ -1,4 +1,4 @@
-const express = require('express');
+import express, { Request, Response } from 'express';
 const router = express.Router();
 const Fabric = require('../models/Fabric');
 const Employee = require('../models/Employee');
@@ -8,7 +8,7 @@ const Manufacturing = require('../models/ManufacturingOrder');
 const CuttingRecord = require('../models/CuttingRecord');
 
 // Get dashboard statistics
-router.get('/stats', async (req, res) => {
+router.get('/stats', async (req: Request, res: Response) => {
   try {
     // Get current date info
     const today = new Date();
@@ -113,14 +113,14 @@ router.get('/stats', async (req, res) => {
         attendance: recentAttendance
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Dashboard stats error:', error);
     res.status(500).json({ message: error.message });
   }
 });
 
 // Get chart data for dashboard
-router.get('/charts', async (req, res) => {
+router.get('/charts', async (req: Request, res: Response) => {
   try {
     const last7Days = [];
     const attendanceData = [];
@@ -153,9 +153,9 @@ router.get('/charts', async (req, res) => {
       attendance: attendanceData,
       production: productionData
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 });
 
-module.exports = router;
+export default router;

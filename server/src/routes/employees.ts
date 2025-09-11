@@ -1,32 +1,33 @@
-const express = require('express');
-const router = express.Router();
+import { Router, Request, Response } from 'express';
 const Employee = require('../models/Employee');
 
+const router = Router();
+
 // Get all employees
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const employees = await Employee.find().select('-password');
     res.json(employees);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 });
 
 // Get single employee
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: Request, res: Response) => {
   try {
     const employee = await Employee.findById(req.params.id).select('-password');
     if (!employee) {
       return res.status(404).json({ message: 'Employee not found' });
     }
     res.json(employee);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 });
 
 // Create employee
-router.post('/', async (req, res) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     console.log('Creating employee with data:', req.body);
     
@@ -42,7 +43,7 @@ router.post('/', async (req, res) => {
     
     const savedEmployee = await Employee.findById(employee._id).select('-password');
     res.status(201).json(savedEmployee);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating employee:', error);
     
     if (error.code === 11000) {
@@ -53,7 +54,7 @@ router.post('/', async (req, res) => {
     }
     
     if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(err => err.message);
+      const messages = Object.values(error.errors).map((err: any) => err.message);
       return res.status(400).json({ 
         message: `Validation failed: ${messages.join(', ')}` 
       });
@@ -64,7 +65,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update employee
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req: Request, res: Response) => {
   try {
     const { password, ...updateData } = req.body;
     
@@ -88,13 +89,13 @@ router.put('/:id', async (req, res) => {
     }
     
     res.json(employee);
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 });
 
 // Update employee password
-router.put('/:id/password', async (req, res) => {
+router.put('/:id/password', async (req: Request, res: Response) => {
   try {
     const { newPassword } = req.body;
     const employee = await Employee.findById(req.params.id);
@@ -107,13 +108,13 @@ router.put('/:id/password', async (req, res) => {
     await employee.save();
     
     res.json({ message: 'Password updated successfully' });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 });
 
 // Delete employee
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const employee = await Employee.findByIdAndDelete(req.params.id);
     
@@ -122,13 +123,13 @@ router.delete('/:id', async (req, res) => {
     }
     
     res.json({ message: 'Employee deleted successfully' });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 });
 
 // Login employee
-router.post('/login', async (req, res) => {
+router.post('/login', async (req: Request, res: Response) => {
   try {
     const { username, password } = req.body;
     
@@ -153,9 +154,9 @@ router.post('/login', async (req, res) => {
       message: 'Login successful',
       employee: employeeData
     });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 });
 
-module.exports = router;
+export default router;

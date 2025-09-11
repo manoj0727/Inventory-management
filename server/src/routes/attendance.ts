@@ -1,40 +1,40 @@
-const express = require('express');
+import express, { Request, Response } from 'express';
 const router = express.Router();
 const Attendance = require('../models/Attendance');
 const Employee = require('../models/Employee');
 
 // Get all attendance records
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const { date, employeeId, startDate, endDate } = req.query;
-    let query = {};
+    let query: any = {};
     
     if (employeeId) {
-      query.employeeId = employeeId;
+      (query as any).employeeId = employeeId;
     }
     
     if (date) {
-      const queryDate = new Date(date);
+      const queryDate = new Date(date as string);
       queryDate.setHours(0, 0, 0, 0);
       const nextDay = new Date(queryDate);
       nextDay.setDate(nextDay.getDate() + 1);
-      query.date = { $gte: queryDate, $lt: nextDay };
+      (query as any).date = { $gte: queryDate, $lt: nextDay };
     } else if (startDate && endDate) {
-      query.date = { 
-        $gte: new Date(startDate), 
-        $lte: new Date(endDate) 
+      (query as any).date = { 
+        $gte: new Date(startDate as string), 
+        $lte: new Date(endDate as string) 
       };
     }
     
     const attendance = await Attendance.find(query).sort({ date: -1 });
     res.json(attendance);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 });
 
 // Get today's attendance for an employee
-router.get('/today/:employeeId', async (req, res) => {
+router.get('/today/:employeeId', async (req: Request, res: Response) => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -47,13 +47,13 @@ router.get('/today/:employeeId', async (req, res) => {
     });
     
     res.json(attendance);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 });
 
 // Check attendance for specific date
-router.get('/check/:employeeId/:date', async (req, res) => {
+router.get('/check/:employeeId/:date', async (req: Request, res: Response) => {
   try {
     const { employeeId, date } = req.params;
     const queryDate = new Date(date);
@@ -67,13 +67,13 @@ router.get('/check/:employeeId/:date', async (req, res) => {
     });
     
     res.json({ attendance });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 });
 
 // Mark attendance (simplified for employee portal)
-router.post('/mark', async (req, res) => {
+router.post('/mark', async (req: Request, res: Response) => {
   try {
     const { employeeId, employeeName, date, status, checkIn, notes, photo } = req.body;
     
@@ -121,13 +121,13 @@ router.post('/mark', async (req, res) => {
     
     await attendance.save();
     res.status(201).json({ attendance, message: `Attendance marked as ${status}` });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 });
 
 // Checkout by attendance ID
-router.put('/checkout/:id', async (req, res) => {
+router.put('/checkout/:id', async (req: Request, res: Response) => {
   try {
     const attendance = await Attendance.findById(req.params.id);
     
@@ -144,13 +144,13 @@ router.put('/checkout/:id', async (req, res) => {
     await attendance.save();
     
     res.json({ attendance, message: 'Checked out successfully' });
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 });
 
 // Mark attendance (check-in)
-router.post('/checkin', async (req, res) => {
+router.post('/checkin', async (req: Request, res: Response) => {
   try {
     const { employeeId, location } = req.body;
     
@@ -195,13 +195,13 @@ router.post('/checkin', async (req, res) => {
     
     await attendance.save();
     res.status(201).json(attendance);
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 });
 
 // Mark checkout
-router.post('/checkout', async (req, res) => {
+router.post('/checkout', async (req: Request, res: Response) => {
   try {
     const { employeeId } = req.body;
     
@@ -226,13 +226,13 @@ router.post('/checkout', async (req, res) => {
     await attendance.save();
     
     res.json(attendance);
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 });
 
 // Get attendance summary for a period
-router.get('/summary/:employeeId', async (req, res) => {
+router.get('/summary/:employeeId', async (req: Request, res: Response) => {
   try {
     const { startDate, endDate } = req.query;
     const { employeeId } = req.params;
@@ -240,8 +240,8 @@ router.get('/summary/:employeeId', async (req, res) => {
     const attendance = await Attendance.find({
       employeeId,
       date: { 
-        $gte: new Date(startDate), 
-        $lte: new Date(endDate) 
+        $gte: new Date(startDate as string), 
+        $lte: new Date(endDate as string) 
       }
     });
     
@@ -255,13 +255,13 @@ router.get('/summary/:employeeId', async (req, res) => {
     };
     
     res.json(summary);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 });
 
 // Update attendance record
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req: Request, res: Response) => {
   try {
     const attendance = await Attendance.findByIdAndUpdate(
       req.params.id,
@@ -279,13 +279,13 @@ router.put('/:id', async (req, res) => {
     }
     
     res.json(attendance);
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 });
 
 // Delete attendance record
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const attendance = await Attendance.findByIdAndDelete(req.params.id);
     
@@ -294,9 +294,9 @@ router.delete('/:id', async (req, res) => {
     }
     
     res.json({ message: 'Attendance record deleted successfully' });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 });
 
-module.exports = router;
+export default router;

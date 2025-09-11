@@ -1,32 +1,32 @@
-const express = require('express');
+import express, { Request, Response } from 'express';
 const router = express.Router();
 const Tailor = require('../models/Tailor');
 
 // Get all tailors
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const tailors = await Tailor.find().sort({ createdAt: -1 });
     res.json(tailors);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 });
 
 // Get single tailor
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: Request, res: Response) => {
   try {
     const tailor = await Tailor.findById(req.params.id);
     if (!tailor) {
       return res.status(404).json({ message: 'Tailor not found' });
     }
     res.json(tailor);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 });
 
 // Create tailor
-router.post('/', async (req, res) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     console.log('Creating tailor with data:', req.body);
     
@@ -34,7 +34,7 @@ router.post('/', async (req, res) => {
     await tailor.save();
     
     res.status(201).json(tailor);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating tailor:', error);
     
     if (error.code === 11000) {
@@ -44,7 +44,7 @@ router.post('/', async (req, res) => {
     }
     
     if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(err => err.message);
+      const messages = Object.values(error.errors).map((err: any) => err.message);
       return res.status(400).json({ 
         message: `Validation failed: ${messages.join(', ')}` 
       });
@@ -55,7 +55,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update tailor
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req: Request, res: Response) => {
   try {
     const tailor = await Tailor.findByIdAndUpdate(
       req.params.id,
@@ -68,13 +68,13 @@ router.put('/:id', async (req, res) => {
     }
     
     res.json(tailor);
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 });
 
 // Delete tailor
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const tailor = await Tailor.findByIdAndDelete(req.params.id);
     
@@ -83,13 +83,13 @@ router.delete('/:id', async (req, res) => {
     }
     
     res.json({ message: 'Tailor deleted successfully' });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 });
 
 // Update tailor stats
-router.put('/:id/stats', async (req, res) => {
+router.put('/:id/stats', async (req: Request, res: Response) => {
   try {
     const { totalOrders, completedOrders, pendingOrders } = req.body;
     
@@ -108,9 +108,9 @@ router.put('/:id/stats', async (req, res) => {
     }
     
     res.json(tailor);
-  } catch (error) {
+  } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 });
 
-module.exports = router;
+export default router;
