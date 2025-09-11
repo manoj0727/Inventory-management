@@ -1,0 +1,164 @@
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { useAuthStore } from '@/stores/authStore'
+import {
+  HomeIcon,
+  CubeIcon,
+  UsersIcon,
+  ClipboardDocumentListIcon,
+  QrCodeIcon,
+  ChartBarIcon,
+  Cog6ToothIcon,
+  Bars3Icon,
+  XMarkIcon,
+  ArrowRightOnRectangleIcon,
+  UserCircleIcon
+} from '@heroicons/react/24/outline'
+
+export default function Layout() {
+  const [sidebarOpen, setSidebarOpen] = useState(false) // Default closed on mobile
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { user, logout } = useAuthStore()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
+  // Common menu items for both admin and employees (removed fabric-tracking)
+  const commonMenuItems = [
+    { path: '/fabric-registration', name: 'Register Fabric', icon: ClipboardDocumentListIcon },
+    { path: '/inventory', name: 'Inventory', icon: CubeIcon },
+    { path: '/view-fabrics', name: 'View Fabrics', icon: CubeIcon },
+    { path: '/cutting', name: 'Cutting', icon: ClipboardDocumentListIcon },
+    { path: '/cutting-inventory', name: 'Cutting Inventory', icon: ChartBarIcon },
+    { path: '/manufacturing-inventory', name: 'Manufacturing Inventory', icon: ChartBarIcon },
+    { path: '/qr-scanner', name: 'QR Scanner', icon: QrCodeIcon },
+    { path: '/settings', name: 'Settings', icon: Cog6ToothIcon },
+  ]
+
+  // Admin-only menu items
+  const adminOnlyItems = [
+    { path: '/admin-dashboard', name: 'Admin Dashboard', icon: HomeIcon },
+    { path: '/manufacturing', name: 'Manufacturing', icon: ChartBarIcon },
+    { path: '/employees', name: 'Employees', icon: UsersIcon },
+    { path: '/tailor-management', name: 'Tailor Management', icon: UsersIcon },
+    { path: '/qr-generator', name: 'QR Generator', icon: QrCodeIcon },
+    { path: '/reports', name: 'Reports', icon: ChartBarIcon },
+  ]
+
+  // Employee-only menu items
+  const employeeOnlyItems = [
+    { path: '/employee-portal', name: 'My Dashboard', icon: HomeIcon },
+  ]
+
+  // Combine menu items based on role
+  const adminMenuItems = [
+    adminOnlyItems[0], // Admin Dashboard first
+    commonMenuItems[0], // Register Fabric second
+    ...commonMenuItems.slice(1), // Rest of common items
+    ...adminOnlyItems.slice(1), // Rest of admin-only items
+  ]
+
+  const employeeMenuItems = [
+    employeeOnlyItems[0], // My Dashboard first
+    commonMenuItems[0], // Register Fabric second
+    ...commonMenuItems.slice(1), // Rest of common items
+  ]
+
+  const menuItems = user?.role === 'admin' ? adminMenuItems : employeeMenuItems
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-64 transition-transform duration-300 bg-white shadow-lg lg:shadow-none`}>
+        <div className="flex flex-col h-full">
+          {/* Logo */}
+          <div className="flex items-center justify-between p-4 border-b">
+            <h1 className="font-bold text-xl text-primary-600">
+              QR Inventory
+            </h1>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
+            >
+              <XMarkIcon className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 overflow-y-auto p-4">
+            <ul className="space-y-2">
+              {menuItems.map((item) => {
+                const Icon = item.icon
+                const isActive = location.pathname === item.path
+                
+                return (
+                  <li key={item.path}>
+                    <Link
+                      to={item.path}
+                      className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+                        isActive
+                          ? 'bg-primary-100 text-primary-700'
+                          : 'hover:bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span>{item.name}</span>
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </nav>
+
+          {/* User Section */}
+          <div className="border-t p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-gray-800">{user?.name || 'User'}</p>
+                <p className="text-sm text-gray-500">{user?.role || 'Role'}</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-2 rounded-lg hover:bg-gray-100 text-red-600"
+                title="Logout"
+              >
+                <ArrowRightOnRectangleIcon className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Mobile Header */}
+        <div className="lg:hidden bg-white shadow-sm p-4 flex items-center justify-between">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-lg hover:bg-gray-100"
+          >
+            <Bars3Icon className="h-6 w-6" />
+          </button>
+          <h1 className="font-bold text-lg text-primary-600">QR Inventory</h1>
+          <div className="w-10" />
+        </div>
+        
+        {/* Page Content */}
+        <div className="flex-1 overflow-auto">
+          <Outlet />
+        </div>
+      </div>
+    </div>
+  )
+}
