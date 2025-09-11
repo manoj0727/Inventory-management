@@ -101,8 +101,8 @@ const ManufacturingInventorySchema: Schema = new Schema({
 ManufacturingInventorySchema.pre('save', async function(next) {
   if (this.isNew && !this.id) {
     try {
-      const productCode = this.productName.substring(0, 3).toUpperCase()
-      const tailorCode = this.tailorName.substring(0, 2).toUpperCase()
+      const productCode = (this.productName as string).substring(0, 3).toUpperCase()
+      const tailorCode = (this.tailorName as string).substring(0, 2).toUpperCase()
       const randomNumber = Math.floor(Math.random() * 9000) + 1000
       
       let baseId = `MFG${productCode}${tailorCode}${randomNumber}`
@@ -123,7 +123,7 @@ ManufacturingInventorySchema.pre('save', async function(next) {
       }
       
       this.id = finalId
-      this.quantityRemaining = this.quantity - this.quantityProduced
+      this.quantityRemaining = (this.quantity as number) - (this.quantityProduced as number)
     } catch (error) {
       console.error('Error generating manufacturing inventory ID:', error)
       this.id = `MFG${Date.now()}`
@@ -132,7 +132,7 @@ ManufacturingInventorySchema.pre('save', async function(next) {
   
   // Update quantity remaining when quantity produced changes
   if (this.isModified('quantityProduced') || this.isModified('quantity')) {
-    this.quantityRemaining = this.quantity - this.quantityProduced
+    this.quantityRemaining = (this.quantity as number) - (this.quantityProduced as number)
   }
   
   next()

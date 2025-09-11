@@ -93,9 +93,9 @@ const FabricSchema: Schema = new Schema({
 FabricSchema.pre('save', async function(next) {
   if (this.isNew && (!this.productId || !this.fabricId)) {
     try {
-      const nameCode = this.fabricType.substring(0, 3).toUpperCase()
-      const colorCode = this.color.substring(0, 2).toUpperCase()
-      const quantityCode = Math.floor(this.quantity).toString().padStart(3, '0')
+      const nameCode = (this.fabricType as string).substring(0, 3).toUpperCase()
+      const colorCode = (this.color as string).substring(0, 2).toUpperCase()
+      const quantityCode = Math.floor(this.quantity as number).toString().padStart(3, '0')
       const baseProductId = `${nameCode}${colorCode}${quantityCode}`
       
       let productId = baseProductId
@@ -105,7 +105,7 @@ FabricSchema.pre('save', async function(next) {
       
       while (!isUnique && attempts < maxAttempts) {
         // Check if this ID already exists
-        const existingFabric = await this.constructor.findOne({ productId })
+        const existingFabric = await (this.constructor as any).findOne({ productId })
         if (!existingFabric) {
           isUnique = true
         } else {
@@ -133,7 +133,7 @@ FabricSchema.pre('save', async function(next) {
   // Auto-set status based on quantity
   if (this.quantity === 0) {
     this.status = 'Out of Stock'
-  } else if (this.quantity <= 20) {
+  } else if ((this.quantity as number) <= 20) {
     this.status = 'Low Stock'
   } else {
     this.status = 'In Stock'

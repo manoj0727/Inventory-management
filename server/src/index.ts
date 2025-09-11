@@ -74,7 +74,7 @@ const serverCleanup = useServer(
       return { 
         redis,
         user: ctx.connectionParams?.authorization 
-          ? await authMiddleware.verifyToken(ctx.connectionParams.authorization)
+          ? await authMiddleware.verifyToken(ctx.connectionParams.authorization as string)
           : null
       }
     },

@@ -174,7 +174,7 @@ export const optimizedAggregations = {
 // Connection pool monitoring
 export function monitorConnectionPool() {
   const interval = setInterval(() => {
-    const poolStats = mongoose.connection.db.serverConfig?.s?.pool
+    const poolStats = (mongoose.connection.db as any)?.serverConfig?.s?.pool
     if (poolStats) {
       logger.info('MongoDB Connection Pool Stats:', {
         size: poolStats.size,
