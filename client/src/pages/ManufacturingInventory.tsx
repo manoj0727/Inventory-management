@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import '../styles/common.css'
 
 interface ManufacturingRecord {
@@ -18,81 +18,29 @@ export default function ManufacturingInventory() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterPriority, setFilterPriority] = useState('')
+  const [manufacturingRecords, setManufacturingRecords] = useState<ManufacturingRecord[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
-  const [manufacturingRecords] = useState<ManufacturingRecord[]>([
-    {
-      id: 'MFG001',
-      productName: 'T-Shirt',
-      quantity: 100,
-      fabricUsed: 50,
-      startDate: '2024-01-15',
-      completedDate: '2024-01-20',
-      assignedTo: 'Team A',
-      priority: 'High',
-      status: 'Completed',
-      efficiency: 95
-    },
-    {
-      id: 'MFG002',
-      productName: 'Dress',
-      quantity: 50,
-      fabricUsed: 75,
-      startDate: '2024-01-18',
-      completedDate: '',
-      assignedTo: 'Team B',
-      priority: 'Normal',
-      status: 'In Progress',
-      efficiency: 40
-    },
-    {
-      id: 'MFG003',
-      productName: 'Jeans',
-      quantity: 75,
-      fabricUsed: 90,
-      startDate: '2024-01-20',
-      completedDate: '',
-      assignedTo: 'Team C',
-      priority: 'Urgent',
-      status: 'In Progress',
-      efficiency: 10
-    },
-    {
-      id: 'MFG004',
-      productName: 'Shirt',
-      quantity: 120,
-      fabricUsed: 60,
-      startDate: '2024-01-10',
-      completedDate: '2024-01-18',
-      assignedTo: 'Team A',
-      priority: 'Normal',
-      status: 'Completed',
-      efficiency: 98
-    },
-    {
-      id: 'MFG005',
-      productName: 'Shorts',
-      quantity: 80,
-      fabricUsed: 40,
-      startDate: '2024-01-12',
-      completedDate: '2024-01-19',
-      assignedTo: 'Team B',
-      priority: 'Low',
-      status: 'Completed',
-      efficiency: 92
-    },
-    {
-      id: 'MFG006',
-      productName: 'Jacket',
-      quantity: 30,
-      fabricUsed: 60,
-      startDate: '2024-01-22',
-      completedDate: '',
-      assignedTo: 'Team C',
-      priority: 'High',
-      status: 'Pending',
-      efficiency: 0
+  const fetchManufacturingRecords = async () => {
+    setIsLoading(true)
+    try {
+      // This would be replaced with actual API call when manufacturing API is implemented
+      // const response = await fetch('http://localhost:4000/api/manufacturing-records')
+      // if (response.ok) {
+      //   const records = await response.json()
+      //   setManufacturingRecords(records)
+      // }
+      setManufacturingRecords([])
+    } catch (error) {
+      console.error('Error fetching manufacturing records:', error)
+    } finally {
+      setIsLoading(false)
     }
-  ])
+  }
+
+  useEffect(() => {
+    fetchManufacturingRecords()
+  }, [])
 
   const filteredRecords = manufacturingRecords.filter(record => {
     const matchesSearch = record.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -204,6 +152,13 @@ export default function ManufacturingInventory() {
               <option value="Normal">Normal</option>
               <option value="Low">Low</option>
             </select>
+            <button 
+              className="btn btn-secondary"
+              onClick={fetchManufacturingRecords}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Refreshing...' : 'Refresh'}
+            </button>
             <button className="btn btn-primary">
               Export Report
             </button>

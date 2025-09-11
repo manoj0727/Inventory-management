@@ -21,8 +21,7 @@ export interface IFabric extends Document {
 const FabricSchema: Schema = new Schema({
   fabricId: {
     type: String,
-    unique: true,
-    required: true
+    unique: true
   },
   fabricType: {
     type: String,
@@ -87,9 +86,14 @@ const FabricSchema: Schema = new Schema({
 
 // Generate unique fabric ID before saving
 FabricSchema.pre('save', async function(next) {
-  if (this.isNew) {
-    const count = await mongoose.model('Fabric').countDocuments()
-    this.fabricId = `FAB${String(count + 1).padStart(3, '0')}`
+  if (this.isNew && !this.fabricId) {
+    try {
+      const count = await this.constructor.countDocuments()
+      this.fabricId = `FAB${String(count + 1).padStart(3, '0')}`
+    } catch (error) {
+      // Fallback ID generation
+      this.fabricId = `FAB${String(Date.now()).slice(-3)}`
+    }
     
     // Auto-set status based on quantity
     if (this.quantity === 0) {

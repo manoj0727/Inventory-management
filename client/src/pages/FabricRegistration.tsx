@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import '../styles/common.css'
 
 interface FabricForm {
@@ -14,6 +14,16 @@ interface FabricForm {
   notes: string
 }
 
+interface RecentFabric {
+  fabricId: string
+  fabricType: string
+  color: string
+  quality: string
+  quantity: number
+  dateReceived: string
+  status: string
+}
+
 export default function FabricRegistration() {
   const [formData, setFormData] = useState<FabricForm>({
     fabricType: '',
@@ -27,6 +37,37 @@ export default function FabricRegistration() {
     location: '',
     notes: ''
   })
+  
+  const [recentFabrics, setRecentFabrics] = useState<RecentFabric[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+
+  const fetchRecentFabrics = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch('http://localhost:4000/api/fabrics')
+      if (response.ok) {
+        const fabrics = await response.json()
+        const recentFabrics = fabrics.slice(0, 10).map((fabric: any) => ({
+          fabricId: fabric.fabricId,
+          fabricType: fabric.fabricType,
+          color: fabric.color,
+          quality: fabric.quality,
+          quantity: fabric.quantity,
+          dateReceived: new Date(fabric.dateReceived).toLocaleDateString(),
+          status: fabric.status
+        }))
+        setRecentFabrics(recentFabrics)
+      }
+    } catch (error) {
+      console.error('Error fetching recent fabrics:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchRecentFabrics()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,6 +98,9 @@ export default function FabricRegistration() {
           location: '',
           notes: ''
         })
+        
+        // Refresh recent fabrics
+        fetchRecentFabrics()
       } else {
         alert('❌ Error registering fabric. Please try again.')
       }
@@ -87,9 +131,9 @@ export default function FabricRegistration() {
 
   return (
     <div className="page-container">
-      <div className="page-header" style={{ background: '#ffffff', color: '#000000' }}>
-        <h1 style={{ color: '#000000' }}>Fabric Registration</h1>
-        <p style={{ color: '#333333' }}>Register new fabric inventory</p>
+      <div className="page-header">
+        <h1>Fabric Registration</h1>
+        <p>Register new fabric inventory</p>
       </div>
 
       <div className="content-card">
@@ -261,7 +305,17 @@ export default function FabricRegistration() {
 
       {/* Recent Registrations */}
       <div className="content-card">
-        <h2 style={{ marginBottom: '20px', color: '#374151' }}>Recent Registrations</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0, color: '#374151' }}>Recent Registrations</h2>
+          <button 
+            type="button" 
+            className="btn btn-secondary"
+            onClick={fetchRecentFabrics}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
         <div className="table-container">
           <table className="data-table">
             <thead>
@@ -276,24 +330,32 @@ export default function FabricRegistration() {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>FAB001</td>
-                <td>Cotton</td>
-                <td>White</td>
-                <td>Premium</td>
-                <td>100m</td>
-                <td>{new Date().toLocaleDateString()}</td>
-                <td><span className="badge badge-success">Registered</span></td>
-              </tr>
-              <tr>
-                <td>FAB002</td>
-                <td>Silk</td>
-                <td>Red</td>
-                <td>Premium</td>
-                <td>50m</td>
-                <td>{new Date().toLocaleDateString()}</td>
-                <td><span className="badge badge-success">Registered</span></td>
-              </tr>
+              {recentFabrics.length > 0 ? (
+                recentFabrics.map((fabric) => (
+                  <tr key={fabric.fabricId}>
+                    <td>{fabric.fabricId}</td>
+                    <td>{fabric.fabricType}</td>
+                    <td>{fabric.color}</td>
+                    <td>{fabric.quality}</td>
+                    <td>{fabric.quantity} sq.m</td>
+                    <td>{fabric.dateReceived}</td>
+                    <td>
+                      <span className={`badge ${
+                        fabric.status === 'In Stock' ? 'badge-success' : 
+                        fabric.status === 'Low Stock' ? 'badge-warning' : 'badge-danger'
+                      }`}>
+                        {fabric.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                    No fabric registrations found
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

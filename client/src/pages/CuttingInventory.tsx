@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import '../styles/common.css'
 
 interface CuttingRecord {
@@ -25,84 +25,29 @@ export default function CuttingInventory() {
     start: '',
     end: ''
   })
+  const [cuttingRecords, setCuttingRecords] = useState<CuttingRecord[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
-  const [cuttingRecords] = useState<CuttingRecord[]>([
-    {
-      id: 'CUT001',
-      fabricId: 'FAB001',
-      fabricType: 'Cotton',
-      fabricColor: 'White',
-      productName: 'T-Shirt',
-      piecesCount: 50,
-      meterPerPiece: 0.5,
-      totalMetersUsed: 25,
-      usageLocation: 'Production Line A',
-      cuttingEmployee: 'John Doe',
-      date: '2024-01-20',
-      time: '09:30 AM',
-      status: 'Completed'
-    },
-    {
-      id: 'CUT002',
-      fabricId: 'FAB002',
-      fabricType: 'Silk',
-      fabricColor: 'Red',
-      productName: 'Dress',
-      piecesCount: 20,
-      meterPerPiece: 1.5,
-      totalMetersUsed: 30,
-      usageLocation: 'Tailor Station 1',
-      cuttingEmployee: 'Jane Smith',
-      date: '2024-01-20',
-      time: '11:15 AM',
-      status: 'Completed'
-    },
-    {
-      id: 'CUT003',
-      fabricId: 'FAB003',
-      fabricType: 'Denim',
-      fabricColor: 'Blue',
-      productName: 'Jeans',
-      piecesCount: 30,
-      meterPerPiece: 1.2,
-      totalMetersUsed: 36,
-      usageLocation: 'Production Line B',
-      cuttingEmployee: 'Bob Johnson',
-      date: '2024-01-19',
-      time: '02:45 PM',
-      status: 'Completed'
-    },
-    {
-      id: 'CUT004',
-      fabricId: 'FAB005',
-      fabricType: 'Linen',
-      fabricColor: 'Beige',
-      productName: 'Shirt',
-      piecesCount: 40,
-      meterPerPiece: 0.8,
-      totalMetersUsed: 32,
-      usageLocation: 'Tailor Station 2',
-      cuttingEmployee: 'Alice Brown',
-      date: '2024-01-19',
-      time: '04:30 PM',
-      status: 'Completed'
-    },
-    {
-      id: 'CUT005',
-      fabricId: 'FAB001',
-      fabricType: 'Cotton',
-      fabricColor: 'White',
-      productName: 'Shorts',
-      piecesCount: 60,
-      meterPerPiece: 0.4,
-      totalMetersUsed: 24,
-      usageLocation: 'Production Line A',
-      cuttingEmployee: 'Tom Wilson',
-      date: '2024-01-18',
-      time: '10:00 AM',
-      status: 'Completed'
+  const fetchCuttingRecords = async () => {
+    setIsLoading(true)
+    try {
+      // This would be replaced with actual API call when cutting API is implemented
+      // const response = await fetch('http://localhost:4000/api/cutting-records')
+      // if (response.ok) {
+      //   const records = await response.json()
+      //   setCuttingRecords(records)
+      // }
+      setCuttingRecords([])
+    } catch (error) {
+      console.error('Error fetching cutting records:', error)
+    } finally {
+      setIsLoading(false)
     }
-  ])
+  }
+
+  useEffect(() => {
+    fetchCuttingRecords()
+  }, [])
 
   const filteredRecords = cuttingRecords.filter(record => {
     const matchesSearch = record.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -197,6 +142,13 @@ export default function CuttingInventory() {
               onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
               placeholder="End Date"
             />
+            <button 
+              className="btn btn-secondary"
+              onClick={fetchCuttingRecords}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Refreshing...' : 'Refresh'}
+            </button>
             <button className="btn btn-primary">
               Export Report
             </button>
