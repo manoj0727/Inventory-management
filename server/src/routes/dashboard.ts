@@ -1,11 +1,11 @@
 import express, { Request, Response } from 'express';
+import Fabric from '../models/Fabric';
+import Employee from '../models/Employee';
+import Attendance from '../models/Attendance';
+import Tailor from '../models/Tailor';
+import ManufacturingOrderOrder from '../models/ManufacturingOrderOrder';
+import CuttingRecord from '../models/CuttingRecord';
 const router = express.Router();
-const Fabric = require('../models/Fabric');
-const Employee = require('../models/Employee');
-const Attendance = require('../models/Attendance');
-const Tailor = require('../models/Tailor');
-const Manufacturing = require('../models/ManufacturingOrder');
-const CuttingRecord = require('../models/CuttingRecord');
 
 // Get dashboard statistics
 router.get('/stats', async (req: Request, res: Response) => {
@@ -49,10 +49,10 @@ router.get('/stats', async (req: Request, res: Response) => {
       { $group: { _id: null, total: { $sum: '$totalOrders' } } }
     ]);
     
-    // Manufacturing Statistics
-    const totalManufacturing = await Manufacturing.countDocuments();
-    const completedManufacturing = await Manufacturing.countDocuments({ status: 'completed' });
-    const pendingManufacturing = await Manufacturing.countDocuments({ status: 'pending' });
+    // ManufacturingOrder Statistics
+    const totalManufacturingOrder = await ManufacturingOrder.countDocuments();
+    const completedManufacturingOrder = await ManufacturingOrder.countDocuments({ status: 'completed' });
+    const pendingManufacturingOrder = await ManufacturingOrder.countDocuments({ status: 'pending' });
     
     // Cutting Statistics
     const totalCutting = await CuttingRecord.countDocuments();
@@ -76,7 +76,7 @@ router.get('/stats', async (req: Request, res: Response) => {
       date: { $gte: startOfMonth }
     });
     
-    const monthlyManufacturing = await Manufacturing.countDocuments({
+    const monthlyManufacturingOrder = await ManufacturingOrder.countDocuments({
       createdAt: { $gte: startOfMonth }
     });
     
@@ -94,10 +94,10 @@ router.get('/stats', async (req: Request, res: Response) => {
         totalOrders: totalTailorOrders[0]?.total || 0
       },
       manufacturing: {
-        total: totalManufacturing,
-        completed: completedManufacturing,
-        pending: pendingManufacturing,
-        completionRate: totalManufacturing ? Math.round((completedManufacturing / totalManufacturing) * 100) : 0
+        total: totalManufacturingOrder,
+        completed: completedManufacturingOrder,
+        pending: pendingManufacturingOrder,
+        completionRate: totalManufacturingOrder ? Math.round((completedManufacturingOrder / totalManufacturingOrder) * 100) : 0
       },
       cutting: {
         total: totalCutting,
@@ -105,7 +105,7 @@ router.get('/stats', async (req: Request, res: Response) => {
       },
       trends: {
         monthlyAttendance,
-        monthlyManufacturing,
+        monthlyManufacturingOrder,
         weeklyGrowth: Math.floor(Math.random() * 20) + 5 // You can calculate actual growth
       },
       recentActivities: {
@@ -142,7 +142,7 @@ router.get('/charts', async (req: Request, res: Response) => {
       });
       attendanceData.push(attendance);
       
-      const production = await Manufacturing.countDocuments({
+      const production = await ManufacturingOrder.countDocuments({
         createdAt: { $gte: date, $lt: nextDay }
       });
       productionData.push(production);

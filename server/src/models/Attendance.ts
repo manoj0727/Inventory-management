@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const attendanceSchema = new mongoose.Schema({
   employeeId: {
@@ -55,4 +55,4 @@ attendanceSchema.methods.calculateWorkHours = function() {
 // Create compound index for employee and date
 attendanceSchema.index({ employeeId: 1, date: 1 }, { unique: true });
 
-module.exports = mongoose.model('Attendance', attendanceSchema);
+export default mongoose.model('Attendance', attendanceSchema);

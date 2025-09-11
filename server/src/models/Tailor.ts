@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const tailorSchema = new mongoose.Schema({
   tailorId: {
@@ -54,13 +54,13 @@ const tailorSchema = new mongoose.Schema({
 tailorSchema.pre('save', async function(next) {
   if (!this.tailorId) {
     try {
-      const count = await this.constructor.countDocuments();
+      const count = await (this.constructor as any).countDocuments();
       this.tailorId = `TLR${String(count + 1).padStart(4, '0')}`;
-    } catch (error) {
+    } catch (error: any) {
       return next(error);
     }
   }
   next();
 });
 
-module.exports = mongoose.model('Tailor', tailorSchema);
+export default mongoose.model('Tailor', tailorSchema);

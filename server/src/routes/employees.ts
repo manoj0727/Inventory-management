@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-const Employee = require('../models/Employee');
+import Employee from '../models/Employee';
 
 const router = Router();
 

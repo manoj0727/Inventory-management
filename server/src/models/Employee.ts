@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 const bcrypt = require('bcryptjs');
 
 const employeeSchema = new mongoose.Schema({
@@ -75,7 +75,7 @@ employeeSchema.pre('save', async function(next) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     next();
-  } catch (error) {
+  } catch (error: any) {
     next(error);
   }
 });
@@ -84,9 +84,9 @@ employeeSchema.pre('save', async function(next) {
 employeeSchema.pre('save', async function(next) {
   if (!this.employeeId) {
     try {
-      const count = await this.constructor.countDocuments();
+      const count = await (this.constructor as any).countDocuments();
       this.employeeId = `EMP${String(count + 1).padStart(4, '0')}`;
-    } catch (error) {
+    } catch (error: any) {
       return next(error);
     }
   }
@@ -94,8 +94,8 @@ employeeSchema.pre('save', async function(next) {
 });
 
 // Compare password method
-employeeSchema.methods.comparePassword = async function(candidatePassword) {
+employeeSchema.methods.comparePassword = async function(candidatePassword: string) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-module.exports = mongoose.model('Employee', employeeSchema);
+export default mongoose.model('Employee', employeeSchema);

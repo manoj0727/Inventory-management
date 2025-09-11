@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
+import Attendance from '../models/Attendance';
+import Employee from '../models/Employee';
 const router = express.Router();
-const Attendance = require('../models/Attendance');
-const Employee = require('../models/Employee');
 
 // Get all attendance records
 router.get('/', async (req: Request, res: Response) => {
