@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose'
 
 export interface IFabric extends Document {
   productId: string
+  fabricId: string
   fabricType: string
   color: string
   quality: 'Premium' | 'Standard' | 'Economy'
@@ -20,6 +21,10 @@ export interface IFabric extends Document {
 
 const FabricSchema: Schema = new Schema({
   productId: {
+    type: String,
+    unique: true
+  },
+  fabricId: {
     type: String,
     unique: true
   },
@@ -84,9 +89,9 @@ const FabricSchema: Schema = new Schema({
   timestamps: true
 })
 
-// Generate unique product ID before saving
+// Generate unique product ID and fabricId before saving
 FabricSchema.pre('save', async function(next) {
-  if (this.isNew && !this.productId) {
+  if (this.isNew && (!this.productId || !this.fabricId)) {
     try {
       const nameCode = this.fabricType.substring(0, 3).toUpperCase()
       const colorCode = this.color.substring(0, 2).toUpperCase()
@@ -116,9 +121,12 @@ FabricSchema.pre('save', async function(next) {
       }
       
       this.productId = productId
+      this.fabricId = productId // Use same ID for both fields
     } catch (error) {
       // Ultimate fallback ID generation
-      this.productId = `FAB${String(Date.now()).slice(-6)}`
+      const fallbackId = `FAB${String(Date.now()).slice(-6)}`
+      this.productId = fallbackId
+      this.fabricId = fallbackId
     }
   }
   

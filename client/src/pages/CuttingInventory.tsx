@@ -9,6 +9,8 @@ interface CuttingRecord {
   fabricColor: string
   productName: string
   piecesCount: number
+  piecesRemaining: number
+  piecesManufactured: number
   pieceLength: number
   pieceWidth: number
   totalSquareMetersUsed: number
@@ -165,7 +167,9 @@ export default function CuttingInventory() {
                 <th>Product Name</th>
                 <th>Fabric</th>
                 <th>Color</th>
-                <th>Pieces</th>
+                <th>Total Cut</th>
+                <th>Remaining</th>
+                <th>Manufactured</th>
                 <th>Total Used</th>
                 <th>Employee</th>
                 <th>Date</th>
@@ -182,6 +186,13 @@ export default function CuttingInventory() {
                     <td>{record.fabricType}</td>
                     <td>{record.fabricColor}</td>
                     <td>{record.piecesCount}</td>
+                    <td style={{ 
+                      fontWeight: '600',
+                      color: record.piecesRemaining === 0 ? '#ef4444' : record.piecesRemaining < 10 ? '#f59e0b' : '#10b981'
+                    }}>
+                      {record.piecesRemaining || record.piecesCount}
+                    </td>
+                    <td>{record.piecesManufactured || 0}</td>
                     <td>{record.totalSquareMetersUsed} sq.m</td>
                     <td>{record.cuttingEmployee}</td>
                     <td>{formatDate(record.date)}</td>
@@ -198,7 +209,7 @@ export default function CuttingInventory() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={12} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     {isLoading ? 'Loading cutting records...' : 'No cutting records found'}
                   </td>
                 </tr>

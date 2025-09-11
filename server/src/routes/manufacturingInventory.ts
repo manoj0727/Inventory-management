@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { ManufacturingInventory } from '../models/ManufacturingInventory'
+import { CuttingRecord } from '../models/CuttingRecord'
 
 const router = Router()
 
@@ -52,6 +53,22 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Missing required fields' })
     }
 
+    // Find the cutting record and check available pieces
+    const cuttingRecord = await CuttingRecord.findOne({ id: cuttingId })
+    
+    if (!cuttingRecord) {
+      return res.status(404).json({ message: 'Cutting record not found with the given cutting ID' })
+    }
+    
+    const quantityToManufacture = parseInt(quantity)
+    
+    // Check if enough pieces are available
+    if (cuttingRecord.piecesRemaining < quantityToManufacture) {
+      return res.status(400).json({ 
+        message: `Insufficient cutting pieces. Available: ${cuttingRecord.piecesRemaining}, Required: ${quantityToManufacture}` 
+      })
+    }
+
     const manufacturingInventory = new ManufacturingInventory({
       productId,
       productName,
@@ -68,10 +85,18 @@ router.post('/', async (req, res) => {
       notes
     })
 
+    // Save manufacturing record first
     await manufacturingInventory.save()
+    
+    // Update cutting record quantities
+    cuttingRecord.piecesRemaining -= quantityToManufacture
+    cuttingRecord.piecesManufactured += quantityToManufacture
+    await cuttingRecord.save()
+    
     res.status(201).json({
-      message: 'Manufacturing inventory record created successfully',
-      manufacturingInventory
+      message: 'Manufacturing inventory record created successfully and cutting record updated',
+      manufacturingInventory,
+      cuttingRecordRemaining: cuttingRecord.piecesRemaining
     })
   } catch (error: any) {
     console.error('Create manufacturing inventory record error:', error)
@@ -104,6 +129,10 @@ router.put('/:id', async (req, res) => {
       notes
     } = req.body
 
+    // Store old values for quantity tracking
+    const oldQuantity = manufacturingInventory.quantity
+    const oldQuantityProduced = manufacturingInventory.quantityProduced
+
     // Update fields
     if (quantity) manufacturingInventory.quantity = parseInt(quantity)
     if (quantityProduced !== undefined) manufacturingInventory.quantityProduced = parseInt(quantityProduced)
@@ -115,6 +144,26 @@ router.put('/:id', async (req, res) => {
     if (priority) manufacturingInventory.priority = priority
     if (status) manufacturingInventory.status = status
     if (notes !== undefined) manufacturingInventory.notes = notes
+
+    // If quantity changed, update cutting record accordingly
+    if (quantity && parseInt(quantity) !== oldQuantity) {
+      const cuttingRecord = await CuttingRecord.findOne({ id: manufacturingInventory.cuttingId })
+      if (cuttingRecord) {
+        const quantityDiff = parseInt(quantity) - oldQuantity
+        
+        // Check if enough pieces are available when increasing quantity
+        if (quantityDiff > 0 && cuttingRecord.piecesRemaining < quantityDiff) {
+          return res.status(400).json({ 
+            message: `Insufficient cutting pieces for quantity increase. Available: ${cuttingRecord.piecesRemaining}, Required: ${quantityDiff}` 
+          })
+        }
+        
+        // Update cutting record
+        cuttingRecord.piecesRemaining -= quantityDiff
+        cuttingRecord.piecesManufactured += quantityDiff
+        await cuttingRecord.save()
+      }
+    }
 
     await manufacturingInventory.save()
     res.json({

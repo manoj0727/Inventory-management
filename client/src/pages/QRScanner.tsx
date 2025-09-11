@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import QrScanner from 'qr-scanner'
 import '../styles/common.css'
 
 interface ScannedItem {
@@ -42,9 +43,8 @@ export default function QRScanner() {
   const [isLoading, setIsLoading] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [stream, setStream] = useState<MediaStream | null>(null)
-  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment')
-  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([])
+  const [qrScanner, setQrScanner] = useState<QrScanner | null>(null)
+  const [availableCameras, setAvailableCameras] = useState<QrScanner.Camera[]>([])
   const [selectedCamera, setSelectedCamera] = useState<string>('')
 
   // Fetch scan history from database
@@ -66,22 +66,28 @@ export default function QRScanner() {
 
   useEffect(() => {
     fetchScanHistory()
-    // Don't auto-start camera, wait for user action
+    getCameraDevices()
+    
+    // Cleanup on unmount
+    return () => {
+      if (qrScanner) {
+        qrScanner.destroy()
+      }
+    }
   }, [])
 
   // Get available camera devices
   const getCameraDevices = async () => {
     try {
-      const devices = await navigator.mediaDevices.enumerateDevices()
-      const videoDevices = devices.filter(device => device.kind === 'videoinput')
-      setAvailableCameras(videoDevices)
-      if (videoDevices.length > 0 && !selectedCamera) {
+      const cameras = await QrScanner.listCameras(true)
+      setAvailableCameras(cameras)
+      if (cameras.length > 0 && !selectedCamera) {
         // Default to back camera if available
-        const backCamera = videoDevices.find(device => 
-          device.label.toLowerCase().includes('back') || 
-          device.label.toLowerCase().includes('environment')
+        const backCamera = cameras.find(camera => 
+          camera.label.toLowerCase().includes('back') || 
+          camera.label.toLowerCase().includes('environment')
         )
-        setSelectedCamera(backCamera?.deviceId || videoDevices[0].deviceId)
+        setSelectedCamera(backCamera?.id || cameras[0].id)
       }
     } catch (error) {
       console.error('Error getting camera devices:', error)
@@ -207,56 +213,54 @@ export default function QRScanner() {
     try {
       setIsLoading(true)
       
-      // Stop any existing stream first
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop())
+      // Stop any existing scanner first
+      if (qrScanner) {
+        qrScanner.destroy()
       }
       
-      // Simple constraints
-      const constraints: MediaStreamConstraints = {
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+      if (!videoRef.current) {
+        throw new Error('Video element not ready')
+      }
+      
+      // Create QR Scanner instance
+      const scanner = new QrScanner(
+        videoRef.current,
+        async (result) => {
+          // Handle successful scan
+          console.log('QR Code detected:', result.data)
+          const scannedItem = await processScannedData(result.data)
+          if (scannedItem) {
+            if (scannedItem.type === 'UNKNOWN') {
+              alert('⚠️ QR Code scanned but item not found in database!')
+            } else {
+              alert('✅ QR Code scanned successfully!')
+            }
+          }
         },
-        audio: false
-      }
-      
-      // Get the stream
-      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
-      
-      if (!mediaStream) {
-        throw new Error('Could not get media stream')
-      }
-      
-      setStream(mediaStream)
-      
-      // Set video source and ensure it plays
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream
-        // Wait a bit for stream to be ready
-        await new Promise(resolve => setTimeout(resolve, 100))
-        
-        try {
-          await videoRef.current.play()
-          console.log('Camera started successfully')
-        } catch (playError) {
-          console.error('Error playing video:', playError)
+        {
+          returnDetailedScanResult: true,
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+          preferredCamera: deviceId || selectedCamera || 'environment',
+          maxScansPerSecond: 2
         }
+      )
+      
+      // Set camera if specified
+      if (deviceId) {
+        await scanner.setCamera(deviceId)
       }
       
-      // Re-enumerate devices after getting permission
-      try {
-        const devices = await navigator.mediaDevices.enumerateDevices()
-        const videoDevices = devices.filter(device => device.kind === 'videoinput')
-        setAvailableCameras(videoDevices)
-        if (videoDevices.length > 0 && !selectedCamera) {
-          setSelectedCamera(videoDevices[0].deviceId)
-        }
-      } catch (err) {
-        console.log('Could not enumerate devices:', err)
-      }
+      // Start scanning
+      await scanner.start()
       
+      setQrScanner(scanner)
       setScanMode(true)
+      
+      // Get available cameras after starting
+      const cameras = await QrScanner.listCameras(true)
+      setAvailableCameras(cameras)
+      
     } catch (error) {
       console.error('Error accessing camera:', error)
       alert('❌ Could not access camera. Please check permissions and try again.')
@@ -267,9 +271,9 @@ export default function QRScanner() {
   }
 
   const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop())
-      setStream(null)
+    if (qrScanner) {
+      qrScanner.destroy()
+      setQrScanner(null)
     }
     setScanMode(false)
   }
@@ -289,32 +293,46 @@ export default function QRScanner() {
   const switchCamera = async () => {
     if (availableCameras.length <= 1) return
     
-    const currentIndex = availableCameras.findIndex(cam => cam.deviceId === selectedCamera)
+    const currentIndex = availableCameras.findIndex(cam => cam.id === selectedCamera)
     const nextIndex = (currentIndex + 1) % availableCameras.length
     const nextCamera = availableCameras[nextIndex]
     
-    setSelectedCamera(nextCamera.deviceId)
+    setSelectedCamera(nextCamera.id)
     
-    if (scanMode) {
-      stopCamera()
-      await startCamera(nextCamera.deviceId)
+    if (qrScanner && scanMode) {
+      await qrScanner.setCamera(nextCamera.id)
     }
   }
 
   const toggleFacingMode = async () => {
-    const newFacingMode = facingMode === 'user' ? 'environment' : 'user'
-    setFacingMode(newFacingMode)
-    
-    if (scanMode) {
-      stopCamera()
-      await startCamera()
+    if (qrScanner) {
+      await qrScanner.turnFlashOff()
+      const cameras = await QrScanner.listCameras(true)
+      const currentCam = cameras.find(c => c.id === selectedCamera)
+      const otherCams = cameras.filter(c => c.id !== selectedCamera)
+      if (otherCams.length > 0) {
+        const newCam = otherCams[0]
+        setSelectedCamera(newCam.id)
+        await qrScanner.setCamera(newCam.id)
+      }
     }
   }
 
-  // Simulate QR detection for demo (in production, use a QR detection library)
-  const detectQR = () => {
-    // This is a placeholder - in production you'd use a library like jsQR
-    alert('📷 QR detection would happen here. For demo, please use manual entry.')
+  // Flash control
+  const toggleFlash = async () => {
+    if (qrScanner) {
+      const hasFlash = await qrScanner.hasFlash()
+      if (hasFlash) {
+        const isOn = await qrScanner.isFlashOn()
+        if (isOn) {
+          await qrScanner.turnFlashOff()
+        } else {
+          await qrScanner.turnFlashOn()
+        }
+      } else {
+        alert('Flash not available on this camera')
+      }
+    }
   }
 
   const getTypeBadgeClass = (type: string) => {
@@ -384,22 +402,38 @@ export default function QRScanner() {
                 />
                 
                 {/* Camera Controls Overlay */}
-                {availableCameras.length > 1 && (
+                <div style={{
+                  position: 'absolute',
+                  top: '10px',
+                  right: '10px',
+                  display: 'flex',
+                  gap: '8px'
+                }}>
+                  {availableCameras.length > 1 && (
+                    <button 
+                      onClick={switchCamera}
+                      className="btn btn-secondary"
+                      style={{ 
+                        padding: '8px 12px',
+                        fontSize: '12px'
+                      }}
+                      title="Switch Camera"
+                    >
+                      🔄
+                    </button>
+                  )}
                   <button 
-                    onClick={switchCamera}
+                    onClick={toggleFlash}
                     className="btn btn-secondary"
                     style={{ 
-                      position: 'absolute',
-                      top: '10px',
-                      right: '10px',
                       padding: '8px 12px',
                       fontSize: '12px'
                     }}
-                    title="Switch Camera"
+                    title="Toggle Flash"
                   >
-                    🔄
+                    💡
                   </button>
-                )}
+                </div>
                 
                 {/* Scan frame overlay */}
                 <div style={{
@@ -417,16 +451,16 @@ export default function QRScanner() {
               
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
                 <button 
-                  onClick={detectQR}
-                  className="btn btn-success"
+                  onClick={toggleFlash}
+                  className="btn btn-secondary"
                 >
-                  📷 Capture QR
+                  💡 Toggle Flash
                 </button>
                 {availableCameras.length > 1 && (
                   <button 
                     onClick={switchCamera}
                     className="btn btn-secondary"
-                    title={`Switch to ${availableCameras.find(cam => cam.deviceId !== selectedCamera)?.label || 'other camera'}`}
+                    title={`Switch to ${availableCameras.find(cam => cam.id !== selectedCamera)?.label || 'other camera'}`}
                   >
                     🔄 Switch Camera
                   </button>
@@ -461,7 +495,7 @@ export default function QRScanner() {
                     }}
                   >
                     {availableCameras.map(camera => (
-                      <option key={camera.deviceId} value={camera.deviceId}>
+                      <option key={camera.id} value={camera.id}>
                         {camera.label || `Camera ${availableCameras.indexOf(camera) + 1}`}
                       </option>
                     ))}

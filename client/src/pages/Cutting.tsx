@@ -194,39 +194,16 @@ export default function Cutting() {
       }
       
       // Save the cutting record to database
+      // The backend will automatically update the fabric quantity
       const cuttingResponse = await fetch('http://localhost:4000/api/cutting-records', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(cuttingRecord)
       })
       
-      if (!cuttingResponse.ok) {
-        console.error('Failed to save cutting record')
-      }
-      
-      // Update fabric inventory by reducing the quantity
-      const newQuantity = selectedFabric.quantity - totalUsed
-      const updateResponse = await fetch(`http://localhost:4000/api/fabrics/${selectedFabric._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fabricType: selectedFabric.fabricType,
-          color: selectedFabric.color,
-          quality: selectedFabric.quality,
-          length: selectedFabric.length,
-          width: selectedFabric.width,
-          quantity: newQuantity,
-          supplier: selectedFabric.supplier,
-          purchasePrice: selectedFabric.purchasePrice,
-          location: selectedFabric.location,
-          notes: selectedFabric.notes
-        })
-      })
-      
-      if (updateResponse.ok) {
-        alert(`✅ Cutting record ${cuttingId} added successfully! Fabric inventory updated.`)
+      if (cuttingResponse.ok) {
+        const result = await cuttingResponse.json()
+        alert(`✅ Cutting record ${cuttingId} added successfully!\nFabric remaining: ${result.fabricRemainingQuantity} units`)
         
         // Reset form
         setFormData({
@@ -247,7 +224,8 @@ export default function Cutting() {
         fetchFabrics()
         fetchRecentCuttingRecords()
       } else {
-        alert('❌ Error updating fabric inventory. Please try again.')
+        const error = await cuttingResponse.text()
+        alert('❌ Error creating cutting record: ' + error)
       }
     } catch (error) {
       console.error('Error updating fabric inventory:', error)

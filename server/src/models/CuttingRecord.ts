@@ -7,6 +7,8 @@ export interface ICuttingRecord extends Document {
   fabricColor: string
   productName: string
   piecesCount: number
+  piecesRemaining: number
+  piecesManufactured: number
   pieceLength: number
   pieceWidth: number
   totalSquareMetersUsed: number
@@ -50,6 +52,16 @@ const CuttingRecordSchema: Schema = new Schema({
     type: Number,
     required: true,
     min: 1
+  },
+  piecesRemaining: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  piecesManufactured: {
+    type: Number,
+    default: 0,
+    min: 0
   },
   pieceLength: {
     type: Number,
@@ -96,6 +108,14 @@ const CuttingRecordSchema: Schema = new Schema({
   }
 }, {
   timestamps: true
+})
+
+// Initialize piecesRemaining when creating new record
+CuttingRecordSchema.pre('save', async function(next) {
+  if (this.isNew && this.piecesRemaining === undefined) {
+    this.piecesRemaining = this.piecesCount
+  }
+  next()
 })
 
 export const CuttingRecord = mongoose.model<ICuttingRecord>('CuttingRecord', CuttingRecordSchema)

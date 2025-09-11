@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { CuttingRecord } from '../models/CuttingRecord'
+import { Fabric } from '../models/Fabric'
 
 const router = Router()
 
@@ -56,6 +57,27 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Missing required fields' })
     }
 
+    // Check if fabric exists and has enough quantity
+    const fabric = await Fabric.findOne({ 
+      $or: [
+        { productId: productId },
+        { fabricId: productId }
+      ]
+    })
+    
+    if (!fabric) {
+      return res.status(404).json({ message: 'Fabric not found with the given product ID' })
+    }
+    
+    // Calculate area to decrease (length × width × pieces count)
+    const areaToDecrease = parseFloat(totalSquareMetersUsed)
+    
+    if (fabric.quantity < areaToDecrease) {
+      return res.status(400).json({ 
+        message: `Insufficient fabric quantity. Available: ${fabric.quantity} sq.m, Required: ${areaToDecrease} sq.m` 
+      })
+    }
+
     const cuttingRecord = new CuttingRecord({
       id,
       productId,
@@ -63,6 +85,8 @@ router.post('/', async (req, res) => {
       fabricColor,
       productName,
       piecesCount: parseInt(piecesCount),
+      piecesRemaining: parseInt(piecesCount), // Initialize with full count
+      piecesManufactured: 0,
       pieceLength: parseFloat(pieceLength),
       pieceWidth: parseFloat(pieceWidth),
       totalSquareMetersUsed: parseFloat(totalSquareMetersUsed),
@@ -74,10 +98,17 @@ router.post('/', async (req, res) => {
       notes
     })
 
+    // Save cutting record first
     await cuttingRecord.save()
+    
+    // Update fabric quantity (subtract the area used)
+    fabric.quantity -= areaToDecrease
+    await fabric.save()
+    
     res.status(201).json({
-      message: 'Cutting record created successfully',
-      cuttingRecord
+      message: 'Cutting record created successfully and fabric quantity updated',
+      cuttingRecord,
+      fabricRemainingQuantity: fabric.quantity
     })
   } catch (error: any) {
     console.error('Create cutting record error:', error)

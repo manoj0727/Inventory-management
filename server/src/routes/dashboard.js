@@ -4,7 +4,7 @@ const Fabric = require('../models/Fabric');
 const Employee = require('../models/Employee');
 const Attendance = require('../models/Attendance');
 const Tailor = require('../models/Tailor');
-const Manufacturing = require('../models/Manufacturing');
+const Manufacturing = require('../models/ManufacturingOrder');
 const CuttingRecord = require('../models/CuttingRecord');
 
 // Get dashboard statistics

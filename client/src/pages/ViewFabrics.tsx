@@ -1,14 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import '../styles/common.css'
 
 interface Fabric {
-  id: string
+  _id: string
+  productId: string
+  fabricId: string
   fabricType: string
   color: string
   quality: string
   quantity: number
   supplier: string
-  employeeName: string
+  employeeName?: string
   dateReceived: string
   status: string
   location: string
@@ -18,74 +20,40 @@ export default function ViewFabrics() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterQuality, setFilterQuality] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
+  const [fabrics, setFabrics] = useState<Fabric[]>([])
+  const [loading, setLoading] = useState(true)
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
 
-  const [fabrics] = useState<Fabric[]>([
-    {
-      id: 'FAB001',
-      fabricType: 'Cotton',
-      color: 'White',
-      quality: 'Premium',
-      quantity: 100,
-      supplier: 'ABC Textiles',
-      employeeName: 'John Doe',
-      dateReceived: '2024-01-15',
-      status: 'In Stock',
-      location: 'Warehouse A'
-    },
-    {
-      id: 'FAB002',
-      fabricType: 'Silk',
-      color: 'Red',
-      quality: 'Premium',
-      quantity: 50,
-      supplier: 'XYZ Fabrics',
-      employeeName: 'Jane Smith',
-      dateReceived: '2024-01-16',
-      status: 'In Stock',
-      location: 'Warehouse B'
-    },
-    {
-      id: 'FAB003',
-      fabricType: 'Denim',
-      color: 'Blue',
-      quality: 'Standard',
-      quantity: 10,
-      supplier: 'Denim Co',
-      employeeName: 'Bob Johnson',
-      dateReceived: '2024-01-14',
-      status: 'Low Stock',
-      location: 'Warehouse A'
-    },
-    {
-      id: 'FAB004',
-      fabricType: 'Wool',
-      color: 'Gray',
-      quality: 'Premium',
-      quantity: 0,
-      supplier: 'Wool Masters',
-      employeeName: 'Alice Brown',
-      dateReceived: '2024-01-13',
-      status: 'Out of Stock',
-      location: 'Warehouse C'
-    },
-    {
-      id: 'FAB005',
-      fabricType: 'Linen',
-      color: 'Beige',
-      quality: 'Standard',
-      quantity: 75,
-      supplier: 'Linen World',
-      employeeName: 'Tom Wilson',
-      dateReceived: '2024-01-12',
-      status: 'In Stock',
-      location: 'Warehouse B'
+  useEffect(() => {
+    fetchFabrics()
+    // Auto-refresh every 5 seconds to show updated quantities
+    const interval = setInterval(() => {
+      fetchFabrics()
+    }, 5000)
+    
+    return () => clearInterval(interval)
+  }, [])
+
+  const fetchFabrics = async () => {
+    try {
+      const response = await fetch('http://localhost:4000/api/fabrics')
+      if (response.ok) {
+        const data = await response.json()
+        setFabrics(data)
+        setLastUpdated(new Date())
+      }
+    } catch (error) {
+      console.error('Error fetching fabrics:', error)
+    } finally {
+      setLoading(false)
     }
-  ])
+  }
+
 
   const filteredFabrics = fabrics.filter(fabric => {
     const matchesSearch = fabric.fabricType.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           fabric.color.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          fabric.id.toLowerCase().includes(searchTerm.toLowerCase())
+                          fabric.productId?.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesQuality = !filterQuality || fabric.quality === filterQuality
     const matchesStatus = !filterStatus || fabric.status === filterStatus
     
@@ -121,7 +89,7 @@ export default function ViewFabrics() {
         </div>
         <div className="stat-card">
           <h3>Total Quantity</h3>
-          <p className="stat-value">{totalValue}m</p>
+          <p className="stat-value">{totalValue.toFixed(2)} sq.m</p>
         </div>
         <div className="stat-card">
           <h3>In Stock</h3>
@@ -167,10 +135,26 @@ export default function ViewFabrics() {
               <option value="Low Stock">Low Stock</option>
               <option value="Out of Stock">Out of Stock</option>
             </select>
+            <button className="btn btn-secondary" onClick={fetchFabrics}>
+              🔄 Refresh
+            </button>
             <button className="btn btn-primary">
               Export
             </button>
           </div>
+        </div>
+        <div style={{ 
+          padding: '8px 16px', 
+          background: '#f8fafc', 
+          borderTop: '1px solid #e2e8f0',
+          fontSize: '12px',
+          color: '#64748b',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <span>Last Updated: {lastUpdated.toLocaleTimeString()}</span>
+          <span style={{ color: '#10b981' }}>Auto-refreshing every 5 seconds</span>
         </div>
       </div>
 
@@ -193,17 +177,28 @@ export default function ViewFabrics() {
               </tr>
             </thead>
             <tbody>
-              {filteredFabrics.length > 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={10} style={{ textAlign: 'center', padding: '40px' }}>
+                    Loading fabrics...
+                  </td>
+                </tr>
+              ) : filteredFabrics.length > 0 ? (
                 filteredFabrics.map((fabric) => (
-                  <tr key={fabric.id}>
-                    <td style={{ fontWeight: '500' }}>{fabric.id}</td>
+                  <tr key={fabric._id}>
+                    <td style={{ fontWeight: '500' }}>{fabric.productId || fabric.fabricId}</td>
                     <td>{fabric.fabricType}</td>
                     <td>{fabric.color}</td>
                     <td>{fabric.quality}</td>
-                    <td>{fabric.quantity}m</td>
+                    <td style={{ 
+                      fontWeight: '600',
+                      color: fabric.quantity === 0 ? '#ef4444' : fabric.quantity <= 20 ? '#f59e0b' : '#10b981'
+                    }}>
+                      {fabric.quantity.toFixed(2)} sq.m
+                    </td>
                     <td>{fabric.supplier}</td>
-                    <td>{fabric.location}</td>
-                    <td>{fabric.dateReceived}</td>
+                    <td>{fabric.location || 'N/A'}</td>
+                    <td>{new Date(fabric.dateReceived).toLocaleDateString()}</td>
                     <td>
                       <span className={`badge ${getStatusBadgeClass(fabric.status)}`}>
                         {fabric.status}

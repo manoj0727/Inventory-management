@@ -53,6 +53,17 @@ export default function Employees() {
     }
   }, [])
 
+  // Set up video when showCamera and stream are ready
+  useEffect(() => {
+    if (showCamera && stream && videoRef.current) {
+      console.log('Setting up video from useEffect')
+      videoRef.current.srcObject = stream
+      videoRef.current.play().catch(err => {
+        console.log('Play from useEffect failed:', err)
+      })
+    }
+  }, [showCamera, stream])
+
   const fetchEmployees = async () => {
     setIsLoading(true)
     try {
@@ -70,46 +81,108 @@ export default function Employees() {
 
   const startCamera = async () => {
     try {
+      // First set showCamera to true to show the video element
+      setShowCamera(true)
+      
       // Check if getUserMedia is available
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Camera API not available. Please use HTTPS or localhost.')
       }
 
-      // Request camera with simple constraints
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: true,
-        audio: false 
-      })
+      // Check current permission status if available
+      if (navigator.permissions && navigator.permissions.query) {
+        try {
+          const permissionStatus = await navigator.permissions.query({ name: 'camera' as PermissionName })
+          console.log('Camera permission status:', permissionStatus.state)
+          
+          if (permissionStatus.state === 'denied') {
+            throw new Error('Camera permission denied. Please enable camera access in your browser settings.')
+          }
+        } catch (e) {
+          console.log('Could not check permission status:', e)
+        }
+      }
+
+      // Request camera with fallback constraints
+      let mediaStream: MediaStream | null = null
+      
+      // Try different constraint combinations
+      const constraintsList = [
+        { video: true, audio: false },
+        { video: { facingMode: 'user' }, audio: false },
+        { video: { facingMode: 'environment' }, audio: false },
+        { video: { width: 640, height: 480 }, audio: false }
+      ]
+      
+      for (const constraints of constraintsList) {
+        try {
+          console.log('Trying constraints:', constraints)
+          mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
+          if (mediaStream) break
+        } catch (e) {
+          console.log('Failed with constraints:', constraints, e)
+        }
+      }
+      
+      if (!mediaStream) {
+        throw new Error('Could not access camera with any constraints')
+      }
       
       setStream(mediaStream)
-      setShowCamera(true)
       
-      // Set up video element after state updates
-      setTimeout(() => {
+      // Ensure video element is ready and set stream
+      const setupVideo = () => {
         if (videoRef.current && mediaStream) {
+          console.log('Setting up video element')
           videoRef.current.srcObject = mediaStream
-          // Try to play the video
+          
+          // Add event listeners for debugging
+          videoRef.current.onloadedmetadata = () => {
+            console.log('Video metadata loaded')
+            videoRef.current?.play().catch(err => {
+              console.error('Play error:', err)
+            })
+          }
+          
+          videoRef.current.onplay = () => {
+            console.log('Video started playing')
+          }
+          
+          // Force play
           videoRef.current.play().catch(err => {
-            console.warn('Auto-play prevented:', err)
-            // User might need to interact with the page first
+            console.warn('Initial play failed, will retry:', err)
+            // Retry play after a short delay
+            setTimeout(() => {
+              videoRef.current?.play().catch(e => console.error('Retry play failed:', e))
+            }, 500)
           })
+        } else {
+          // If video element not ready, try again
+          setTimeout(setupVideo, 100)
         }
-      }, 100)
+      }
+      
+      // Start setup immediately and also after a delay
+      setupVideo()
+      setTimeout(setupVideo, 200)
       
     } catch (error: any) {
       console.error('Camera error:', error)
+      setShowCamera(false)
       
       let errorMessage = 'Could not access camera. '
       
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-        errorMessage += 'Please allow camera permissions in your browser.'
+        errorMessage = 'Camera permission denied. Please click "Allow" when prompted or check your browser settings (look for camera icon in address bar).'
       } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-        errorMessage += 'No camera found on this device.'
+        errorMessage = 'No camera found. Please connect a camera and try again.'
       } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-        errorMessage += 'Camera is already in use by another application.'
+        errorMessage = 'Camera is being used by another application. Please close other apps using the camera.'
       } else if (error.name === 'OverconstrainedError' || error.name === 'ConstraintNotSatisfiedError') {
-        errorMessage += 'Camera does not support the requested settings.'
+        errorMessage = 'Camera does not support the requested settings.'
       } else if (error.message?.includes('HTTPS')) {
+        errorMessage = error.message
+      } else if (error.message?.includes('permission')) {
         errorMessage = error.message
       } else {
         errorMessage += error.message || 'Unknown error occurred.'
