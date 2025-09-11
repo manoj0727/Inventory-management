@@ -1,86 +1,222 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import '../styles/common.css'
 
+// Extend window interface for debounce timer
+declare global {
+  interface Window {
+    debounceTimer: number
+  }
+}
+
 interface ManufacturingOrder {
-  orderId: string
+  cuttingId: string
   productName: string
   quantity: string
-  fabricRequired: string
-  startDate: string
-  endDate: string
-  assignedTo: string
-  priority: string
+  dueDate: string
+  tailorName: string
+  tailorMobile: string
   status: string
   notes: string
 }
 
+interface CuttingRecord {
+  _id: string
+  id: string
+  productName: string
+  piecesCount: number
+  status: string
+}
+
+interface ManufacturingRecord {
+  _id: string
+  cuttingId: string
+  productName: string
+  quantity: number
+  dueDate: string
+  tailorName: string
+  tailorMobile: string
+  priority: string
+  status: string
+  createdAt: string
+}
+
 export default function Manufacturing() {
   const [formData, setFormData] = useState<ManufacturingOrder>({
-    orderId: '',
+    cuttingId: '',
     productName: '',
     quantity: '',
-    fabricRequired: '',
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: '',
-    assignedTo: '',
-    priority: 'Normal',
+    dueDate: '',
+    tailorName: '',
+    tailorMobile: '',
     status: 'Pending',
     notes: ''
   })
+  const [cuttingRecords, setCuttingRecords] = useState<CuttingRecord[]>([])
+  const [manufacturingRecords, setManufacturingRecords] = useState<ManufacturingRecord[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingRecords, setIsLoadingRecords] = useState(false)
+
+  const fetchCuttingRecords = async () => {
+    try {
+      const response = await fetch('http://localhost:4000/api/cutting-records')
+      if (response.ok) {
+        const records = await response.json()
+        setCuttingRecords(records.filter((record: CuttingRecord) => record.status === 'Completed'))
+      }
+    } catch (error) {
+      console.error('Error fetching cutting records:', error)
+    }
+  }
+
+  const fetchManufacturingRecords = async () => {
+    setIsLoadingRecords(true)
+    try {
+      const response = await fetch('http://localhost:4000/api/manufacturing-orders')
+      if (response.ok) {
+        const records = await response.json()
+        setManufacturingRecords(records.slice(0, 10))
+      }
+    } catch (error) {
+      console.error('Error fetching manufacturing records:', error)
+    } finally {
+      setIsLoadingRecords(false)
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return ''
+    try {
+      const date = new Date(dateString)
+      const day = date.getDate().toString().padStart(2, '0')
+      const month = (date.getMonth() + 1).toString().padStart(2, '0')
+      const year = date.getFullYear()
+      return `${day}/${month}/${year}`
+    } catch (error) {
+      return dateString
+    }
+  }
+
+  const handleCuttingIdChange = async (cuttingId: string) => {
+    if (!cuttingId.trim()) {
+      setFormData({
+        ...formData,
+        cuttingId: '',
+        productName: '',
+        quantity: ''
+      })
+      return
+    }
+
+    try {
+      const response = await fetch('http://localhost:4000/api/cutting-records')
+      if (response.ok) {
+        const records = await response.json()
+        const selectedRecord = records.find((record: CuttingRecord) => record.id === cuttingId.toUpperCase())
+        
+        if (selectedRecord) {
+          setFormData({
+            ...formData,
+            cuttingId: cuttingId.toUpperCase(),
+            productName: selectedRecord.productName,
+            quantity: selectedRecord.piecesCount.toString()
+          })
+        } else {
+          setFormData({
+            ...formData,
+            cuttingId: cuttingId.toUpperCase(),
+            productName: '',
+            quantity: ''
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching cutting record:', error)
+      setFormData({
+        ...formData,
+        cuttingId: cuttingId.toUpperCase(),
+        productName: '',
+        quantity: ''
+      })
+    }
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log('Manufacturing Order:', formData)
-    alert('✅ Manufacturing order created successfully!')
-    
-    // Reset form
-    setFormData({
-      orderId: '',
-      productName: '',
-      quantity: '',
-      fabricRequired: '',
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: '',
-      assignedTo: '',
-      priority: 'Normal',
-      status: 'Pending',
-      notes: ''
-    })
-  }
-
-  const activeOrders = [
-    {
-      id: 'MFG001',
-      product: 'T-Shirt',
-      quantity: 100,
-      progress: 75,
-      status: 'In Progress',
-      dueDate: '2024-01-25'
-    },
-    {
-      id: 'MFG002',
-      product: 'Dress',
-      quantity: 50,
-      progress: 40,
-      status: 'In Progress',
-      dueDate: '2024-01-28'
-    },
-    {
-      id: 'MFG003',
-      product: 'Jeans',
-      quantity: 75,
-      progress: 10,
-      status: 'Started',
-      dueDate: '2024-02-01'
+    const { name, value } = e.target
+    if (name === 'cuttingId') {
+      // Update form data immediately for typing experience
+      setFormData({
+        ...formData,
+        cuttingId: value
+      })
+      // Debounce the API call
+      clearTimeout(window.debounceTimer)
+      window.debounceTimer = setTimeout(() => {
+        handleCuttingIdChange(value)
+      }, 500)
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      })
     }
-  ]
+  }
+
+  useEffect(() => {
+    fetchCuttingRecords()
+    fetchManufacturingRecords()
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    try {
+      setIsLoading(true)
+      const manufacturingOrder = {
+        cuttingId: formData.cuttingId,
+        productName: formData.productName,
+        quantity: parseInt(formData.quantity),
+        dueDate: formData.dueDate,
+        tailorName: formData.tailorName,
+        tailorMobile: formData.tailorMobile,
+        priority: 'Normal',
+        status: formData.status,
+        notes: formData.notes
+      }
+      
+      const response = await fetch('http://localhost:4000/api/manufacturing-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(manufacturingOrder)
+      })
+      
+      if (response.ok) {
+        alert('✅ Manufacturing order assigned to tailor successfully!')
+        
+        // Refresh manufacturing records
+        fetchManufacturingRecords()
+        
+        // Reset form
+        setFormData({
+          cuttingId: '',
+          productName: '',
+          quantity: '',
+          dueDate: '',
+          tailorName: '',
+          tailorMobile: '',
+          status: 'Pending',
+          notes: ''
+        })
+      } else {
+        alert('❌ Error creating manufacturing order. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error creating manufacturing order:', error)
+      alert('❌ Error creating manufacturing order. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
 
   return (
     <div className="page-container">
@@ -89,122 +225,97 @@ export default function Manufacturing() {
         <p>Create and manage manufacturing orders</p>
       </div>
 
-      {/* Statistics */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <h3>Active Orders</h3>
-          <p className="stat-value">8</p>
-        </div>
-        <div className="stat-card">
-          <h3>In Production</h3>
-          <p className="stat-value">5</p>
-        </div>
-        <div className="stat-card">
-          <h3>Completed Today</h3>
-          <p className="stat-value">3</p>
-        </div>
-        <div className="stat-card">
-          <h3>Pending</h3>
-          <p className="stat-value">2</p>
-        </div>
-        <div className="stat-card">
-          <h3>Efficiency</h3>
-          <p className="stat-value">92%</p>
-        </div>
-      </div>
 
-      {/* Create Manufacturing Order */}
+      {/* Assign Manufacturing to Tailor */}
       <div className="content-card">
-        <h2 style={{ marginBottom: '20px', color: '#374151' }}>Create Manufacturing Order</h2>
+        <h2 style={{ marginBottom: '20px', color: '#374151' }}>Assign Manufacturing to Tailor</h2>
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
             <div className="form-group">
-              <label htmlFor="orderId">Order ID *</label>
+              <label htmlFor="cuttingId">Cutting ID *</label>
               <input
                 type="text"
-                id="orderId"
-                name="orderId"
-                value={formData.orderId}
+                id="cuttingId"
+                name="cuttingId"
+                value={formData.cuttingId}
                 onChange={handleChange}
-                placeholder="e.g., MFG004"
+                placeholder="Enter cutting ID (e.g., CUTTSH001)"
                 required
               />
+              {formData.cuttingId && !formData.productName && (
+                <small style={{ color: '#ef4444' }}>
+                  ❌ Cutting ID not found
+                </small>
+              )}
+              {formData.cuttingId && formData.productName && (
+                <small style={{ color: '#10b981' }}>
+                  ✅ Found: {formData.productName} ({formData.quantity} pieces)
+                </small>
+              )}
             </div>
 
             <div className="form-group">
-              <label htmlFor="productName">Product Name *</label>
+              <label htmlFor="productName">Product Name</label>
               <input
                 type="text"
                 id="productName"
                 name="productName"
                 value={formData.productName}
-                onChange={handleChange}
-                placeholder="e.g., T-Shirt, Dress"
-                required
+                placeholder="Auto-filled from cutting record"
+                readOnly
+                style={{ background: '#f9fafb', color: '#6b7280' }}
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="quantity">Quantity *</label>
+              <label htmlFor="quantity">Quantity to Manufacture *</label>
               <input
                 type="number"
                 id="quantity"
                 name="quantity"
                 value={formData.quantity}
                 onChange={handleChange}
-                placeholder="Number of units"
+                placeholder="Number of units to manufacture"
                 min="1"
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="fabricRequired">Fabric Required (meters)</label>
-              <input
-                type="number"
-                id="fabricRequired"
-                name="fabricRequired"
-                value={formData.fabricRequired}
-                onChange={handleChange}
-                placeholder="Total fabric needed"
-                min="0.1"
-                step="0.1"
-              />
-            </div>
 
             <div className="form-group">
-              <label htmlFor="startDate">Start Date *</label>
+              <label htmlFor="dueDate">Due Date *</label>
               <input
                 type="date"
-                id="startDate"
-                name="startDate"
-                value={formData.startDate}
+                id="dueDate"
+                name="dueDate"
+                value={formData.dueDate}
                 onChange={handleChange}
                 required
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="endDate">Due Date *</label>
-              <input
-                type="date"
-                id="endDate"
-                name="endDate"
-                value={formData.endDate}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="assignedTo">Assigned To *</label>
+              <label htmlFor="tailorName">Tailor Name *</label>
               <input
                 type="text"
-                id="assignedTo"
-                name="assignedTo"
-                value={formData.assignedTo}
+                id="tailorName"
+                name="tailorName"
+                value={formData.tailorName}
                 onChange={handleChange}
-                placeholder="Team or employee name"
+                placeholder="Enter tailor name"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="tailorMobile">Tailor Mobile Number *</label>
+              <input
+                type="tel"
+                id="tailorMobile"
+                name="tailorMobile"
+                value={formData.tailorMobile}
+                onChange={handleChange}
+                placeholder="Enter mobile number"
                 required
               />
             </div>
@@ -232,28 +343,26 @@ export default function Manufacturing() {
               name="notes"
               value={formData.notes}
               onChange={handleChange}
-              placeholder="Any special instructions for manufacturing"
+              placeholder="Any special instructions for the tailor"
               rows={3}
               style={{ resize: 'vertical' }}
             />
           </div>
 
           <div className="btn-group">
-            <button type="submit" className="btn btn-primary">
-              Create Order
+            <button type="submit" className="btn btn-primary" disabled={isLoading}>
+              {isLoading ? 'Assigning...' : 'Assign to Tailor'}
             </button>
             <button 
               type="button" 
               className="btn btn-secondary"
               onClick={() => setFormData({
-                orderId: '',
+                cuttingId: '',
                 productName: '',
                 quantity: '',
-                fabricRequired: '',
-                startDate: new Date().toISOString().split('T')[0],
-                endDate: '',
-                assignedTo: '',
-                priority: 'Normal',
+                dueDate: '',
+                tailorName: '',
+                tailorMobile: '',
                 status: 'Pending',
                 notes: ''
               })}
@@ -264,110 +373,61 @@ export default function Manufacturing() {
         </form>
       </div>
 
-      {/* Active Orders */}
+      {/* Recent Manufacturing Assignments */}
       <div className="content-card">
-        <h2 style={{ marginBottom: '20px', color: '#374151' }}>Active Manufacturing Orders</h2>
+        <h2 style={{ marginBottom: '20px', color: '#374151' }}>Recent Manufacturing Assignments</h2>
         <div className="table-container">
           <table className="data-table">
             <thead>
               <tr>
-                <th>Order ID</th>
+                <th>Cutting ID</th>
                 <th>Product</th>
                 <th>Quantity</th>
-                <th>Progress</th>
-                <th>Status</th>
+                <th>Tailor</th>
+                <th>Mobile</th>
                 <th>Due Date</th>
-                <th>Actions</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {activeOrders.map((order) => (
-                <tr key={order.id}>
-                  <td style={{ fontWeight: '500' }}>{order.id}</td>
-                  <td>{order.product}</td>
-                  <td>{order.quantity}</td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ 
-                        width: '100px', 
-                        height: '8px', 
-                        background: '#e5e7eb', 
-                        borderRadius: '4px',
-                        overflow: 'hidden'
-                      }}>
-                        <div style={{ 
-                          width: `${order.progress}%`, 
-                          height: '100%', 
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                          transition: 'width 0.3s'
-                        }} />
-                      </div>
-                      <span style={{ fontSize: '12px', color: '#6b7280' }}>{order.progress}%</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`badge ${order.status === 'In Progress' ? 'badge-info' : 'badge-warning'}`}>
-                      {order.status}
-                    </span>
-                  </td>
-                  <td>{order.dueDate}</td>
-                  <td>
-                    <div className="action-buttons">
-                      <button className="action-btn view">View</button>
-                      <button className="action-btn edit">Update</button>
-                    </div>
+              {isLoadingRecords ? (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                    Loading manufacturing assignments...
                   </td>
                 </tr>
-              ))}
+              ) : manufacturingRecords.length > 0 ? (
+                manufacturingRecords.map((record) => (
+                  <tr key={record._id}>
+                    <td style={{ fontWeight: '500' }}>{record.cuttingId}</td>
+                    <td>{record.productName}</td>
+                    <td>{record.quantity}</td>
+                    <td>{record.tailorName}</td>
+                    <td>{record.tailorMobile}</td>
+                    <td>{formatDate(record.dueDate)}</td>
+                    <td>
+                      <span className={`badge ${
+                        record.status === 'Completed' ? 'badge-success' : 
+                        record.status === 'In Progress' ? 'badge-info' : 'badge-warning'
+                      }`}>
+                        {record.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                    No manufacturing assignments found
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Production Timeline */}
-      <div className="content-card">
-        <h2 style={{ marginBottom: '20px', color: '#374151' }}>Production Timeline</h2>
-        <div style={{ padding: '20px', background: '#f9fafb', borderRadius: '8px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ 
-                width: '12px', 
-                height: '12px', 
-                borderRadius: '50%', 
-                background: '#10b981' 
-              }} />
-              <div>
-                <strong>MFG001 - T-Shirt (100 units)</strong>
-                <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#6b7280' }}>75% Complete - Due: Jan 25</p>
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ 
-                width: '12px', 
-                height: '12px', 
-                borderRadius: '50%', 
-                background: '#f59e0b' 
-              }} />
-              <div>
-                <strong>MFG002 - Dress (50 units)</strong>
-                <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#6b7280' }}>40% Complete - Due: Jan 28</p>
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ 
-                width: '12px', 
-                height: '12px', 
-                borderRadius: '50%', 
-                background: '#3b82f6' 
-              }} />
-              <div>
-                <strong>MFG003 - Jeans (75 units)</strong>
-                <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#6b7280' }}>10% Complete - Due: Feb 1</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+
     </div>
   )
 }

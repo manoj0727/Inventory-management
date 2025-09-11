@@ -2,16 +2,23 @@ import { useState, useEffect } from 'react'
 import '../styles/common.css'
 
 interface ManufacturingRecord {
+  _id: string
   id: string
+  productId: string
   productName: string
+  cuttingId: string
   quantity: number
-  fabricUsed: number
+  quantityProduced: number
+  quantityRemaining: number
+  tailorName: string
+  tailorMobile: string
   startDate: string
-  completedDate: string
-  assignedTo: string
+  completedDate?: string
+  dueDate: string
   priority: string
   status: string
-  efficiency: number
+  notes?: string
+  createdAt: string
 }
 
 export default function ManufacturingInventory() {
@@ -20,19 +27,23 @@ export default function ManufacturingInventory() {
   const [filterPriority, setFilterPriority] = useState('')
   const [manufacturingRecords, setManufacturingRecords] = useState<ManufacturingRecord[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [editingRecord, setEditingRecord] = useState<ManufacturingRecord | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
 
   const fetchManufacturingRecords = async () => {
     setIsLoading(true)
     try {
-      // This would be replaced with actual API call when manufacturing API is implemented
-      // const response = await fetch('http://localhost:4000/api/manufacturing-records')
-      // if (response.ok) {
-      //   const records = await response.json()
-      //   setManufacturingRecords(records)
-      // }
-      setManufacturingRecords([])
+      const response = await fetch('http://localhost:4000/api/manufacturing-inventory')
+      if (response.ok) {
+        const records = await response.json()
+        setManufacturingRecords(records)
+      } else {
+        console.error('Failed to fetch manufacturing inventory records')
+        setManufacturingRecords([])
+      }
     } catch (error) {
       console.error('Error fetching manufacturing records:', error)
+      setManufacturingRecords([])
     } finally {
       setIsLoading(false)
     }
@@ -42,29 +53,78 @@ export default function ManufacturingInventory() {
     fetchManufacturingRecords()
   }, [])
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return ''
+    try {
+      const date = new Date(dateString)
+      const day = date.getDate().toString().padStart(2, '0')
+      const month = (date.getMonth() + 1).toString().padStart(2, '0')
+      const year = date.getFullYear()
+      return `${day}/${month}/${year}`
+    } catch (error) {
+      return dateString
+    }
+  }
+
+  const handleEdit = (record: ManufacturingRecord) => {
+    setEditingRecord(record)
+    setShowEditModal(true)
+  }
+
+  const handleDelete = async (record: ManufacturingRecord) => {
+    if (window.confirm(`Are you sure you want to delete manufacturing record ${record.id}?`)) {
+      try {
+        const deleteResponse = await fetch(`http://localhost:4000/api/manufacturing-inventory/${record._id}`, {
+          method: 'DELETE'
+        })
+        
+        if (deleteResponse.ok) {
+          alert('✅ Manufacturing record deleted successfully!')
+          fetchManufacturingRecords()
+        } else {
+          alert('❌ Error deleting manufacturing record. Please try again.')
+        }
+      } catch (error) {
+        console.error('Error deleting manufacturing record:', error)
+        alert('❌ Error deleting manufacturing record. Please try again.')
+      }
+    }
+  }
+
+  const handleSaveEdit = async (updatedRecord: any) => {
+    try {
+      const updateResponse = await fetch(`http://localhost:4000/api/manufacturing-inventory/${editingRecord?._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedRecord)
+      })
+      
+      if (updateResponse.ok) {
+        alert('✅ Manufacturing record updated successfully!')
+        setShowEditModal(false)
+        setEditingRecord(null)
+        fetchManufacturingRecords()
+      } else {
+        alert('❌ Error updating manufacturing record. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error updating manufacturing record:', error)
+      alert('❌ Error updating manufacturing record. Please try again.')
+    }
+  }
+
   const filteredRecords = manufacturingRecords.filter(record => {
     const matchesSearch = record.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           record.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          record.assignedTo.toLowerCase().includes(searchTerm.toLowerCase())
+                          record.tailorName.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = !filterStatus || record.status === filterStatus
     const matchesPriority = !filterPriority || record.priority === filterPriority
     
     return matchesSearch && matchesStatus && matchesPriority
   })
 
-  // Calculate statistics
-  const totalOrders = manufacturingRecords.length
-  const completedOrders = manufacturingRecords.filter(r => r.status === 'Completed').length
-  const inProgressOrders = manufacturingRecords.filter(r => r.status === 'In Progress').length
-  const pendingOrders = manufacturingRecords.filter(r => r.status === 'Pending').length
-  const totalUnitsProduced = manufacturingRecords
-    .filter(r => r.status === 'Completed')
-    .reduce((sum, r) => sum + r.quantity, 0)
-  const averageEfficiency = Math.round(
-    manufacturingRecords
-      .filter(r => r.efficiency > 0)
-      .reduce((sum, r, _, arr) => sum + r.efficiency / arr.length, 0)
-  )
 
   const getStatusBadgeClass = (status: string) => {
     switch(status) {
@@ -93,33 +153,6 @@ export default function ManufacturingInventory() {
         <p>Track all manufacturing orders and production history</p>
       </div>
 
-      {/* Statistics */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <h3>Total Orders</h3>
-          <p className="stat-value">{totalOrders}</p>
-        </div>
-        <div className="stat-card">
-          <h3>Completed</h3>
-          <p className="stat-value">{completedOrders}</p>
-        </div>
-        <div className="stat-card">
-          <h3>In Progress</h3>
-          <p className="stat-value">{inProgressOrders}</p>
-        </div>
-        <div className="stat-card">
-          <h3>Pending</h3>
-          <p className="stat-value">{pendingOrders}</p>
-        </div>
-        <div className="stat-card">
-          <h3>Units Produced</h3>
-          <p className="stat-value">{totalUnitsProduced}</p>
-        </div>
-        <div className="stat-card">
-          <h3>Avg Efficiency</h3>
-          <p className="stat-value">{averageEfficiency}%</p>
-        </div>
-      </div>
 
       {/* Filters */}
       <div className="content-card">
@@ -127,7 +160,7 @@ export default function ManufacturingInventory() {
           <div className="search-box">
             <input
               type="text"
-              placeholder="Search by ID, product, or team..."
+              placeholder="Search by ID, product, cutting ID, or tailor..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -159,9 +192,6 @@ export default function ManufacturingInventory() {
             >
               {isLoading ? 'Refreshing...' : 'Refresh'}
             </button>
-            <button className="btn btn-primary">
-              Export Report
-            </button>
           </div>
         </div>
       </div>
@@ -172,30 +202,29 @@ export default function ManufacturingInventory() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Order ID</th>
+                <th>Manufacturing ID</th>
                 <th>Product</th>
-                <th>Quantity</th>
-                <th>Fabric Used</th>
-                <th>Team</th>
-                <th>Start Date</th>
-                <th>Completed</th>
+                <th>Produced</th>
+                <th>Remaining</th>
+                <th>Tailor</th>
+                <th>Due Date</th>
                 <th>Priority</th>
                 <th>Status</th>
-                <th>Efficiency</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredRecords.length > 0 ? (
                 filteredRecords.map((record) => (
-                  <tr key={record.id}>
+                  <tr key={record._id}>
                     <td style={{ fontWeight: '500' }}>{record.id}</td>
                     <td>{record.productName}</td>
-                    <td>{record.quantity}</td>
-                    <td>{record.fabricUsed}m</td>
-                    <td>{record.assignedTo}</td>
-                    <td>{record.startDate}</td>
-                    <td>{record.completedDate || '-'}</td>
+                    <td>{record.quantityProduced}</td>
+                    <td style={{ color: record.quantityRemaining > 0 ? '#f59e0b' : '#10b981' }}>
+                      {record.quantityRemaining}
+                    </td>
+                    <td>{record.tailorName}</td>
+                    <td>{formatDate(record.dueDate)}</td>
                     <td>
                       <span className={`badge ${getPriorityBadgeClass(record.priority)}`}>
                         {record.priority}
@@ -207,43 +236,17 @@ export default function ManufacturingInventory() {
                       </span>
                     </td>
                     <td>
-                      {record.efficiency > 0 ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ 
-                            width: '60px', 
-                            height: '6px', 
-                            background: '#e5e7eb', 
-                            borderRadius: '3px',
-                            overflow: 'hidden'
-                          }}>
-                            <div style={{ 
-                              width: `${record.efficiency}%`, 
-                              height: '100%', 
-                              background: record.efficiency > 80 ? '#10b981' : record.efficiency > 50 ? '#f59e0b' : '#ef4444'
-                            }} />
-                          </div>
-                          <span style={{ fontSize: '12px' }}>{record.efficiency}%</span>
-                        </div>
-                      ) : '-'}
-                    </td>
-                    <td>
                       <div className="action-buttons">
-                        <button className="action-btn view">View</button>
-                        {record.status !== 'Completed' && (
-                          <button className="action-btn edit">Update</button>
-                        )}
+                        <button className="action-btn edit" onClick={() => handleEdit(record)}>✏️</button>
+                        <button className="action-btn delete" onClick={() => handleDelete(record)}>🗑️</button>
                       </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={11} style={{ textAlign: 'center', padding: '40px' }}>
-                    <div className="empty-state">
-                      <div className="empty-state-icon">🏭</div>
-                      <h3>No manufacturing records found</h3>
-                      <p>Try adjusting your search or filters</p>
-                    </div>
+                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                    {isLoading ? 'Loading manufacturing inventory...' : 'No manufacturing inventory records found'}
                   </td>
                 </tr>
               )}
@@ -252,56 +255,130 @@ export default function ManufacturingInventory() {
         </div>
       </div>
 
-      {/* Production Summary by Team */}
-      <div className="content-card">
-        <h2 style={{ marginBottom: '20px', color: '#374151' }}>Team Performance Summary</h2>
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Team</th>
-                <th>Orders Completed</th>
-                <th>Orders In Progress</th>
-                <th>Total Units Produced</th>
-                <th>Average Efficiency</th>
-                <th>Total Fabric Used</th>
-              </tr>
-            </thead>
-            <tbody>
-              {['Team A', 'Team B', 'Team C'].map(team => {
-                const teamRecords = manufacturingRecords.filter(r => r.assignedTo === team)
-                const completed = teamRecords.filter(r => r.status === 'Completed').length
-                const inProgress = teamRecords.filter(r => r.status === 'In Progress').length
-                const unitsProduced = teamRecords
-                  .filter(r => r.status === 'Completed')
-                  .reduce((sum, r) => sum + r.quantity, 0)
-                const avgEfficiency = teamRecords.length > 0 
-                  ? Math.round(teamRecords.reduce((sum, r) => sum + r.efficiency, 0) / teamRecords.length)
-                  : 0
-                const totalFabric = teamRecords.reduce((sum, r) => sum + r.fabricUsed, 0)
-                
-                return (
-                  <tr key={team}>
-                    <td style={{ fontWeight: '500' }}>{team}</td>
-                    <td>{completed}</td>
-                    <td>{inProgress}</td>
-                    <td>{unitsProduced}</td>
-                    <td>
-                      <span style={{ 
-                        color: avgEfficiency > 80 ? '#10b981' : avgEfficiency > 50 ? '#f59e0b' : '#ef4444',
-                        fontWeight: '500'
-                      }}>
-                        {avgEfficiency}%
-                      </span>
-                    </td>
-                    <td>{totalFabric}m</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+      {/* Edit Modal */}
+      {showEditModal && editingRecord && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '30px',
+            borderRadius: '10px',
+            width: '90%',
+            maxWidth: '500px',
+            maxHeight: '90vh',
+            overflow: 'auto'
+          }}>
+            <h2 style={{ marginBottom: '20px', color: '#374151' }}>Edit Manufacturing Record</h2>
+            <form onSubmit={(e) => {
+              e.preventDefault()
+              const formData = new FormData(e.target as HTMLFormElement)
+              const updatedRecord = {
+                quantityProduced: parseInt(formData.get('quantityProduced') as string),
+                tailorName: formData.get('tailorName') as string,
+                dueDate: formData.get('dueDate') as string,
+                priority: formData.get('priority') as string,
+                status: formData.get('status') as string
+              }
+              handleSaveEdit(updatedRecord)
+            }}>
+              <div className="form-group">
+                <label htmlFor="quantityProduced">Quantity Produced *</label>
+                <input
+                  type="number"
+                  id="quantityProduced"
+                  name="quantityProduced"
+                  defaultValue={editingRecord.quantityProduced}
+                  min="0"
+                  max={editingRecord.quantity}
+                  required
+                />
+                <small style={{ color: '#6b7280' }}>
+                  Maximum: {editingRecord.quantity} (Total ordered)
+                </small>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="tailorName">Tailor Name *</label>
+                <input
+                  type="text"
+                  id="tailorName"
+                  name="tailorName"
+                  defaultValue={editingRecord.tailorName}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="dueDate">Due Date *</label>
+                <input
+                  type="date"
+                  id="dueDate"
+                  name="dueDate"
+                  defaultValue={editingRecord.dueDate}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="priority">Priority *</label>
+                <select
+                  id="priority"
+                  name="priority"
+                  defaultValue={editingRecord.priority}
+                  required
+                >
+                  <option value="Low">Low</option>
+                  <option value="Normal">Normal</option>
+                  <option value="High">High</option>
+                  <option value="Urgent">Urgent</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="status">Status *</label>
+                <select
+                  id="status"
+                  name="status"
+                  defaultValue={editingRecord.status}
+                  required
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              <div className="btn-group">
+                <button type="submit" className="btn btn-primary">
+                  Save Changes
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowEditModal(false)
+                    setEditingRecord(null)
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
+      )}
+
     </div>
   )
 }
