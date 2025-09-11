@@ -11,11 +11,10 @@ services:
         value: production
       - key: PORT
         value: 10000
-    # Add your environment variables here
-    # - key: MONGODB_URI
-    #   value: your_mongodb_connection_string
-    # - key: JWT_SECRET
-    #   value: your_jwt_secret
+      - key: MONGODB_URI
+        sync: false
+    # IMPORTANT: You MUST add your MongoDB connection string in Render Dashboard
+    # Go to your service -> Environment -> Add MONGODB_URI with your MongoDB Atlas connection string
 
   # Frontend Service  
   - type: web
