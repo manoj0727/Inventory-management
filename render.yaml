@@ -4,8 +4,9 @@ services:
     name: inventory-backend
     env: node
     plan: free
-    buildCommand: cd backend && npm install
-    startCommand: cd backend && npm start
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -22,8 +23,9 @@ services:
     name: inventory-frontend
     env: node
     plan: free
-    buildCommand: cd frontend && npm install
-    startCommand: cd frontend && npm start
+    rootDir: frontend
+    buildCommand: npm install
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
