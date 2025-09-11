@@ -103,8 +103,12 @@ async function startServer() {
   await apolloServer.start()
 
   // Express middleware
+  const allowedOrigins = process.env.NODE_ENV === 'production' 
+    ? [process.env.CLIENT_URL || 'https://inventory-client.onrender.com']
+    : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173']
+    
   app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
+    origin: allowedOrigins,
     credentials: true,
   }))
   

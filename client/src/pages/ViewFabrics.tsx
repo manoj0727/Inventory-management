@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import '../styles/common.css'
+import { API_URL } from '@/config/api'
 
 interface Fabric {
   _id: string
@@ -36,7 +37,7 @@ export default function ViewFabrics() {
 
   const fetchFabrics = async () => {
     try {
-      const response = await fetch('http://localhost:4000/api/fabrics')
+      const response = await fetch(`${API_URL}/api/fabrics`)
       if (response.ok) {
         const data = await response.json()
         setFabrics(data)

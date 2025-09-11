@@ -58,7 +58,7 @@ export default function QRScanner() {
         setScanHistory(JSON.parse(savedHistory))
       }
     } catch (error) {
-      console.error('Error fetching scan history:', error)
+      // Error fetching scan history
     } finally {
       setIsLoading(false)
     }
@@ -90,7 +90,7 @@ export default function QRScanner() {
         setSelectedCamera(backCamera?.id || cameras[0].id)
       }
     } catch (error) {
-      console.error('Error getting camera devices:', error)
+      // Error getting camera devices
     }
   }
 
@@ -122,7 +122,7 @@ export default function QRScanner() {
         return null
       }
     } catch (error) {
-      console.error('Error looking up manufacturing item:', error)
+      // Error looking up manufacturing item
     }
     return null
   }
@@ -183,7 +183,7 @@ export default function QRScanner() {
       
       return scannedItem
     } catch (error) {
-      console.error('Error processing scanned data:', error)
+      // Error processing scanned data
       return null
     }
   }
@@ -227,7 +227,7 @@ export default function QRScanner() {
         videoRef.current,
         async (result) => {
           // Handle successful scan
-          console.log('QR Code detected:', result.data)
+          // QR Code detected
           const scannedItem = await processScannedData(result.data)
           if (scannedItem) {
             if (scannedItem.type === 'UNKNOWN') {
@@ -262,7 +262,7 @@ export default function QRScanner() {
       setAvailableCameras(cameras)
       
     } catch (error) {
-      console.error('Error accessing camera:', error)
+      // Error accessing camera
       alert('❌ Could not access camera. Please check permissions and try again.')
       setScanMode(false)
     } finally {

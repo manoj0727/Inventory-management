@@ -56,11 +56,8 @@ export default function Employees() {
   // Set up video when showCamera and stream are ready
   useEffect(() => {
     if (showCamera && stream && videoRef.current) {
-      console.log('Setting up video from useEffect')
       videoRef.current.srcObject = stream
-      videoRef.current.play().catch(err => {
-        console.log('Play from useEffect failed:', err)
-      })
+      videoRef.current.play().catch(() => {})
     }
   }, [showCamera, stream])
 
@@ -73,7 +70,7 @@ export default function Employees() {
         setEmployees(data)
       }
     } catch (error) {
-      console.error('Error fetching employees:', error)
+      // Error fetching employees
     } finally {
       setIsLoading(false)
     }
@@ -93,13 +90,13 @@ export default function Employees() {
       if (navigator.permissions && navigator.permissions.query) {
         try {
           const permissionStatus = await navigator.permissions.query({ name: 'camera' as PermissionName })
-          console.log('Camera permission status:', permissionStatus.state)
+          // Camera permission status checked
           
           if (permissionStatus.state === 'denied') {
             throw new Error('Camera permission denied. Please enable camera access in your browser settings.')
           }
         } catch (e) {
-          console.log('Could not check permission status:', e)
+          // Could not check permission status
         }
       }
 
@@ -116,11 +113,11 @@ export default function Employees() {
       
       for (const constraints of constraintsList) {
         try {
-          console.log('Trying constraints:', constraints)
+          // Trying constraints
           mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
           if (mediaStream) break
         } catch (e) {
-          console.log('Failed with constraints:', constraints, e)
+          // Failed with constraints
         }
       }
       
@@ -133,27 +130,27 @@ export default function Employees() {
       // Ensure video element is ready and set stream
       const setupVideo = () => {
         if (videoRef.current && mediaStream) {
-          console.log('Setting up video element')
+          // Setting up video element
           videoRef.current.srcObject = mediaStream
           
           // Add event listeners for debugging
           videoRef.current.onloadedmetadata = () => {
-            console.log('Video metadata loaded')
+            // Video metadata loaded
             videoRef.current?.play().catch(err => {
-              console.error('Play error:', err)
+              // Play error
             })
           }
           
           videoRef.current.onplay = () => {
-            console.log('Video started playing')
+            // Video started playing
           }
           
           // Force play
           videoRef.current.play().catch(err => {
-            console.warn('Initial play failed, will retry:', err)
+            // Initial play failed, will retry
             // Retry play after a short delay
             setTimeout(() => {
-              videoRef.current?.play().catch(e => console.error('Retry play failed:', e))
+              videoRef.current?.play().catch(() => {})
             }, 500)
           })
         } else {
@@ -167,7 +164,7 @@ export default function Employees() {
       setTimeout(setupVideo, 200)
       
     } catch (error: any) {
-      console.error('Camera error:', error)
+      // Camera error
       setShowCamera(false)
       
       let errorMessage = 'Could not access camera. '
@@ -291,11 +288,11 @@ export default function Employees() {
         resetForm()
       } else {
         const error = await response.json()
-        console.error('Server error:', error)
+        // Server error
         alert(error.message || 'Failed to save employee. Please check all fields.')
       }
     } catch (error) {
-      console.error('Error saving employee:', error)
+      // Error saving employee
       alert('Error saving employee. Please try again.')
     } finally {
       setIsLoading(false)

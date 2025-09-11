@@ -1,50 +1,117 @@
 # Inventory Management System
 
-## Project Structure
+A modern full-stack inventory management system with real-time tracking, employee management, and manufacturing workflow.
+
+## 🚀 Features
+
+- **Inventory Management** - Track fabrics, materials, and products
+- **Employee Portal** - Attendance tracking with photo verification
+- **Manufacturing** - Track cutting and production processes
+- **QR Code System** - Generate and scan product QR codes
+- **Real-time Dashboard** - Live statistics and metrics
+- **Tailor Management** - Manage tailors and work assignments
+
+## 📁 Project Structure
 
 ```
 inventory-management/
-├── frontend/           # Frontend application (HTML/CSS/JS)
-│   ├── index.html
-│   ├── login.html
-│   ├── employee-portal.html
-│   ├── css/
-│   ├── js/
-│   ├── assets/
-│   ├── data/
-│   ├── pages/
-│   └── fabric-tracking-module/
-├── backend/           # Backend API + Static server
-│   ├── server.js      # Serves both API and frontend
-│   └── package.json
-└── package.json       # Root package file
+├── client/                # React + TypeScript frontend
+│   ├── src/
+│   │   ├── pages/        # Page components
+│   │   ├── components/   # Reusable components
+│   │   ├── stores/       # State management
+│   │   └── config/       # Configuration
+│   └── dist/            # Production build
+├── server/               # Node.js + Express backend
+│   ├── src/
+│   │   ├── models/      # MongoDB schemas
+│   │   ├── routes/      # API endpoints
+│   │   └── graphql/     # GraphQL setup
+│   └── dist/           # Compiled TypeScript
+├── render.yaml          # Render deployment config
+└── DEPLOY.md           # Deployment guide
 ```
 
-## Quick Start
+## 🛠️ Tech Stack
 
-1. **Install all dependencies:**
+**Frontend:**
+- React 18 + TypeScript
+- Vite
+- TailwindCSS
+- Apollo Client
+
+**Backend:**
+- Node.js + Express
+- MongoDB + Mongoose
+- GraphQL + Apollo Server
+- JWT Authentication
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18+
+- MongoDB
+- Git
+
+### Local Development
+
+1. **Clone and install:**
 ```bash
-npm run install:all
+git clone https://github.com/YOUR_USERNAME/inventory-management.git
+cd inventory-management
 ```
 
-2. **Start the application:**
+2. **Setup Backend:**
 ```bash
-npm start
+cd server
+npm install
+cp .env.example .env
+# Edit .env with your MongoDB URI
+npm run dev
 ```
 
-The application runs on a single port:
-- **URL:** http://localhost:3000
-- **API Endpoints:** http://localhost:3000/api/*
-- **Frontend:** Served from the same port
+3. **Setup Frontend:**
+```bash
+cd client
+npm install
+cp .env.example .env
+npm run dev
+```
 
-## Available Scripts
+4. **Access:**
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:4000
+- GraphQL: http://localhost:4000/graphql
 
-- `npm start` - Start the application (production)
-- `npm run dev` - Development mode with auto-reload
-- `npm run install:all` - Install all dependencies
+## 🌐 Deployment on Render
 
-## Technologies Used
+### Easy Deploy with render.yaml
 
-- **Frontend:** HTML, CSS, JavaScript (served via http-server)
-- **Backend:** Node.js, Express, MongoDB
-- **Tools:** Concurrently for parallel execution
+1. Push code to GitHub
+2. Update `render.yaml` with your repo URL
+3. Go to Render Dashboard → New Blueprint
+4. Connect repository
+5. Deploy automatically
+
+See [DEPLOY.md](./DEPLOY.md) for detailed instructions.
+
+## 🔐 Environment Variables
+
+**Backend (.env):**
+```
+PORT=4000
+NODE_ENV=production
+MONGODB_URI=mongodb://...
+JWT_SECRET=<generated>
+SESSION_SECRET=<generated>
+CLIENT_URL=https://your-frontend.onrender.com
+```
+
+**Frontend (.env):**
+```
+VITE_API_URL=https://your-backend.onrender.com
+```
+
+## 📝 License
+
+MIT License - see LICENSE file for details

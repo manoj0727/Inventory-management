@@ -52,10 +52,107 @@ router.get('/today/:employeeId', async (req, res) => {
   }
 });
 
+// Check attendance for specific date
+router.get('/check/:employeeId/:date', async (req, res) => {
+  try {
+    const { employeeId, date } = req.params;
+    const queryDate = new Date(date);
+    queryDate.setHours(0, 0, 0, 0);
+    const nextDay = new Date(queryDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    
+    const attendance = await Attendance.findOne({
+      employeeId,
+      date: { $gte: queryDate, $lt: nextDay }
+    });
+    
+    res.json({ attendance });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Mark attendance (simplified for employee portal)
+router.post('/mark', async (req, res) => {
+  try {
+    const { employeeId, employeeName, date, status, checkIn, notes, photo } = req.body;
+    
+    // Get employee to verify
+    const employee = await Employee.findOne({ 
+      $or: [
+        { employeeId: employeeId },
+        { username: employeeId }
+      ]
+    });
+    
+    if (!employee) {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+    
+    // Photo is required
+    if (!photo) {
+      return res.status(400).json({ message: 'Photo is required to mark attendance' });
+    }
+    
+    // Check if already marked for this date
+    const queryDate = new Date(date);
+    queryDate.setHours(0, 0, 0, 0);
+    const nextDay = new Date(queryDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    
+    const existingAttendance = await Attendance.findOne({
+      employeeId,
+      date: { $gte: queryDate, $lt: nextDay }
+    });
+    
+    if (existingAttendance) {
+      return res.status(400).json({ message: 'Attendance already marked for this date' });
+    }
+    
+    const attendance = new Attendance({
+      employeeId,
+      employeeName: employee.name,
+      date: queryDate,
+      checkIn: checkIn ? new Date(checkIn) : (status === 'present' || status === 'late' ? new Date() : null),
+      status,
+      photo: photo, // Use the captured photo from request
+      notes
+    });
+    
+    await attendance.save();
+    res.status(201).json({ attendance, message: `Attendance marked as ${status}` });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Checkout by attendance ID
+router.put('/checkout/:id', async (req, res) => {
+  try {
+    const attendance = await Attendance.findById(req.params.id);
+    
+    if (!attendance) {
+      return res.status(404).json({ message: 'Attendance record not found' });
+    }
+    
+    if (attendance.checkOut) {
+      return res.status(400).json({ message: 'Already checked out' });
+    }
+    
+    attendance.checkOut = new Date();
+    attendance.calculateWorkHours();
+    await attendance.save();
+    
+    res.json({ attendance, message: 'Checked out successfully' });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 // Mark attendance (check-in)
 router.post('/checkin', async (req, res) => {
   try {
-    const { employeeId, photo, location } = req.body;
+    const { employeeId, location } = req.body;
     
     // Get employee details - check by employeeId or username
     const employee = await Employee.findOne({ 
@@ -85,13 +182,13 @@ router.post('/checkin', async (req, res) => {
       return res.status(400).json({ message: 'Already checked in today' });
     }
     
-    // Create new attendance record
+    // Create new attendance record with employee's stored photo
     const attendance = new Attendance({
       employeeId: actualEmployeeId,
       employeeName: employee.name,
       date: today,
       checkIn: new Date(),
-      photo,
+      photo: employee.photo, // Use employee's stored photo
       location,
       status: new Date().getHours() > 9 ? 'late' : 'present'
     });
