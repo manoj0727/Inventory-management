@@ -19,11 +19,8 @@ import Manufacturing from './pages/Manufacturing'
 import ManufacturingInventory from './pages/ManufacturingInventory'
 import Employees from './pages/Employees'
 import TailorManagement from './pages/TailorManagement'
-import QRGenerator from './pages/QRGenerator'
 import GenerateQR from './pages/GenerateQR'
 import QRScanner from './pages/QRScanner'
-import Reports from './pages/Reports'
-import Settings from './pages/Settings'
 
 function App() {
   const isAuthenticated = useAuthStore(state => state.isAuthenticated)
@@ -50,10 +47,7 @@ function App() {
           <Route path="/generate-qr" element={<GenerateQR />} />
           <Route path="/employees" element={<Employees />} />
           <Route path="/tailor-management" element={<TailorManagement />} />
-          <Route path="/qr-generator" element={<QRGenerator />} />
           <Route path="/qr-scanner" element={<QRScanner />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>
       

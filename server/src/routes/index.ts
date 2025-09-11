@@ -7,11 +7,17 @@ import manufacturingInventoryRoutes from './manufacturingInventory'
 
 const router = Router()
 
+// Import JS routes for employees and attendance
+const employeesRoutes = require('./employees')
+const attendanceRoutes = require('./attendance')
+
 router.use('/auth', authRoutes)
 router.use('/fabrics', fabricRoutes)
 router.use('/cutting-records', cuttingRecordsRoutes)
 router.use('/manufacturing-orders', manufacturingOrdersRoutes)
 router.use('/manufacturing-inventory', manufacturingInventoryRoutes)
+router.use('/employees', employeesRoutes)
+router.use('/attendance', attendanceRoutes)
 
 // Health check
 router.get('/health', (req, res) => {

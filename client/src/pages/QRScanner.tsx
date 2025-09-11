@@ -66,23 +66,8 @@ export default function QRScanner() {
 
   useEffect(() => {
     fetchScanHistory()
-    // Request camera permissions and get devices
-    requestCameraPermission()
+    // Don't auto-start camera, wait for user action
   }, [])
-
-  const requestCameraPermission = async () => {
-    try {
-      // Request permission first
-      await navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-        // Stop the stream immediately after getting permission
-        stream.getTracks().forEach(track => track.stop())
-      })
-      // Then get camera devices
-      getCameraDevices()
-    } catch (error) {
-      console.log('Camera permission not granted yet')
-    }
-  }
 
   // Get available camera devices
   const getCameraDevices = async () => {
@@ -222,36 +207,22 @@ export default function QRScanner() {
     try {
       setIsLoading(true)
       
-      // First try with specific device
-      let constraints: MediaStreamConstraints = {
-        video: true
+      // Stop any existing stream first
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop())
       }
       
-      if (deviceId || selectedCamera) {
-        constraints = {
-          video: {
-            deviceId: { exact: deviceId || selectedCamera }
-          }
-        }
-      } else {
-        // Fallback to simpler constraints
-        constraints = {
-          video: {
-            facingMode: facingMode
-          }
-        }
+      // Simple constraints
+      const constraints: MediaStreamConstraints = {
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
       }
       
-      // Try to get the stream
-      let mediaStream: MediaStream | null = null
-      
-      try {
-        mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
-      } catch (err) {
-        // If specific constraints fail, try with basic video
-        console.log('Trying with basic video constraints...')
-        mediaStream = await navigator.mediaDevices.getUserMedia({ video: true })
-      }
+      // Get the stream
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
       
       if (!mediaStream) {
         throw new Error('Could not get media stream')
@@ -259,30 +230,37 @@ export default function QRScanner() {
       
       setStream(mediaStream)
       
+      // Set video source and ensure it plays
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream
-        videoRef.current.onloadedmetadata = () => {
-          if (videoRef.current) {
-            videoRef.current.play().catch(err => {
-              console.error('Error playing video:', err)
-            })
-          }
+        // Wait a bit for stream to be ready
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        try {
+          await videoRef.current.play()
+          console.log('Camera started successfully')
+        } catch (playError) {
+          console.error('Error playing video:', playError)
         }
-        // Also try to play immediately
-        videoRef.current.play().catch(err => {
-          console.log('Waiting for metadata to play...')
-        })
       }
       
       // Re-enumerate devices after getting permission
-      const devices = await navigator.mediaDevices.enumerateDevices()
-      const videoDevices = devices.filter(device => device.kind === 'videoinput')
-      setAvailableCameras(videoDevices)
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices()
+        const videoDevices = devices.filter(device => device.kind === 'videoinput')
+        setAvailableCameras(videoDevices)
+        if (videoDevices.length > 0 && !selectedCamera) {
+          setSelectedCamera(videoDevices[0].deviceId)
+        }
+      } catch (err) {
+        console.log('Could not enumerate devices:', err)
+      }
       
       setScanMode(true)
     } catch (error) {
       console.error('Error accessing camera:', error)
       alert('❌ Could not access camera. Please check permissions and try again.')
+      setScanMode(false)
     } finally {
       setIsLoading(false)
     }
@@ -296,10 +274,14 @@ export default function QRScanner() {
     setScanMode(false)
   }
 
-  const handleCameraScan = () => {
+  const handleCameraScan = async () => {
     if (scanMode) {
       stopCamera()
     } else {
+      // Get camera devices first if not already done
+      if (availableCameras.length === 0) {
+        await getCameraDevices()
+      }
       startCamera()
     }
   }
@@ -385,13 +367,14 @@ export default function QRScanner() {
                     width: '100%',
                     height: '350px',
                     borderRadius: '8px',
-                    background: '#1f2937',
+                    background: 'linear-gradient(45deg, #1f2937 25%, #374151 25%, #374151 50%, #1f2937 50%, #1f2937 75%, #374151 75%, #374151)',
+                    backgroundSize: '20px 20px',
                     objectFit: 'cover',
-                    display: 'block'
+                    display: 'block',
                   }}
-                  autoPlay
-                  playsInline
-                  muted
+                  autoPlay={true}
+                  playsInline={true}
+                  muted={true}
                 />
                 <canvas
                   ref={canvasRef}
