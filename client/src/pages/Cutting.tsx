@@ -47,6 +47,8 @@ export default function Cutting() {
   const [fabrics, setFabrics] = useState<Fabric[]>([])
   const [selectedFabric, setSelectedFabric] = useState<Fabric | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [recentCuttingRecords, setRecentCuttingRecords] = useState<any[]>([])
+  const [isLoadingRecords, setIsLoadingRecords] = useState(false)
   
   const generateCuttingId = (productName: string, color: string) => {
     const productCode = productName.substring(0, 3).toUpperCase()
@@ -71,6 +73,23 @@ export default function Cutting() {
       }
     } catch (error) {
       console.error('Error fetching fabrics:', error)
+    }
+  }
+
+  const fetchRecentCuttingRecords = async () => {
+    setIsLoadingRecords(true)
+    try {
+      const response = await fetch('http://localhost:4000/api/cutting-records')
+      if (response.ok) {
+        const records = await response.json()
+        // Get the 5 most recent records
+        const recentRecords = records.slice(0, 5)
+        setRecentCuttingRecords(recentRecords)
+      }
+    } catch (error) {
+      console.error('Error fetching recent cutting records:', error)
+    } finally {
+      setIsLoadingRecords(false)
     }
   }
 
@@ -107,6 +126,7 @@ export default function Cutting() {
 
   useEffect(() => {
     fetchFabrics()
+    fetchRecentCuttingRecords()
   }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -223,8 +243,9 @@ export default function Cutting() {
         })
         setSelectedFabric(null)
         
-        // Refresh fabric list
+        // Refresh fabric list and recent records
         fetchFabrics()
+        fetchRecentCuttingRecords()
       } else {
         alert('❌ Error updating fabric inventory. Please try again.')
       }
@@ -455,11 +476,34 @@ export default function Cutting() {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-                  No cutting records found
-                </td>
-              </tr>
+              {isLoadingRecords ? (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                    Loading recent records...
+                  </td>
+                </tr>
+              ) : recentCuttingRecords.length > 0 ? (
+                recentCuttingRecords.map((record) => (
+                  <tr key={record._id}>
+                    <td style={{ fontWeight: '500' }}>{record.id}</td>
+                    <td>{record.fabricType} - {record.fabricColor}</td>
+                    <td>{record.productName}</td>
+                    <td>{record.piecesCount}</td>
+                    <td>{record.totalSquareMetersUsed} sq.m</td>
+                    <td>{record.cuttingEmployee}</td>
+                    <td>{record.date}</td>
+                    <td>
+                      <span className="badge badge-success">{record.status}</span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                    No cutting records found
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

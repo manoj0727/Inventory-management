@@ -27,6 +27,19 @@ export default function CuttingInventory() {
   const [editingRecord, setEditingRecord] = useState<CuttingRecord | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return ''
+    try {
+      const date = new Date(dateString)
+      const day = date.getDate().toString().padStart(2, '0')
+      const month = (date.getMonth() + 1).toString().padStart(2, '0')
+      const year = date.getFullYear()
+      return `${day}/${month}/${year}`
+    } catch (error) {
+      return dateString // Return original if parsing fails
+    }
+  }
+
   const generateCuttingId = (productName: string, color: string) => {
     const productCode = productName.substring(0, 3).toUpperCase()
     const colorCode = color.substring(0, 2).toUpperCase()
@@ -149,7 +162,6 @@ export default function CuttingInventory() {
             <thead>
               <tr>
                 <th>Cutting ID</th>
-                <th>Product ID</th>
                 <th>Product Name</th>
                 <th>Fabric</th>
                 <th>Color</th>
@@ -166,14 +178,13 @@ export default function CuttingInventory() {
                 filteredRecords.map((record) => (
                   <tr key={record.id}>
                     <td style={{ fontWeight: '500' }}>{record.id}</td>
-                    <td>{record.productId}</td>
                     <td>{record.productName}</td>
                     <td>{record.fabricType}</td>
                     <td>{record.fabricColor}</td>
                     <td>{record.piecesCount}</td>
                     <td>{record.totalSquareMetersUsed} sq.m</td>
                     <td>{record.cuttingEmployee}</td>
-                    <td>{record.date}</td>
+                    <td>{formatDate(record.date)}</td>
                     <td>
                       <span className="badge badge-success">{record.status}</span>
                     </td>
@@ -187,7 +198,7 @@ export default function CuttingInventory() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={11} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     {isLoading ? 'Loading cutting records...' : 'No cutting records found'}
                   </td>
                 </tr>

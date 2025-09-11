@@ -32,6 +32,7 @@ export default function Layout() {
     { path: '/inventory', name: 'Fabric Inventory', icon: CubeIcon },
     { path: '/cutting', name: 'Cutting', icon: ClipboardDocumentListIcon },
     { path: '/cutting-inventory', name: 'Cutting Inventory', icon: ChartBarIcon },
+    { path: '/manufacturing', name: 'Manufacturing', icon: ChartBarIcon },
     { path: '/manufacturing-inventory', name: 'Manufacturing Inventory', icon: ChartBarIcon },
     { path: '/qr-scanner', name: 'QR Scanner', icon: QrCodeIcon },
     { path: '/settings', name: 'Settings', icon: Cog6ToothIcon },
@@ -40,7 +41,6 @@ export default function Layout() {
   // Admin-only menu items
   const adminOnlyItems = [
     { path: '/admin-dashboard', name: 'Admin Dashboard', icon: HomeIcon },
-    { path: '/manufacturing', name: 'Manufacturing', icon: ChartBarIcon },
     { path: '/employees', name: 'Employees', icon: UsersIcon },
     { path: '/tailor-management', name: 'Tailor Management', icon: UsersIcon },
     { path: '/qr-generator', name: 'QR Generator', icon: QrCodeIcon },
