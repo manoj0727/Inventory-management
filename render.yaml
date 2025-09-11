@@ -1,62 +1,22 @@
 services:
-  # Backend API Service
   - type: web
-    name: inventory-api
+    name: inventory-management
     runtime: node
-    repo: https://github.com/manoj0727/inventory-management # Update with your repo
-    buildCommand: cd server && npm install
-    startCommand: cd server && npm start
-    rootDir: .
+    buildCommand: npm run install:all && npm run build
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
+      - key: MONGODB_URI
+        fromDatabase:
+          name: inventory-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
       - key: PORT
         value: 4000
-      - key: MONGODB_URI
-        sync: false # Set this in Render dashboard
-      - key: JWT_SECRET
-        generateValue: true # Render will generate a secure random value
-      - key: SESSION_SECRET
-        generateValue: true # Render will generate a secure random value
       - key: CLIENT_URL
         fromService:
           type: web
-          name: inventory-client
+          name: inventory-management
           property: url
-    healthCheckPath: /api/health
-    
-  # Frontend Client Service  
-  - type: web
-    name: inventory-client
-    runtime: static
-    repo: https://github.com/manoj0727/inventory-management # Update with your repo
-    buildCommand: cd client && npm install && npm run build
-    staticPublishPath: ./client/dist
-    rootDir: .
-    envVars:
-      - key: VITE_API_URL
-        fromService:
-          type: web
-          name: inventory-api
-          property: url
-    headers:
-      - path: /*
-        name: X-Frame-Options
-        value: SAMEORIGIN
-      - path: /*
-        name: X-Content-Type-Options
-        value: nosniff
-      - path: /*
-        name: X-XSS-Protection
-        value: 1; mode=block
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-
-# MongoDB Database (optional - you can use MongoDB Atlas instead)
-databases:
-  - name: inventory-db
-    databaseName: inventory_management
-    user: inventory_user
-    plan: free # or 'starter' for production
