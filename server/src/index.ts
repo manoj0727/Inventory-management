@@ -102,38 +102,9 @@ const apolloServer = new ApolloServer({
 async function startServer() {
   await apolloServer.start()
 
-  // Express middleware
-  const allowedOrigins = process.env.NODE_ENV === 'production' 
-    ? [
-        process.env.CLIENT_URL,
-        'https://inventory-man.netlify.app',
-        'https://inventory-client.onrender.com',
-        'https://*.netlify.app'
-      ].filter(Boolean)
-    : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173']
-    
+  // Express middleware - Temporary fix for CORS
   app.use(cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true)
-      
-      // Check if origin matches allowed origins or patterns
-      const isAllowed = allowedOrigins.some(allowed => {
-        if (allowed.includes('*')) {
-          // Handle wildcard domains
-          const pattern = allowed.replace('*', '.*')
-          return new RegExp(pattern).test(origin)
-        }
-        return allowed === origin
-      })
-      
-      if (isAllowed) {
-        callback(null, true)
-      } else {
-        console.log(`CORS blocked origin: ${origin}`)
-        callback(null, false)
-      }
-    },
+    origin: true, // Allow all origins temporarily
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
