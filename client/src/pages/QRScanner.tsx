@@ -214,6 +214,18 @@ export default function QRScanner() {
     try {
       setIsLoading(true)
       
+      // First, check if we have camera permissions
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'environment' } 
+        })
+        // Stop the test stream immediately
+        stream.getTracks().forEach(track => track.stop())
+      } catch (permError) {
+        console.error('Permission check failed:', permError)
+        throw permError
+      }
+      
       // Stop any existing scanner first
       if (qrScanner) {
         qrScanner.destroy()
@@ -262,9 +274,23 @@ export default function QRScanner() {
       const cameras = await QrScanner.listCameras(true)
       setAvailableCameras(cameras)
       
-    } catch (error) {
+    } catch (error: any) {
       // Error accessing camera
-      alert('❌ Could not access camera. Please check permissions and try again.')
+      console.error('Camera error:', error)
+      
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        alert('❌ Camera permission denied. Please allow camera access in your browser settings.')
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        alert('❌ No camera found. Please ensure your device has a camera.')
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        alert('❌ Camera is already in use by another application.')
+      } else if (error.name === 'OverconstrainedError' || error.name === 'ConstraintNotSatisfiedError') {
+        alert('❌ Camera constraints could not be satisfied.')
+      } else if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+        alert('❌ Camera access requires HTTPS. Please use a secure connection.')
+      } else {
+        alert(`❌ Could not access camera: ${error.message || 'Unknown error'}`)
+      }
       setScanMode(false)
     } finally {
       setIsLoading(false)
@@ -370,6 +396,9 @@ export default function QRScanner() {
               }}>
                 <video
                   ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
                   style={{
                     width: '100%',
                     height: '350px',
