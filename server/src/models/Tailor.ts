@@ -1,6 +1,19 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
-const tailorSchema = new mongoose.Schema({
+export interface ITailor extends Document {
+  tailorId: string;
+  name: string;
+  mobile: string;
+  address: string;
+  work: string;
+  status: string;
+  joiningDate: Date;
+  totalOrders?: number;
+  completedOrders?: number;
+  pendingOrders?: number;
+}
+
+const tailorSchema = new Schema<ITailor>({
   tailorId: {
     type: String,
     unique: true
@@ -63,4 +76,6 @@ tailorSchema.pre('save', async function(next) {
   next();
 });
 
-export default mongoose.model('Tailor', tailorSchema);
+const Tailor = mongoose.model<ITailor>('Tailor', tailorSchema);
+export { Tailor };
+export default Tailor;

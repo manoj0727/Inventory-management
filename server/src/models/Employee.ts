@@ -1,7 +1,29 @@
-import mongoose from 'mongoose';
-const bcrypt = require('bcryptjs');
+import mongoose, { Document, Schema } from 'mongoose';
+import bcrypt from 'bcryptjs';
 
-const employeeSchema = new mongoose.Schema({
+export interface IEmployee extends Document {
+  username: string;
+  password: string;
+  name: string;
+  email: string;
+  mobile: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
+  };
+  salary?: number;
+  work: string;
+  photo?: string;
+  employeeId: string;
+  role: 'admin' | 'employee';
+  joiningDate: Date;
+  status: 'active' | 'inactive' | 'terminated';
+  comparePassword(candidatePassword: string): Promise<boolean>;
+}
+
+const employeeSchema = new Schema<IEmployee>({
   username: {
     type: String,
     required: true,
@@ -98,4 +120,6 @@ employeeSchema.methods.comparePassword = async function(candidatePassword: strin
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-export default mongoose.model('Employee', employeeSchema);
+const Employee = mongoose.model<IEmployee>('Employee', employeeSchema);
+export { Employee };
+export default Employee;

@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-const Tailor = require('../models/Tailor');
+import { Tailor } from '../models/Tailor';
 const router = express.Router();
 
 // Get all tailors

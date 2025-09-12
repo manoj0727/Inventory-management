@@ -408,9 +408,6 @@ export default function QRScanner() {
                     objectFit: 'cover',
                     display: 'block',
                   }}
-                  autoPlay={true}
-                  playsInline={true}
-                  muted={true}
                 />
                 <canvas
                   ref={canvasRef}
