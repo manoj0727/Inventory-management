@@ -5,6 +5,8 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  VITE_API_URL = "https://inventory-management-3-df8v.onrender.com"
+  VITE_GRAPHQL_URL = "https://inventory-management-3-df8v.onrender.com/graphql"
 
 [[redirects]]
   from = "/*"

@@ -1,0 +1,17 @@
+{
+  "name": "QR Inventory Management System",
+  "short_name": "QR Inventory",
+  "description": "QR Inventory Management System",
+  "theme_color": "#3b82f6",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
