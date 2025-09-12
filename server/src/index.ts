@@ -146,8 +146,19 @@ async function startServer() {
     })
   )
 
+  // Root route
+  app.get('/', (_req, res) => {
+    res.json({
+      message: 'Inventory Management API',
+      version: '1.0.0',
+      graphql: '/graphql',
+      health: '/health',
+      timestamp: new Date().toISOString()
+    })
+  })
+
   // Health check
-  app.get('/health', (req, res) => {
+  app.get('/health', (_req, res) => {
     res.json({ 
       status: 'healthy',
       timestamp: new Date().toISOString(),
