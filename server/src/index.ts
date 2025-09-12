@@ -147,29 +147,16 @@ async function startServer() {
     })
   })
 
-  // Serve static files in production
-  if (process.env.NODE_ENV === 'production') {
-    const path = require('path')
-    const clientBuildPath = path.join(__dirname, '../../client/dist')
-    
-    app.use(express.static(clientBuildPath))
-    
-    // Handle React routing, return index.html for all non-API routes
-    app.get('*', (_req, res) => {
-      res.sendFile(path.join(clientBuildPath, 'index.html'))
+  // Root route
+  app.get('/', (_req, res) => {
+    res.json({
+      message: 'Inventory Management API',
+      version: '1.0.0',
+      graphql: '/graphql',
+      health: '/health',
+      timestamp: new Date().toISOString()
     })
-  } else {
-    // Development root route
-    app.get('/', (_req, res) => {
-      res.json({
-        message: 'Inventory Management API (Development)',
-        version: '1.0.0',
-        graphql: '/graphql',
-        health: '/health',
-        timestamp: new Date().toISOString()
-      })
-    })
-  }
+  })
 
   httpServer.listen(PORT, () => {
     logger.info(`🚀 Server ready at http://localhost:${PORT}`)
