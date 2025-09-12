@@ -37,6 +37,7 @@ router.post('/', async (req, res) => {
       quality,
       length,
       width,
+      quantity,
       supplier,
       purchasePrice,
       location,
@@ -44,12 +45,12 @@ router.post('/', async (req, res) => {
     } = req.body
 
     // Validate required fields
-    if (!fabricType || !color || !quality || !length || !width || !supplier) {
+    if (!fabricType || !color || !quality || !length || !width || !quantity || !supplier) {
       return res.status(400).json({ message: 'Missing required fields' })
     }
 
-    // Calculate quantity automatically (length × width)
-    const calculatedQuantity = parseFloat(length) * parseFloat(width)
+    // Use provided quantity or calculate from dimensions
+    const finalQuantity = quantity ? parseFloat(quantity) : parseFloat(length) * parseFloat(width)
 
     const fabric = new Fabric({
       fabricType,
@@ -57,7 +58,7 @@ router.post('/', async (req, res) => {
       quality,
       length: parseFloat(length),
       width: parseFloat(width),
-      quantity: calculatedQuantity,
+      quantity: finalQuantity,
       supplier,
       purchasePrice: purchasePrice ? parseFloat(purchasePrice) : undefined,
       location,
