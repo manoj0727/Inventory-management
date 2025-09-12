@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import '../styles/common.css'
+import { API_URL } from '@/config/api'
 
 interface Employee {
-import { API_URL } from '@/config/api'
   _id: string
   employeeId: string
   username: string

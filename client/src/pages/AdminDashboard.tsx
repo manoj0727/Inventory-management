@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { API_URL } from '@/config/api'
 import '../styles/common.css'
 
 interface DashboardStats {
-import { API_URL } from '@/config/api'
   overview: {
     totalEmployees: number
     activeEmployees: number

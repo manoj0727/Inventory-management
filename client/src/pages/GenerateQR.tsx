@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import QRCode from 'qrcode'
 import '../styles/common.css'
+import { API_URL } from '@/config/api'
 
 interface ManufacturingRecord {
-import { API_URL } from '@/config/api'
   _id: string
   id: string
   productId: string

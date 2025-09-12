@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import '../styles/common.css'
+import { API_URL } from '@/config/api'
 
 interface AttendanceRecord {
-import { API_URL } from '@/config/api'
   _id: string
   employeeId: string
   employeeName: string

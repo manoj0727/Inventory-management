@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import '../styles/common.css'
+import { API_URL } from '@/config/api'
 
 interface CuttingForm {
-import { API_URL } from '@/config/api'
   productId: string
   productName: string
   pieceLength: string

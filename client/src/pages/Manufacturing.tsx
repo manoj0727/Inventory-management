@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import '../styles/common.css'
+import { API_URL } from '@/config/api'
 
 interface ManufacturingOrder {
-import { API_URL } from '@/config/api'
   cuttingId: string
   productName: string
   quantity: string

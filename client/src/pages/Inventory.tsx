@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import '../styles/common.css'
+import { API_URL } from '@/config/api'
 
 interface InventoryItem {
-import { API_URL } from '@/config/api'
   id: string
   name: string
   color: string
