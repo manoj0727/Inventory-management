@@ -118,17 +118,6 @@ async function startServer() {
   // REST API routes (for file uploads, legacy support)
   app.use('/api', apiRoutes)
 
-  // Serve static files in production
-  if (process.env.NODE_ENV === 'production') {
-    const path = require('path')
-    app.use(express.static(path.join(__dirname, '../../client/dist')))
-    
-    // Handle React routing, return index.html for all non-API routes
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(__dirname, '../../client/dist/index.html'))
-    })
-  }
-
   // GraphQL middleware
   app.use(
     '/graphql',
@@ -146,17 +135,6 @@ async function startServer() {
     })
   )
 
-  // Root route
-  app.get('/', (_req, res) => {
-    res.json({
-      message: 'Inventory Management API',
-      version: '1.0.0',
-      graphql: '/graphql',
-      health: '/health',
-      timestamp: new Date().toISOString()
-    })
-  })
-
   // Health check
   app.get('/health', (_req, res) => {
     res.json({ 
@@ -168,6 +146,30 @@ async function startServer() {
       }
     })
   })
+
+  // Serve static files in production
+  if (process.env.NODE_ENV === 'production') {
+    const path = require('path')
+    const clientBuildPath = path.join(__dirname, '../../client/dist')
+    
+    app.use(express.static(clientBuildPath))
+    
+    // Handle React routing, return index.html for all non-API routes
+    app.get('*', (_req, res) => {
+      res.sendFile(path.join(clientBuildPath, 'index.html'))
+    })
+  } else {
+    // Development root route
+    app.get('/', (_req, res) => {
+      res.json({
+        message: 'Inventory Management API (Development)',
+        version: '1.0.0',
+        graphql: '/graphql',
+        health: '/health',
+        timestamp: new Date().toISOString()
+      })
+    })
+  }
 
   httpServer.listen(PORT, () => {
     logger.info(`🚀 Server ready at http://localhost:${PORT}`)
