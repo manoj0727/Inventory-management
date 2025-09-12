@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import '../styles/common.css'
 
 interface Tailor {
+import { API_URL } from '@/config/api'
   _id: string
   tailorId: string
   name: string
@@ -35,7 +36,7 @@ export default function TailorManagement() {
   const fetchTailors = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('http://localhost:4000/api/tailors')
+      const response = await fetch('${API_URL}/api/tailors')
       if (response.ok) {
         const data = await response.json()
         setTailors(data)
@@ -59,8 +60,8 @@ export default function TailorManagement() {
     
     try {
       const url = editingTailor 
-        ? `http://localhost:4000/api/tailors/${editingTailor._id}`
-        : 'http://localhost:4000/api/tailors'
+        ? `${API_URL}/api/tailors/${editingTailor._id}`
+        : '${API_URL}/api/tailors'
       
       const method = editingTailor ? 'PUT' : 'POST'
       
@@ -101,7 +102,7 @@ export default function TailorManagement() {
     if (!window.confirm('Are you sure you want to delete this tailor?')) return
     
     try {
-      const response = await fetch(`http://localhost:4000/api/tailors/${id}`, {
+      const response = await fetch(`${API_URL}/api/tailors/${id}`, {
         method: 'DELETE'
       })
       

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import '../styles/common.css'
 
 interface ManufacturingOrder {
+import { API_URL } from '@/config/api'
   cuttingId: string
   productName: string
   quantity: string
@@ -50,7 +51,7 @@ export default function Manufacturing() {
 
   const fetchCuttingRecords = async () => {
     try {
-      const response = await fetch('http://localhost:4000/api/cutting-records')
+      const response = await fetch('${API_URL}/api/cutting-records')
       if (response.ok) {
         const records = await response.json()
         setCuttingRecords(records.filter((record: CuttingRecord) => record.status === 'Completed'))
@@ -63,7 +64,7 @@ export default function Manufacturing() {
   const fetchManufacturingRecords = async () => {
     setIsLoadingRecords(true)
     try {
-      const response = await fetch('http://localhost:4000/api/manufacturing-orders')
+      const response = await fetch('${API_URL}/api/manufacturing-orders')
       if (response.ok) {
         const records = await response.json()
         setManufacturingRecords(records.slice(0, 10))
@@ -100,7 +101,7 @@ export default function Manufacturing() {
     }
 
     try {
-      const response = await fetch('http://localhost:4000/api/cutting-records')
+      const response = await fetch('${API_URL}/api/cutting-records')
       if (response.ok) {
         const records = await response.json()
         const selectedRecord = records.find((record: CuttingRecord) => record.id === cuttingId.toUpperCase())
@@ -175,7 +176,7 @@ export default function Manufacturing() {
         notes: formData.notes
       }
       
-      const response = await fetch('http://localhost:4000/api/manufacturing-orders', {
+      const response = await fetch('${API_URL}/api/manufacturing-orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(manufacturingOrder)

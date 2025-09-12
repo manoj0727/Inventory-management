@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import '../styles/common.css'
 
 interface ManufacturingRecord {
+import { API_URL } from '@/config/api'
   _id: string
   id: string
   productId: string
@@ -32,7 +33,7 @@ export default function ManufacturingInventory() {
   const fetchManufacturingRecords = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('http://localhost:4000/api/manufacturing-inventory')
+      const response = await fetch('${API_URL}/api/manufacturing-inventory')
       if (response.ok) {
         const records = await response.json()
         setManufacturingRecords(records)
@@ -73,7 +74,7 @@ export default function ManufacturingInventory() {
   const handleDelete = async (record: ManufacturingRecord) => {
     if (window.confirm(`Are you sure you want to delete manufacturing record ${record.id}?`)) {
       try {
-        const deleteResponse = await fetch(`http://localhost:4000/api/manufacturing-inventory/${record._id}`, {
+        const deleteResponse = await fetch(`${API_URL}/api/manufacturing-inventory/${record._id}`, {
           method: 'DELETE'
         })
         
@@ -92,7 +93,7 @@ export default function ManufacturingInventory() {
 
   const handleSaveEdit = async (updatedRecord: any) => {
     try {
-      const updateResponse = await fetch(`http://localhost:4000/api/manufacturing-inventory/${editingRecord?._id}`, {
+      const updateResponse = await fetch(`${API_URL}/api/manufacturing-inventory/${editingRecord?._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '@/config/api'
 import '../styles/common.css'
 
 interface FabricForm {
@@ -44,7 +45,7 @@ export default function FabricRegistration() {
   const fetchRecentFabrics = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('http://localhost:4000/api/fabrics')
+      const response = await fetch(`${API_URL}/api/fabrics`)
       if (response.ok) {
         const fabrics = await response.json()
         const recentFabrics = fabrics.slice(0, 10).map((fabric: any) => ({
@@ -73,7 +74,7 @@ export default function FabricRegistration() {
     e.preventDefault()
     
     try {
-      const response = await fetch('http://localhost:4000/api/fabrics', {
+      const response = await fetch(`${API_URL}/api/fabrics`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

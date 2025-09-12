@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import '../styles/common.css'
 
+import { API_URL } from '@/config/api'
 export default function MarkAttendance() {
   const { user } = useAuthStore()
   const [isLoading, setIsLoading] = useState(false)
@@ -24,7 +25,7 @@ export default function MarkAttendance() {
   const checkTodayAttendance = async () => {
     try {
       const employeeIdentifier = user?.employeeId || user?.username || user?.id
-      const response = await fetch(`http://localhost:4000/api/attendance/today/${employeeIdentifier}`)
+      const response = await fetch(`${API_URL}/api/attendance/today/${employeeIdentifier}`)
       if (response.ok) {
         const data = await response.json()
         setAttendanceStatus(data)
@@ -108,7 +109,7 @@ export default function MarkAttendance() {
     setIsLoading(true)
     try {
       const employeeIdentifier = user?.employeeId || user?.username || user?.id
-      const response = await fetch('http://localhost:4000/api/attendance/checkin', {
+      const response = await fetch('${API_URL}/api/attendance/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -141,7 +142,7 @@ export default function MarkAttendance() {
     setIsLoading(true)
     try {
       const employeeIdentifier = user?.employeeId || user?.username || user?.id
-      const response = await fetch('http://localhost:4000/api/attendance/checkout', {
+      const response = await fetch('${API_URL}/api/attendance/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

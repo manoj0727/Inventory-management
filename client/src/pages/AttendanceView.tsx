@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import '../styles/common.css'
 
 interface AttendanceRecord {
+import { API_URL } from '@/config/api'
   _id: string
   employeeId: string
   employeeName: string
@@ -43,7 +44,7 @@ export default function AttendanceView() {
 
   const fetchEmployees = async () => {
     try {
-      const response = await fetch('http://localhost:4000/api/employees')
+      const response = await fetch('${API_URL}/api/employees')
       if (response.ok) {
         const data = await response.json()
         setEmployees(data)
@@ -56,7 +57,7 @@ export default function AttendanceView() {
   const fetchAttendance = async () => {
     setIsLoading(true)
     try {
-      let url = 'http://localhost:4000/api/attendance?'
+      let url = '${API_URL}/api/attendance?'
       
       if (viewMode === 'daily') {
         url += `date=${selectedDate}`

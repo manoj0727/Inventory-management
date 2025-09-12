@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import '../styles/common.css'
 
 interface CuttingRecord {
+import { API_URL } from '@/config/api'
   _id?: string
   id: string
   productId: string
@@ -47,7 +48,7 @@ export default function CuttingInventory() {
   const fetchCuttingRecords = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('http://localhost:4000/api/cutting-records')
+      const response = await fetch('${API_URL}/api/cutting-records')
       if (response.ok) {
         const records = await response.json()
         setCuttingRecords(records)
@@ -71,7 +72,7 @@ export default function CuttingInventory() {
   const handleDelete = async (record: CuttingRecord) => {
     if (window.confirm(`Are you sure you want to delete cutting record ${record.id}?`)) {
       try {
-        const deleteResponse = await fetch(`http://localhost:4000/api/cutting-records/${record._id}`, {
+        const deleteResponse = await fetch(`${API_URL}/api/cutting-records/${record._id}`, {
           method: 'DELETE'
         })
         
@@ -90,7 +91,7 @@ export default function CuttingInventory() {
 
   const handleSaveEdit = async (updatedRecord: CuttingRecord) => {
     try {
-      const updateResponse = await fetch(`http://localhost:4000/api/cutting-records/${editingRecord?._id}`, {
+      const updateResponse = await fetch(`${API_URL}/api/cutting-records/${editingRecord?._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

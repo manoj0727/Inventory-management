@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import '../styles/common.css'
 
 interface Employee {
+import { API_URL } from '@/config/api'
   _id: string
   employeeId: string
   username: string
@@ -64,7 +65,7 @@ export default function Employees() {
   const fetchEmployees = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('http://localhost:4000/api/employees')
+      const response = await fetch('${API_URL}/api/employees')
       if (response.ok) {
         const data = await response.json()
         setEmployees(data)
@@ -271,8 +272,8 @@ export default function Employees() {
       }
 
       const url = editingEmployee 
-        ? `http://localhost:4000/api/employees/${editingEmployee._id}`
-        : 'http://localhost:4000/api/employees'
+        ? `${API_URL}/api/employees/${editingEmployee._id}`
+        : '${API_URL}/api/employees'
       
       const method = editingEmployee ? 'PUT' : 'POST'
       
@@ -319,7 +320,7 @@ export default function Employees() {
     if (!window.confirm('Are you sure you want to delete this employee?')) return
     
     try {
-      const response = await fetch(`http://localhost:4000/api/employees/${id}`, {
+      const response = await fetch(`${API_URL}/api/employees/${id}`, {
         method: 'DELETE'
       })
       

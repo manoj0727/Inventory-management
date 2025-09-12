@@ -3,6 +3,7 @@ import QRCode from 'qrcode'
 import '../styles/common.css'
 
 interface ManufacturingRecord {
+import { API_URL } from '@/config/api'
   _id: string
   id: string
   productId: string
@@ -34,7 +35,7 @@ export default function GenerateQR() {
   const fetchManufacturingRecords = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('http://localhost:4000/api/manufacturing-inventory')
+      const response = await fetch('${API_URL}/api/manufacturing-inventory')
       if (response.ok) {
         const records = await response.json()
         // Only show completed items for QR generation
@@ -243,7 +244,7 @@ export default function GenerateQR() {
   const handleDelete = async (record: ManufacturingRecord) => {
     if (window.confirm(`Are you sure you want to delete manufacturing record ${record.id}?`)) {
       try {
-        const deleteResponse = await fetch(`http://localhost:4000/api/manufacturing-inventory/${record._id}`, {
+        const deleteResponse = await fetch(`${API_URL}/api/manufacturing-inventory/${record._id}`, {
           method: 'DELETE'
         })
         
@@ -269,7 +270,7 @@ export default function GenerateQR() {
     if (!editingRecord) return
 
     try {
-      const response = await fetch(`http://localhost:4000/api/manufacturing-inventory/${editingRecord._id}`, {
+      const response = await fetch(`${API_URL}/api/manufacturing-inventory/${editingRecord._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

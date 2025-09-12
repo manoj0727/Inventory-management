@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import '../styles/common.css'
 
 interface InventoryItem {
+import { API_URL } from '@/config/api'
   id: string
   name: string
   color: string
@@ -37,7 +38,7 @@ export default function Inventory() {
     setIsLoading(true)
     try {
       // This would connect to fabric API to show fabrics as inventory
-      const response = await fetch('http://localhost:4000/api/fabrics')
+      const response = await fetch('${API_URL}/api/fabrics')
       if (response.ok) {
         const fabrics = await response.json()
         const inventoryItems = fabrics.map((fabric: any) => ({
@@ -83,7 +84,7 @@ export default function Inventory() {
     if (window.confirm(`Are you sure you want to delete ${item.name} - ${item.color}?`)) {
       try {
         // Find the fabric by matching name and color since we need the MongoDB _id
-        const response = await fetch('http://localhost:4000/api/fabrics')
+        const response = await fetch('${API_URL}/api/fabrics')
         if (response.ok) {
           const fabrics = await response.json()
           const fabricToDelete = fabrics.find((fabric: any) => 
@@ -91,7 +92,7 @@ export default function Inventory() {
           )
           
           if (fabricToDelete) {
-            const deleteResponse = await fetch(`http://localhost:4000/api/fabrics/${fabricToDelete._id}`, {
+            const deleteResponse = await fetch(`${API_URL}/api/fabrics/${fabricToDelete._id}`, {
               method: 'DELETE'
             })
             
@@ -113,7 +114,7 @@ export default function Inventory() {
   const handleSaveEdit = async (updatedItem: InventoryItem) => {
     try {
       // Find the fabric by matching name and color since we need the MongoDB _id
-      const response = await fetch('http://localhost:4000/api/fabrics')
+      const response = await fetch('${API_URL}/api/fabrics')
       if (response.ok) {
         const fabrics = await response.json()
         const fabricToUpdate = fabrics.find((fabric: any) => 
@@ -121,7 +122,7 @@ export default function Inventory() {
         )
         
         if (fabricToUpdate) {
-          const updateResponse = await fetch(`http://localhost:4000/api/fabrics/${fabricToUpdate._id}`, {
+          const updateResponse = await fetch(`${API_URL}/api/fabrics/${fabricToUpdate._id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',

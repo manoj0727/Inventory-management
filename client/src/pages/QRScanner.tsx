@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import QrScanner from 'qr-scanner'
+import { API_URL } from '@/config/api'
 import '../styles/common.css'
 
 interface ScannedItem {
@@ -105,7 +106,7 @@ export default function QRScanner() {
 
   const lookupManufacturingItem = async (qrData: any): Promise<ManufacturingRecord | null> => {
     try {
-      const response = await fetch('http://localhost:4000/api/manufacturing-inventory')
+      const response = await fetch('${API_URL}/api/manufacturing-inventory')
       if (response.ok) {
         const records: ManufacturingRecord[] = await response.json()
         

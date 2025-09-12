@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import '../styles/common.css'
 
 interface DashboardStats {
+import { API_URL } from '@/config/api'
   overview: {
     totalEmployees: number
     activeEmployees: number
@@ -66,7 +67,7 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch('http://localhost:4000/api/dashboard/stats')
+      const response = await fetch('${API_URL}/api/dashboard/stats')
       if (response.ok) {
         const data = await response.json()
         setStats(data)
@@ -80,7 +81,7 @@ export default function AdminDashboard() {
 
   const fetchChartData = async () => {
     try {
-      const response = await fetch('http://localhost:4000/api/dashboard/charts')
+      const response = await fetch('${API_URL}/api/dashboard/charts')
       if (response.ok) {
         const data = await response.json()
         setChartData(data)
