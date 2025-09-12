@@ -103,6 +103,7 @@ export default function Layout() {
                   <li key={item.path}>
                     <Link
                       to={item.path}
+                      onClick={() => setSidebarOpen(false)}
                       className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
                         isActive
                           ? 'bg-primary-100 text-primary-700'
