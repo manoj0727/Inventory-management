@@ -36,7 +36,7 @@ export default function TailorManagement() {
   const fetchTailors = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('${API_URL}/api/tailors')
+      const response = await fetch(`${API_URL}/api/tailors`)
       if (response.ok) {
         const data = await response.json()
         setTailors(data)
@@ -61,7 +61,7 @@ export default function TailorManagement() {
     try {
       const url = editingTailor 
         ? `${API_URL}/api/tailors/${editingTailor._id}`
-        : '${API_URL}/api/tailors'
+        : `${API_URL}/api/tailors`
       
       const method = editingTailor ? 'PUT' : 'POST'
       

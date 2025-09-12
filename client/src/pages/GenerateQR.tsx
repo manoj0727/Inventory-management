@@ -35,7 +35,7 @@ export default function GenerateQR() {
   const fetchManufacturingRecords = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('${API_URL}/api/manufacturing-inventory')
+      const response = await fetch(`${API_URL}/api/manufacturing-inventory`)
       if (response.ok) {
         const records = await response.json()
         // Only show completed items for QR generation

@@ -67,7 +67,7 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch('${API_URL}/api/dashboard/stats')
+      const response = await fetch(`${API_URL}/api/dashboard/stats`)
       if (response.ok) {
         const data = await response.json()
         setStats(data)
@@ -81,7 +81,7 @@ export default function AdminDashboard() {
 
   const fetchChartData = async () => {
     try {
-      const response = await fetch('${API_URL}/api/dashboard/charts')
+      const response = await fetch(`${API_URL}/api/dashboard/charts`)
       if (response.ok) {
         const data = await response.json()
         setChartData(data)

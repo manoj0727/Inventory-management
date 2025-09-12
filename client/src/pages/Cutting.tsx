@@ -67,7 +67,7 @@ export default function Cutting() {
 
   const fetchFabrics = async () => {
     try {
-      const response = await fetch('${API_URL}/api/fabrics')
+      const response = await fetch(`${API_URL}/api/fabrics`)
       if (response.ok) {
         const fabricsData = await response.json()
         setFabrics(fabricsData)
@@ -80,7 +80,7 @@ export default function Cutting() {
   const fetchRecentCuttingRecords = async () => {
     setIsLoadingRecords(true)
     try {
-      const response = await fetch('${API_URL}/api/cutting-records')
+      const response = await fetch(`${API_URL}/api/cutting-records`)
       if (response.ok) {
         const records = await response.json()
         // Get the 5 most recent records
@@ -102,7 +102,7 @@ export default function Cutting() {
 
     setIsLoading(true)
     try {
-      const response = await fetch('${API_URL}/api/fabrics')
+      const response = await fetch(`${API_URL}/api/fabrics`)
       if (response.ok) {
         const fabricsData = await response.json()
         const fabric = fabricsData.find((f: Fabric) => 
@@ -196,7 +196,7 @@ export default function Cutting() {
       
       // Save the cutting record to database
       // The backend will automatically update the fabric quantity
-      const cuttingResponse = await fetch('${API_URL}/api/cutting-records', {
+      const cuttingResponse = await fetch(`${API_URL}/api/cutting-records`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(cuttingRecord)

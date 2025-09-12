@@ -65,7 +65,7 @@ export default function Employees() {
   const fetchEmployees = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('${API_URL}/api/employees')
+      const response = await fetch(`${API_URL}/api/employees`)
       if (response.ok) {
         const data = await response.json()
         setEmployees(data)
@@ -273,7 +273,7 @@ export default function Employees() {
 
       const url = editingEmployee 
         ? `${API_URL}/api/employees/${editingEmployee._id}`
-        : '${API_URL}/api/employees'
+        : `${API_URL}/api/employees`
       
       const method = editingEmployee ? 'PUT' : 'POST'
       

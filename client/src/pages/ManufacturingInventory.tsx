@@ -33,7 +33,7 @@ export default function ManufacturingInventory() {
   const fetchManufacturingRecords = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('${API_URL}/api/manufacturing-inventory')
+      const response = await fetch(`${API_URL}/api/manufacturing-inventory`)
       if (response.ok) {
         const records = await response.json()
         setManufacturingRecords(records)

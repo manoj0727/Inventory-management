@@ -109,7 +109,7 @@ export default function MarkAttendance() {
     setIsLoading(true)
     try {
       const employeeIdentifier = user?.employeeId || user?.username || user?.id
-      const response = await fetch('${API_URL}/api/attendance/checkin', {
+      const response = await fetch(`${API_URL}/api/attendance/checkin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -142,7 +142,7 @@ export default function MarkAttendance() {
     setIsLoading(true)
     try {
       const employeeIdentifier = user?.employeeId || user?.username || user?.id
-      const response = await fetch('${API_URL}/api/attendance/checkout', {
+      const response = await fetch(`${API_URL}/api/attendance/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -44,7 +44,7 @@ export default function AttendanceView() {
 
   const fetchEmployees = async () => {
     try {
-      const response = await fetch('${API_URL}/api/employees')
+      const response = await fetch(`${API_URL}/api/employees`)
       if (response.ok) {
         const data = await response.json()
         setEmployees(data)
@@ -57,7 +57,7 @@ export default function AttendanceView() {
   const fetchAttendance = async () => {
     setIsLoading(true)
     try {
-      let url = '${API_URL}/api/attendance?'
+      let url = `${API_URL}/api/attendance?`
       
       if (viewMode === 'daily') {
         url += `date=${selectedDate}`

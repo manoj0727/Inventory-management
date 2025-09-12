@@ -38,7 +38,7 @@ export default function Inventory() {
     setIsLoading(true)
     try {
       // This would connect to fabric API to show fabrics as inventory
-      const response = await fetch('${API_URL}/api/fabrics')
+      const response = await fetch(`${API_URL}/api/fabrics`)
       if (response.ok) {
         const fabrics = await response.json()
         const inventoryItems = fabrics.map((fabric: any) => ({
@@ -84,7 +84,7 @@ export default function Inventory() {
     if (window.confirm(`Are you sure you want to delete ${item.name} - ${item.color}?`)) {
       try {
         // Find the fabric by matching name and color since we need the MongoDB _id
-        const response = await fetch('${API_URL}/api/fabrics')
+        const response = await fetch(`${API_URL}/api/fabrics`)
         if (response.ok) {
           const fabrics = await response.json()
           const fabricToDelete = fabrics.find((fabric: any) => 
@@ -114,7 +114,7 @@ export default function Inventory() {
   const handleSaveEdit = async (updatedItem: InventoryItem) => {
     try {
       // Find the fabric by matching name and color since we need the MongoDB _id
-      const response = await fetch('${API_URL}/api/fabrics')
+      const response = await fetch(`${API_URL}/api/fabrics`)
       if (response.ok) {
         const fabrics = await response.json()
         const fabricToUpdate = fabrics.find((fabric: any) => 

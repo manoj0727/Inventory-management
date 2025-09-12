@@ -48,7 +48,7 @@ export default function CuttingInventory() {
   const fetchCuttingRecords = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('${API_URL}/api/cutting-records')
+      const response = await fetch(`${API_URL}/api/cutting-records`)
       if (response.ok) {
         const records = await response.json()
         setCuttingRecords(records)
