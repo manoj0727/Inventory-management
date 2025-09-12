@@ -107,7 +107,8 @@ async function startServer() {
     ? [
         process.env.CLIENT_URL,
         'https://inventory-man.netlify.app',
-        'https://inventory-client.onrender.com'
+        'https://inventory-client.onrender.com',
+        'https://*.netlify.app'
       ].filter(Boolean)
     : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173']
     
@@ -116,15 +117,28 @@ async function startServer() {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true)
       
-      if (allowedOrigins.indexOf(origin) !== -1) {
+      // Check if origin matches allowed origins or patterns
+      const isAllowed = allowedOrigins.some(allowed => {
+        if (allowed.includes('*')) {
+          // Handle wildcard domains
+          const pattern = allowed.replace('*', '.*')
+          return new RegExp(pattern).test(origin)
+        }
+        return allowed === origin
+      })
+      
+      if (isAllowed) {
         callback(null, true)
       } else {
+        console.log(`CORS blocked origin: ${origin}`)
         callback(null, false)
       }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204
   }))
   
   app.use(express.json({ limit: '10mb' }))
