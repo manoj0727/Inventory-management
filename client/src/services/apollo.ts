@@ -20,7 +20,9 @@ const authLink = setContext((_, { headers }) => {
 })
 
 const wsLink = new WebSocketLink({
-  uri: (import.meta.env.VITE_GRAPHQL_URL || 'http://localhost:4000/graphql').replace('http', 'ws'),
+  uri: (import.meta.env.VITE_GRAPHQL_URL || 'http://localhost:4000/graphql')
+    .replace('https', 'wss')
+    .replace('http', 'ws'),
   options: {
     reconnect: true,
     connectionParams: {
