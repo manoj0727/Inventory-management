@@ -120,6 +120,29 @@ router.post('/', async (req, res) => {
   }
 })
 
+// PATCH update cutting record (partial update)
+router.patch('/:id', async (req, res) => {
+  try {
+    const cuttingRecord = await CuttingRecord.findById(req.params.id)
+    if (!cuttingRecord) {
+      return res.status(404).json({ message: 'Cutting record not found' })
+    }
+
+    // Update only the fields provided
+    Object.keys(req.body).forEach(key => {
+      if (req.body[key] !== undefined && key !== '_id') {
+        (cuttingRecord as any)[key] = req.body[key]
+      }
+    })
+
+    await cuttingRecord.save()
+    res.json(cuttingRecord)
+  } catch (error) {
+    console.error('Cutting record update error:', error)
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
 // PUT update cutting record
 router.put('/:id', async (req, res) => {
   try {

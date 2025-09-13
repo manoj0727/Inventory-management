@@ -3,73 +3,50 @@ import QrScanner from 'qr-scanner'
 import { API_URL } from '@/config/api'
 import '../styles/common.css'
 
+// Add CSS animations
+const style = document.createElement('style')
+style.textContent = `
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+`
+document.head.appendChild(style)
+
 interface ScannedItem {
   _id: string
-  manufacturingId: string
-  type: string
-  productName: string
-  details: string
-  location: string
-  timestamp: string
-  scannedBy: string
-  quantity?: number
-  tailorName?: string
-  status?: string
-}
-
-interface ManufacturingRecord {
-  _id: string
-  id: string
-  productId: string
-  productName: string
-  cuttingId: string
-  quantity: number
-  quantityProduced: number
-  quantityRemaining: number
-  tailorName: string
-  tailorMobile: string
-  startDate: string
-  completedDate?: string
-  dueDate: string
-  status: string
-  notes?: string
-  createdAt: string
+  manufacturingId?: string
+  fabricId?: string
+  productId?: string
+  type: 'FABRIC' | 'MANUFACTURING' | 'CUTTING' | 'UNKNOWN'
+  name: string
+  currentStock: number
+  details: any
 }
 
 export default function QRScanner() {
   const [scanMode, setScanMode] = useState(false)
   const [manualCode, setManualCode] = useState('')
-  const [lastScanned, setLastScanned] = useState<ScannedItem | null>(null)
-  const [scanHistory, setScanHistory] = useState<ScannedItem[]>([])
+  const [scannedItem, setScannedItem] = useState<ScannedItem | null>(null)
+  const [stockAction, setStockAction] = useState<'add' | 'remove'>('add')
+  const [quantity, setQuantity] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
+  const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null)
+  const [showModal, setShowModal] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
   const [qrScanner, setQrScanner] = useState<QrScanner | null>(null)
-  const [availableCameras, setAvailableCameras] = useState<QrScanner.Camera[]>([])
-  const [selectedCamera, setSelectedCamera] = useState<string>('')
-
-  // Fetch scan history from database
-  const fetchScanHistory = async () => {
-    setIsLoading(true)
-    try {
-      // For now, we'll use localStorage to store scan history
-      // In production, this would be an API call
-      const savedHistory = localStorage.getItem('qr_scan_history')
-      if (savedHistory) {
-        setScanHistory(JSON.parse(savedHistory))
-      }
-    } catch (error) {
-      // Error fetching scan history
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   useEffect(() => {
-    fetchScanHistory()
-    getCameraDevices()
-    
-    // Cleanup on unmount
     return () => {
       if (qrScanner) {
         qrScanner.destroy()
@@ -77,115 +54,133 @@ export default function QRScanner() {
     }
   }, [])
 
-  // Get available camera devices
-  const getCameraDevices = async () => {
-    try {
-      const cameras = await QrScanner.listCameras(true)
-      setAvailableCameras(cameras)
-      if (cameras.length > 0 && !selectedCamera) {
-        // Default to back camera if available
-        const backCamera = cameras.find(camera => 
-          camera.label.toLowerCase().includes('back') || 
-          camera.label.toLowerCase().includes('environment')
-        )
-        setSelectedCamera(backCamera?.id || cameras[0].id)
-      }
-    } catch (error) {
-      // Error getting camera devices
-    }
-  }
-
-  const formatDate = (date: Date) => {
-    const day = date.getDate().toString().padStart(2, '0')
-    const month = (date.getMonth() + 1).toString().padStart(2, '0')
-    const year = date.getFullYear()
-    const hours = date.getHours().toString().padStart(2, '0')
-    const minutes = date.getMinutes().toString().padStart(2, '0')
-    return `${day}/${month}/${year} ${hours}:${minutes}`
-  }
-
-  const lookupManufacturingItem = async (qrData: any): Promise<ManufacturingRecord | null> => {
-    try {
-      const response = await fetch('${API_URL}/api/manufacturing-inventory')
-      if (response.ok) {
-        const records: ManufacturingRecord[] = await response.json()
-        
-        // Try to find by manufacturing ID
-        if (qrData.manufacturingId) {
-          return records.find(record => record.id === qrData.manufacturingId) || null
-        }
-        
-        // Try to find by product ID
-        if (qrData.productId) {
-          return records.find(record => record.productId === qrData.productId) || null
-        }
-        
-        return null
-      }
-    } catch (error) {
-      // Error looking up manufacturing item
-    }
-    return null
+  const showMessage = (type: 'success' | 'error' | 'info', text: string) => {
+    setMessage({ type, text })
+    setTimeout(() => setMessage(null), 5000)
   }
 
   const processScannedData = async (scannedText: string) => {
     try {
+      setIsLoading(true)
       let qrData
-      
-      // Try to parse as JSON first (for our generated QR codes)
+
       try {
         qrData = JSON.parse(scannedText)
       } catch {
-        // If not JSON, treat as simple text (manufacturing ID)
-        qrData = { manufacturingId: scannedText.toUpperCase() }
+        qrData = { id: scannedText }
       }
 
-      // Look up the item in manufacturing inventory
-      const manufacturingItem = await lookupManufacturingItem(qrData)
-      
-      let scannedItem: ScannedItem
+      // Determine type and fetch data
+      let itemData: ScannedItem | null = null
 
-      if (manufacturingItem) {
-        // Found in manufacturing inventory
-        scannedItem = {
-          _id: new Date().getTime().toString(),
-          manufacturingId: manufacturingItem.id,
-          type: 'MANUFACTURED_PRODUCT',
-          productName: manufacturingItem.productName,
-          details: `Quantity: ${manufacturingItem.quantityProduced || manufacturingItem.quantity} | Status: ${manufacturingItem.status}`,
-          location: 'Manufacturing Floor',
-          timestamp: formatDate(new Date()),
-          scannedBy: 'Current User',
-          quantity: manufacturingItem.quantityProduced || manufacturingItem.quantity,
-          tailorName: manufacturingItem.tailorName,
-          status: manufacturingItem.status
+      // Check if it's a fabric
+      if (qrData.fabricId || qrData.type === 'fabric') {
+        try {
+          const response = await fetch(`${API_URL}/api/fabrics`)
+          if (response.ok) {
+            const fabrics = await response.json()
+            const fabric = fabrics.find((f: any) =>
+              f.fabricId === qrData.fabricId ||
+              f.productId === qrData.productId ||
+              f._id === qrData.id
+            )
+
+            if (fabric) {
+              itemData = {
+                _id: fabric._id,
+                fabricId: fabric.fabricId,
+                productId: fabric.productId,
+                type: 'FABRIC',
+                name: `${fabric.fabricType} - ${fabric.color}`,
+                currentStock: fabric.quantity || 0,
+                details: fabric
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching fabric:', error)
         }
-      } else {
-        // Unknown QR code
-        scannedItem = {
-          _id: new Date().getTime().toString(),
-          manufacturingId: qrData.manufacturingId || scannedText.toUpperCase(),
+      }
+
+      // Check if it's a manufacturing item
+      if (!itemData && (qrData.manufacturingId || qrData.type === 'manufacturing')) {
+        try {
+          const response = await fetch(`${API_URL}/api/manufacturing-inventory`)
+          if (response.ok) {
+            const items = await response.json()
+            const item = items.find((m: any) =>
+              m.id === qrData.manufacturingId ||
+              m.productId === qrData.productId ||
+              m._id === qrData.id
+            )
+
+            if (item) {
+              itemData = {
+                _id: item._id,
+                manufacturingId: item.id,
+                productId: item.productId,
+                type: 'MANUFACTURING',
+                name: item.productName,
+                currentStock: item.quantityProduced || item.quantity || 0,
+                details: item
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching manufacturing item:', error)
+        }
+      }
+
+      // Check if it's a cutting item
+      if (!itemData && (qrData.cuttingId || qrData.type === 'cutting')) {
+        try {
+          const response = await fetch(`${API_URL}/api/cutting-inventory`)
+          if (response.ok) {
+            const items = await response.json()
+            const item = items.find((c: any) =>
+              c.cuttingId === qrData.cuttingId ||
+              c._id === qrData.id
+            )
+
+            if (item) {
+              itemData = {
+                _id: item._id,
+                type: 'CUTTING',
+                name: `${item.fabricType} - ${item.color}`,
+                currentStock: item.piecesProduced || 0,
+                details: item
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching cutting item:', error)
+        }
+      }
+
+      if (!itemData) {
+        itemData = {
+          _id: scannedText,
           type: 'UNKNOWN',
-          productName: 'Unknown Product',
-          details: 'Item not found in database',
-          location: 'Unknown',
-          timestamp: formatDate(new Date()),
-          scannedBy: 'Current User'
+          name: 'Unknown Item',
+          currentStock: 0,
+          details: { raw: scannedText }
         }
       }
 
-      // Add to scan history
-      const newHistory = [scannedItem, ...scanHistory].slice(0, 50) // Keep only last 50 scans
-      setScanHistory(newHistory)
-      setLastScanned(scannedItem)
-      
-      // Save to localStorage
-      localStorage.setItem('qr_scan_history', JSON.stringify(newHistory))
-      
-      return scannedItem
+      setScannedItem(itemData)
+
+      if (itemData.type === 'UNKNOWN') {
+        showMessage('error', 'Item not found in database!')
+      } else {
+        showMessage('success', `Found: ${itemData.name}`)
+      }
+
+      return itemData
     } catch (error) {
-      // Error processing scanned data
+      showMessage('error', 'Error processing QR code')
       return null
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -193,103 +188,197 @@ export default function QRScanner() {
     e.preventDefault()
     if (!manualCode.trim()) return
 
-    setIsLoading(true)
-    const result = await processScannedData(manualCode.trim())
-    
-    if (result) {
-      if (result.type === 'UNKNOWN') {
-        alert('⚠️ QR Code scanned but item not found in database!')
-      } else {
-        alert('✅ QR Code scanned successfully!')
-      }
-    } else {
-      alert('❌ Error processing QR code. Please try again.')
+    const item = await processScannedData(manualCode.trim())
+    if (item && item.type !== 'UNKNOWN') {
+      setShowModal(true) // Show the modal for stock action
     }
-    
     setManualCode('')
-    setIsLoading(false)
   }
 
-  const startCamera = async (deviceId?: string) => {
+  const handleStockUpdate = async () => {
+    if (!scannedItem || scannedItem.type === 'UNKNOWN') {
+      showMessage('error', 'Cannot update stock for unknown item')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      let endpoint = ''
+      let method = 'PUT'
+      let updateData: any = {}
+
+      const newQuantity = stockAction === 'add'
+        ? scannedItem.currentStock + quantity
+        : Math.max(0, scannedItem.currentStock - quantity)
+
+      switch (scannedItem.type) {
+        case 'FABRIC':
+          // Use PATCH for partial update
+          endpoint = `${API_URL}/api/fabrics/${scannedItem._id}`
+          method = 'PATCH'
+          updateData = { quantity: newQuantity }
+          break
+
+        case 'MANUFACTURING':
+          endpoint = `${API_URL}/api/manufacturing-inventory/${scannedItem._id}`
+          method = 'PATCH'
+          updateData = {
+            quantityProduced: newQuantity,
+            quantity: newQuantity
+          }
+          break
+
+        case 'CUTTING':
+          endpoint = `${API_URL}/api/cutting-inventory/${scannedItem._id}`
+          method = 'PATCH'
+          updateData = {
+            piecesProduced: newQuantity,
+            quantity: newQuantity
+          }
+          break
+      }
+
+      const response = await fetch(endpoint, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData)
+      })
+
+      if (response.ok || response.status === 200 || response.status === 204) {
+        // Log transaction to database
+        const transaction = {
+          timestamp: new Date().toISOString(),
+          itemType: scannedItem.type,
+          itemId: scannedItem.fabricId || scannedItem.manufacturingId || scannedItem._id,
+          itemName: scannedItem.name,
+          action: stockAction.toUpperCase() as 'ADD' | 'REMOVE',
+          quantity: quantity,
+          previousStock: scannedItem.currentStock,
+          newStock: newQuantity,
+          performedBy: 'QR Scanner User',
+          source: 'QR_SCANNER' as const
+        }
+
+        // Save to database
+        try {
+          const transResponse = await fetch(`${API_URL}/api/transactions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(transaction)
+          })
+
+          if (!transResponse.ok) {
+            console.error('Transaction save failed:', await transResponse.text())
+            // Fallback to localStorage if API fails
+            const existingTransactions = JSON.parse(localStorage.getItem('inventory_transactions') || '[]')
+            existingTransactions.push({
+              id: `trans_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              ...transaction
+            })
+            localStorage.setItem('inventory_transactions', JSON.stringify(existingTransactions))
+          }
+        } catch (error) {
+          console.error('Failed to log transaction:', error)
+          // Fallback to localStorage if API fails
+          const existingTransactions = JSON.parse(localStorage.getItem('inventory_transactions') || '[]')
+          existingTransactions.push({
+            id: `trans_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            ...transaction
+          })
+          localStorage.setItem('inventory_transactions', JSON.stringify(existingTransactions))
+        }
+
+        setScannedItem({
+          ...scannedItem,
+          currentStock: newQuantity
+        })
+
+        showMessage('success', `Stock ${stockAction === 'add' ? 'added' : 'removed'} successfully!`)
+
+        // Auto close modal after 1.5 seconds
+        setTimeout(() => {
+          setShowModal(false)
+          setQuantity(1)
+          setStockAction('add')
+          setScannedItem(null)
+        }, 1500)
+      } else {
+        const errorText = await response.text()
+        console.error('Update failed:', errorText)
+        throw new Error(`Failed to update stock: ${response.status}`)
+      }
+    } catch (error: any) {
+      console.error('Stock update error:', error)
+      showMessage('error', `Failed to update stock: ${error.message}`)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const startCamera = async () => {
     try {
       setIsLoading(true)
-      
-      // First, check if we have camera permissions
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: 'environment' } 
-        })
-        // Stop the test stream immediately
-        stream.getTracks().forEach(track => track.stop())
-      } catch (permError) {
-        console.error('Permission check failed:', permError)
-        throw permError
-      }
-      
-      // Stop any existing scanner first
+      setScanMode(true) // Set scan mode first to render video element
+
+      // Wait for next tick to ensure video element is rendered
+      await new Promise(resolve => setTimeout(resolve, 100))
+
       if (qrScanner) {
         qrScanner.destroy()
+        setQrScanner(null)
       }
-      
+
       if (!videoRef.current) {
-        throw new Error('Video element not ready')
+        // Try once more after a short delay
+        await new Promise(resolve => setTimeout(resolve, 200))
+        if (!videoRef.current) {
+          throw new Error('Video element not ready')
+        }
       }
-      
-      // Create QR Scanner instance
+
       const scanner = new QrScanner(
         videoRef.current,
         async (result) => {
-          // Handle successful scan
-          // QR Code detected
-          const scannedItem = await processScannedData(result.data)
-          if (scannedItem) {
-            if (scannedItem.type === 'UNKNOWN') {
-              alert('⚠️ QR Code scanned but item not found in database!')
-            } else {
-              alert('✅ QR Code scanned successfully!')
-            }
+          // Stop and destroy scanner immediately after detecting QR code
+          scanner.stop()
+          scanner.destroy()
+          setQrScanner(null)
+          setScanMode(false) // Hide camera view immediately
+
+          const item = await processScannedData(result.data)
+          if (item && item.type !== 'UNKNOWN') {
+            setShowModal(true) // Show the modal for stock action
           }
         },
         {
           returnDetailedScanResult: true,
           highlightScanRegion: true,
           highlightCodeOutline: true,
-          preferredCamera: deviceId || selectedCamera || 'environment',
-          maxScansPerSecond: 2
+          preferredCamera: 'environment',
+          maxScansPerSecond: 1
         }
       )
-      
-      // Set camera if specified
-      if (deviceId) {
-        await scanner.setCamera(deviceId)
-      }
-      
-      // Start scanning
+
       await scanner.start()
-      
       setQrScanner(scanner)
-      setScanMode(true)
-      
-      // Get available cameras after starting
-      const cameras = await QrScanner.listCameras(true)
-      setAvailableCameras(cameras)
-      
+
     } catch (error: any) {
-      // Error accessing camera
       console.error('Camera error:', error)
-      
+
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-        alert('❌ Camera permission denied. Please allow camera access in your browser settings.')
+        showMessage('error', 'Camera permission denied. Please allow camera access.')
       } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-        alert('❌ No camera found. Please ensure your device has a camera.')
+        showMessage('error', 'No camera found on this device.')
       } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-        alert('❌ Camera is already in use by another application.')
+        showMessage('error', 'Camera is already in use by another application.')
       } else if (error.name === 'OverconstrainedError' || error.name === 'ConstraintNotSatisfiedError') {
-        alert('❌ Camera constraints could not be satisfied.')
-      } else if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-        alert('❌ Camera access requires HTTPS. Please use a secure connection.')
+        showMessage('error', 'Camera constraints could not be satisfied.')
       } else {
-        alert(`❌ Could not access camera: ${error.message || 'Unknown error'}`)
+        showMessage('error', `Camera error: ${error.message || 'Unknown error'}`)
       }
       setScanMode(false)
     } finally {
@@ -305,392 +394,597 @@ export default function QRScanner() {
     setScanMode(false)
   }
 
-  const handleCameraScan = async () => {
-    if (scanMode) {
-      stopCamera()
-    } else {
-      // Get camera devices first if not already done
-      if (availableCameras.length === 0) {
-        await getCameraDevices()
-      }
-      startCamera()
-    }
+  const resetScanner = () => {
+    setScannedItem(null)
+    setQuantity(1)
+    setStockAction('add')
+    setMessage(null)
+    setShowModal(false)
   }
 
-  const switchCamera = async () => {
-    if (availableCameras.length <= 1) return
-    
-    const currentIndex = availableCameras.findIndex(cam => cam.id === selectedCamera)
-    const nextIndex = (currentIndex + 1) % availableCameras.length
-    const nextCamera = availableCameras[nextIndex]
-    
-    setSelectedCamera(nextCamera.id)
-    
-    if (qrScanner && scanMode) {
-      await qrScanner.setCamera(nextCamera.id)
-    }
-  }
-
-  // Removed unused function
-
-  // Flash control
-  const toggleFlash = async () => {
-    if (qrScanner) {
-      const hasFlash = await qrScanner.hasFlash()
-      if (hasFlash) {
-        const isOn = await qrScanner.isFlashOn()
-        if (isOn) {
-          await qrScanner.turnFlashOff()
-        } else {
-          await qrScanner.turnFlashOn()
-        }
-      } else {
-        alert('Flash not available on this camera')
-      }
-    }
-  }
-
-  const getTypeBadgeClass = (type: string) => {
-    switch(type) {
-      case 'MANUFACTURED_PRODUCT': return 'badge-success'
-      case 'FABRIC': return 'badge-info'
-      case 'CUTTING': return 'badge-warning'
-      case 'UNKNOWN': return 'badge-danger'
-      default: return 'badge-secondary'
-    }
-  }
-
-  const handleDelete = (index: number) => {
-    if (window.confirm('Are you sure you want to delete this scan record?')) {
-      const newHistory = scanHistory.filter((_, i) => i !== index)
-      setScanHistory(newHistory)
-      localStorage.setItem('qr_scan_history', JSON.stringify(newHistory))
-      alert('✅ Scan record deleted successfully!')
-    }
-  }
-
-  const handleView = (item: ScannedItem) => {
-    alert(`Viewing details for ${item.manufacturingId}:\n\nProduct: ${item.productName}\nType: ${item.type}\nDetails: ${item.details}\nLocation: ${item.location}\nScanned: ${item.timestamp}`)
+  const closeModal = () => {
+    setShowModal(false)
+    setQuantity(1)
+    setStockAction('add')
   }
 
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1>QR Code Scanner</h1>
-        <p>Scan QR codes to track manufacturing products and inventory items</p>
+        <h1>QR Stock Manager</h1>
+        <p>Scan QR codes to add or remove stock from inventory</p>
       </div>
 
-      {/* Scanner Section */}
+      {/* Message Display */}
+      {message && (
+        <div style={{
+          padding: '12px 20px',
+          marginBottom: '20px',
+          borderRadius: '8px',
+          backgroundColor: message.type === 'success' ? '#10b981' : message.type === 'error' ? '#ef4444' : '#3b82f6',
+          color: 'white',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <span>{message.text}</span>
+          <button
+            onClick={() => setMessage(null)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'white',
+              cursor: 'pointer',
+              fontSize: '20px'
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <div className="content-card">
-        <h2 style={{ marginBottom: '24px' }}>Scan QR Code</h2>
-        
+        <h2 style={{ marginBottom: '24px' }}>Step 1: Scan Item</h2>
+
         {/* Camera Scanner */}
-        <div style={{ marginBottom: '32px' }}>
-          {scanMode ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ 
-                position: 'relative',
-                width: '100%',
-                maxWidth: '500px',
-                marginBottom: '16px'
+        {scanMode ? (
+          <div style={{ marginBottom: '32px' }}>
+            <div style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: '500px',
+              margin: '0 auto',
+              marginBottom: '16px'
+            }}>
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                style={{
+                  width: '100%',
+                  height: '350px',
+                  borderRadius: '8px',
+                  background: '#000',
+                  objectFit: 'cover',
+                  display: 'block',
+                }}
+              />
+
+              {/* Scan frame overlay */}
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '200px',
+                height: '200px',
+                border: '3px solid #10b981',
+                borderRadius: '12px',
+                pointerEvents: 'none'
               }}>
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  style={{
-                    width: '100%',
-                    height: '350px',
-                    borderRadius: '8px',
-                    background: 'linear-gradient(45deg, #1f2937 25%, #374151 25%, #374151 50%, #1f2937 50%, #1f2937 75%, #374151 75%, #374151)',
-                    backgroundSize: '20px 20px',
-                    objectFit: 'cover',
-                    display: 'block',
-                  }}
-                />
-                <canvas
-                  ref={canvasRef}
-                  style={{ display: 'none' }}
-                  width={640}
-                  height={480}
-                />
-                
-                {/* Camera Controls Overlay */}
                 <div style={{
                   position: 'absolute',
-                  top: '10px',
-                  right: '10px',
-                  display: 'flex',
-                  gap: '8px'
-                }}>
-                  {availableCameras.length > 1 && (
-                    <button 
-                      onClick={switchCamera}
-                      className="btn btn-secondary"
-                      style={{ 
-                        padding: '8px 12px',
-                        fontSize: '12px'
-                      }}
-                      title="Switch Camera"
-                    >
-                      🔄
-                    </button>
-                  )}
-                  <button 
-                    onClick={toggleFlash}
-                    className="btn btn-secondary"
-                    style={{ 
-                      padding: '8px 12px',
-                      fontSize: '12px'
-                    }}
-                    title="Toggle Flash"
-                  >
-                    💡
-                  </button>
-                </div>
-                
-                {/* Scan frame overlay */}
-                <div style={{
-                  position: 'absolute',
-                  top: '50%',
+                  top: '-30px',
                   left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  width: '200px',
-                  height: '200px',
-                  border: '3px solid #10b981',
-                  borderRadius: '12px',
-                  pointerEvents: 'none'
-                }}></div>
-              </div>
-              
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <button 
-                  onClick={toggleFlash}
-                  className="btn btn-secondary"
-                >
-                  💡 Toggle Flash
-                </button>
-                {availableCameras.length > 1 && (
-                  <button 
-                    onClick={switchCamera}
-                    className="btn btn-secondary"
-                    title={`Switch to ${availableCameras.find(cam => cam.id !== selectedCamera)?.label || 'other camera'}`}
-                  >
-                    🔄 Switch Camera
-                  </button>
-                )}
-                <button 
-                  onClick={stopCamera}
-                  className="btn btn-danger"
-                >
-                  Stop Camera
-                </button>
+                  transform: 'translateX(-50%)',
+                  color: '#10b981',
+                  fontWeight: 'bold',
+                  background: 'rgba(0,0,0,0.7)',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  fontSize: '12px'
+                }}>
+                  Align QR Code
+                </div>
               </div>
             </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '40px' }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>📷</div>
-              <h3 style={{ marginBottom: '8px' }}>Camera Scanner</h3>
-              <p style={{ marginBottom: '16px', color: '#6b7280' }}>Start camera to scan QR codes</p>
-              
-              {availableCameras.length > 1 && (
-                <div style={{ marginBottom: '16px' }}>
-                  <select 
-                    value={selectedCamera}
-                    onChange={(e) => setSelectedCamera(e.target.value)}
-                    style={{ 
-                      maxWidth: '300px', 
-                      margin: '0 auto', 
-                      marginBottom: '8px',
-                      padding: '8px 12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px'
-                    }}
-                  >
-                    {availableCameras.map(camera => (
-                      <option key={camera.id} value={camera.id}>
-                        {camera.label || `Camera ${availableCameras.indexOf(camera) + 1}`}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              
-              <button 
-                onClick={handleCameraScan}
-                className="btn btn-primary"
+
+            <div style={{ textAlign: 'center' }}>
+              <button
+                onClick={stopCamera}
+                className="btn btn-danger"
                 style={{ fontSize: '16px', padding: '12px 24px' }}
-                disabled={isLoading}
               >
-                {isLoading ? '⏳ Starting...' : 'Start Camera'}
+                Stop Camera
               </button>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <button
+              onClick={startCamera}
+              className="btn btn-primary"
+              style={{ fontSize: '18px', padding: '14px 32px' }}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Starting Camera...' : '📷 Start Camera Scanner'}
+            </button>
+          </div>
+        )}
 
         {/* Manual Entry */}
-        <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '32px' }}>
-          <h3 style={{ marginBottom: '16px', textAlign: 'center' }}>Manual Entry</h3>
+        <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '24px' }}>
+          <h3 style={{ marginBottom: '16px' }}>Or Enter Code Manually</h3>
           <form onSubmit={handleManualScan}>
-            <div className="form-group">
-              <label>Manufacturing ID</label>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <input
-                  type="text"
-                  placeholder="Enter Manufacturing ID (e.g., MFGTESTE9742)"
-                  value={manualCode}
-                  onChange={(e) => setManualCode(e.target.value)}
-                  style={{ flex: 1 }}
-                />
-                <button 
-                  type="submit" 
-                  className="btn btn-primary"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Scanning...' : 'Scan'}
-                </button>
-              </div>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <input
+                type="text"
+                placeholder="Enter QR code or ID"
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  fontSize: '16px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px'
+                }}
+              />
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isLoading}
+                style={{ padding: '12px 24px' }}
+              >
+                {isLoading ? 'Processing...' : 'Process'}
+              </button>
             </div>
           </form>
         </div>
       </div>
 
-      {/* Last Scanned Item */}
-      {lastScanned && (
-        <div className="content-card" style={{
-          background: lastScanned.type === 'UNKNOWN' ? '#fef2f2' : '#f0fdf4',
-          border: lastScanned.type === 'UNKNOWN' ? '1px solid #ef4444' : '1px solid #10b981'
-        }}>
-          <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span>{lastScanned.type === 'UNKNOWN' ? '❌' : '✅'}</span>
-            Last Scanned Item
-            <span className={`badge ${getTypeBadgeClass(lastScanned.type)}`}>
-              {lastScanned.type.replace('_', ' ')}
-            </span>
-          </h2>
-          
-          <div className="form-grid">
-            <div className="form-group">
-              <label>Manufacturing ID</label>
-              <div style={{ fontWeight: '600', fontSize: '16px' }}>{lastScanned.manufacturingId}</div>
-            </div>
-            <div className="form-group">
-              <label>Product Name</label>
-              <div>{lastScanned.productName}</div>
-            </div>
-            <div className="form-group">
-              <label>Details</label>
-              <div>{lastScanned.details}</div>
-            </div>
-            <div className="form-group">
-              <label>Location</label>
-              <div>{lastScanned.location}</div>
-            </div>
-            <div className="form-group">
-              <label>Scanned At</label>
-              <div>{lastScanned.timestamp}</div>
-            </div>
-            {lastScanned.tailorName && (
-              <div className="form-group">
-                <label>Tailor</label>
-                <div>{lastScanned.tailorName}</div>
-              </div>
-            )}
-          </div>
-          
-          {lastScanned.type !== 'UNKNOWN' && (
-            <div className="btn-group">
-              <button 
-                className="btn btn-primary"
-                onClick={() => handleView(lastScanned)}
-              >
-                View Details
-              </button>
-              <button className="btn btn-secondary">
-                Update Location
-              </button>
-              <button className="btn btn-success">
-                Generate Report
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Modal Popup for Stock Management */}
+      {showModal && scannedItem && (
+        <>
+          {/* Modal Backdrop with animation */}
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            animation: 'fadeIn 0.2s ease-in'
+          }} onClick={closeModal}>
+            {/* Modal Content */}
+            <div
+              style={{
+                maxWidth: '550px',
+                width: '90%',
+                maxHeight: '85vh',
+                overflowY: 'auto',
+                position: 'relative',
+                zIndex: 1001,
+                background: 'white',
+                borderRadius: '16px',
+                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                animation: 'slideUp 0.3s ease-out',
+                padding: '0'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header with white background */}
+              <div style={{
+                background: 'white',
+                borderRadius: '16px 16px 0 0',
+                padding: '20px',
+                position: 'relative',
+                borderBottom: '2px solid #e5e7eb'
+              }}>
+                {/* Close Button */}
+                <button
+                  onClick={closeModal}
+                  style={{
+                    position: 'absolute',
+                    top: '16px',
+                    right: '16px',
+                    background: '#f3f4f6',
+                    border: 'none',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    fontSize: '20px',
+                    cursor: 'pointer',
+                    color: '#6b7280',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#e5e7eb'
+                    e.currentTarget.style.color = '#374151'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#f3f4f6'
+                    e.currentTarget.style.color = '#6b7280'
+                  }}
+                >
+                  ×
+                </button>
 
-      {/* Scan History */}
-      <div className="content-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0 }}>Scan History ({scanHistory.length})</h2>
-          <button 
-            className="btn btn-secondary"
-            onClick={fetchScanHistory}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Refreshing...' : 'Refresh'}
-          </button>
-        </div>
-        
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Manufacturing ID</th>
-                <th>Type</th>
-                <th>Product Name</th>
-                <th>Details</th>
-                <th>Location</th>
-                <th>Timestamp</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {scanHistory.length > 0 ? (
-                scanHistory.map((item, index) => (
-                  <tr key={`${item._id}-${index}`}>
-                    <td style={{ fontWeight: '600' }}>{item.manufacturingId}</td>
-                    <td>
-                      <span className={`badge ${getTypeBadgeClass(item.type)}`}>
-                        {item.type.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td>{item.productName}</td>
-                    <td>{item.details}</td>
-                    <td>{item.location}</td>
-                    <td>{item.timestamp}</td>
-                    <td>
-                      <div className="action-buttons">
-                        <button 
-                          className="action-btn view"
-                          onClick={() => handleView(item)}
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>
+                    {scannedItem.type === 'UNKNOWN' ? '❌' : '📦'}
+                  </div>
+                  <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '600', color: '#1f2937' }}>
+                    Stock Management
+                  </h2>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#6b7280' }}>
+                    Update inventory levels
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ padding: '24px' }}>
+
+                {/* Item Info Card */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #f3f4f6, #e5e7eb)',
+                  padding: '20px',
+                  borderRadius: '12px',
+                  marginBottom: '24px',
+                  border: '1px solid #e5e7eb'
+                }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <div>
+                      <label style={{
+                        fontSize: '11px',
+                        color: '#6b7280',
+                        display: 'block',
+                        marginBottom: '6px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        fontWeight: '500'
+                      }}>
+                        Item Type
+                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '6px 12px',
+                          borderRadius: '20px',
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          background: scannedItem.type === 'FABRIC' ? '#3b82f6' :
+                                    scannedItem.type === 'MANUFACTURING' ? '#10b981' :
+                                    scannedItem.type === 'CUTTING' ? '#f59e0b' :
+                                    '#ef4444',
+                          color: 'white'
+                        }}>
+                          {scannedItem.type}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{
+                        fontSize: '11px',
+                        color: '#6b7280',
+                        display: 'block',
+                        marginBottom: '6px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        fontWeight: '500'
+                      }}>
+                        Current Stock
+                      </label>
+                      <div style={{
+                        fontWeight: '700',
+                        fontSize: '28px',
+                        color: '#059669',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <span>{scannedItem.currentStock}</span>
+                        <span style={{ fontSize: '14px', color: '#6b7280', fontWeight: '400' }}>units</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '16px' }}>
+                    <label style={{
+                      fontSize: '11px',
+                      color: '#6b7280',
+                      display: 'block',
+                      marginBottom: '6px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      fontWeight: '500'
+                    }}>
+                      Item Name
+                    </label>
+                    <div style={{
+                      fontWeight: '600',
+                      fontSize: '18px',
+                      color: '#1f2937'
+                    }}>
+                      {scannedItem.name}
+                    </div>
+                    {(scannedItem.fabricId || scannedItem.manufacturingId) && (
+                      <div style={{
+                        fontSize: '12px',
+                        color: '#6b7280',
+                        marginTop: '4px'
+                      }}>
+                        ID: {scannedItem.fabricId || scannedItem.manufacturingId || scannedItem._id}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {scannedItem.type !== 'UNKNOWN' && (
+                  <>
+                    {/* Stock Action Selection */}
+                    <div style={{ marginBottom: '20px' }}>
+                      <label style={{
+                        display: 'block',
+                        marginBottom: '12px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151'
+                      }}>
+                        Choose Action
+                      </label>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <button
+                          onClick={() => setStockAction('add')}
+                          style={{
+                            padding: '14px',
+                            fontSize: '15px',
+                            fontWeight: '600',
+                            border: '2px solid',
+                            borderColor: stockAction === 'add' ? '#10b981' : '#e5e7eb',
+                            background: stockAction === 'add' ? '#10b981' : 'white',
+                            color: stockAction === 'add' ? 'white' : '#6b7280',
+                            borderRadius: '10px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
                         >
-                          View
+                          <span style={{ fontSize: '20px' }}>📥</span>
+                          Add Stock
                         </button>
-                        <button 
-                          className="action-btn delete"
-                          onClick={() => handleDelete(index)}
+                        <button
+                          onClick={() => setStockAction('remove')}
+                          style={{
+                            padding: '14px',
+                            fontSize: '15px',
+                            fontWeight: '600',
+                            border: '2px solid',
+                            borderColor: stockAction === 'remove' ? '#ef4444' : '#e5e7eb',
+                            background: stockAction === 'remove' ? '#ef4444' : 'white',
+                            color: stockAction === 'remove' ? 'white' : '#6b7280',
+                            borderRadius: '10px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
                         >
-                          Delete
+                          <span style={{ fontSize: '20px' }}>📤</span>
+                          Remove Stock
                         </button>
                       </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={7} className="empty-state">
-                    <div className="empty-state-icon">📱</div>
-                    <h3>No Scan History</h3>
-                    <p>{isLoading ? 'Loading scan history...' : 'Start scanning QR codes to see history'}</p>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                    </div>
 
+                    {/* Quantity Input */}
+                    <div style={{ marginBottom: '20px' }}>
+                      <label style={{
+                        display: 'block',
+                        marginBottom: '12px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151'
+                      }}>
+                        Quantity
+                      </label>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '16px',
+                        background: '#f9fafb',
+                        padding: '12px',
+                        borderRadius: '10px'
+                      }}>
+                        <button
+                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            border: '2px solid #e5e7eb',
+                            background: 'white',
+                            fontSize: '20px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          value={quantity}
+                          onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                          style={{
+                            width: '100px',
+                            padding: '10px',
+                            fontSize: '24px',
+                            fontWeight: '600',
+                            textAlign: 'center',
+                            border: '2px solid #e5e7eb',
+                            borderRadius: '8px',
+                            background: 'white'
+                          }}
+                          min="1"
+                        />
+                        <button
+                          onClick={() => setQuantity(quantity + 1)}
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            border: '2px solid #e5e7eb',
+                            background: 'white',
+                            fontSize: '20px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Preview Card */}
+                    <div style={{
+                      background: `linear-gradient(135deg, ${
+                        stockAction === 'add' ? '#f0fdf4' : '#fef2f2'
+                      }, ${
+                        stockAction === 'add' ? '#dcfce7' : '#fee2e2'
+                      })`,
+                      border: `2px solid ${stockAction === 'add' ? '#86efac' : '#fca5a5'}`,
+                      padding: '16px',
+                      borderRadius: '12px',
+                      marginBottom: '20px',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{
+                        fontSize: '12px',
+                        marginBottom: '8px',
+                        color: '#6b7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        fontWeight: '500'
+                      }}>
+                        Stock After {stockAction === 'add' ? 'Addition' : 'Removal'}
+                      </div>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '12px'
+                      }}>
+                        <span style={{
+                          fontSize: '16px',
+                          color: '#6b7280'
+                        }}>
+                          {scannedItem.currentStock}
+                        </span>
+                        <span style={{
+                          fontSize: '20px',
+                          color: stockAction === 'add' ? '#10b981' : '#ef4444'
+                        }}>
+                          {stockAction === 'add' ? '→' : '→'}
+                        </span>
+                        <span style={{
+                          fontSize: '32px',
+                          fontWeight: 'bold',
+                          color: stockAction === 'add' ? '#059669' : '#dc2626'
+                        }}>
+                          {stockAction === 'add'
+                            ? scannedItem.currentStock + quantity
+                            : Math.max(0, scannedItem.currentStock - quantity)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <button
+                        onClick={closeModal}
+                        style={{
+                          flex: 1,
+                          padding: '14px',
+                          fontSize: '16px',
+                          fontWeight: '600',
+                          border: '2px solid #e5e7eb',
+                          background: 'white',
+                          color: '#6b7280',
+                          borderRadius: '10px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleStockUpdate}
+                        style={{
+                          flex: 2,
+                          padding: '14px',
+                          fontSize: '16px',
+                          fontWeight: '600',
+                          border: 'none',
+                          background: stockAction === 'add'
+                            ? 'linear-gradient(135deg, #10b981, #059669)'
+                            : 'linear-gradient(135deg, #ef4444, #dc2626)',
+                          color: 'white',
+                          borderRadius: '10px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          opacity: isLoading ? 0.7 : 1
+                        }}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <span>Updating...</span>
+                          </span>
+                        ) : (
+                          `Confirm ${stockAction === 'add' ? 'Addition' : 'Removal'}`
+                        )}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

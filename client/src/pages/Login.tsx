@@ -21,7 +21,7 @@ export default function Login() {
     
     try {
       await login(formData.username, formData.password)
-      navigate('/dashboard')
+      navigate('/')
     } catch (err: any) {
       setError(err.message || 'Login failed')
     }
@@ -44,6 +44,14 @@ export default function Login() {
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">QR Inventory</h1>
           <p className="text-gray-500 mt-2 text-sm sm:text-base">Sign in to your account</p>
+          <div className="mt-3 p-2 bg-blue-50 rounded-lg">
+            <p className="text-xs text-blue-700">
+              <strong>Employees:</strong> Use your registered username & password
+            </p>
+            <p className="text-xs text-blue-600 mt-1">
+              <strong>Admin:</strong> admin / password123
+            </p>
+          </div>
         </div>
 
         {/* Error Message */}

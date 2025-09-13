@@ -76,6 +76,33 @@ router.post('/', async (req, res) => {
   }
 })
 
+// PATCH update fabric (partial update)
+router.patch('/:id', async (req, res) => {
+  try {
+    const fabric = await Fabric.findById(req.params.id)
+    if (!fabric) {
+      return res.status(404).json({ message: 'Fabric not found' })
+    }
+
+    // Update only the fields provided
+    if (req.body.quantity !== undefined) {
+      fabric.quantity = req.body.quantity
+    }
+
+    Object.keys(req.body).forEach(key => {
+      if (req.body[key] !== undefined && key !== '_id') {
+        (fabric as any)[key] = req.body[key]
+      }
+    })
+
+    await fabric.save()
+    res.json(fabric)
+  } catch (error) {
+    console.error('Fabric update error:', error)
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
 // PUT update fabric
 router.put('/:id', async (req, res) => {
   try {
@@ -90,6 +117,7 @@ router.put('/:id', async (req, res) => {
       quality,
       length,
       width,
+      quantity,
       supplier,
       purchasePrice,
       location,
@@ -102,6 +130,7 @@ router.put('/:id', async (req, res) => {
     fabric.quality = quality || fabric.quality
     fabric.length = length ? parseFloat(length) : fabric.length
     fabric.width = width ? parseFloat(width) : fabric.width
+    fabric.quantity = quantity !== undefined ? quantity : fabric.quantity
     fabric.supplier = supplier || fabric.supplier
     fabric.purchasePrice = purchasePrice ? parseFloat(purchasePrice) : fabric.purchasePrice
     fabric.location = location || fabric.location

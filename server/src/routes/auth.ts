@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import jwt from 'jsonwebtoken'
 import { User } from '../models/User'
+import { Employee } from '../models/Employee'
 
 const router = Router()
 
@@ -9,9 +10,31 @@ router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body
 
+    // First check if it's an employee trying to login
+    const employee = await Employee.findOne({ username: username.toLowerCase() })
+
+    if (employee && employee.password === password) {
+      // Employee login successful
+      const token = jwt.sign(
+        { id: employee._id, username: employee.username, role: 'employee' },
+        process.env.JWT_SECRET || 'secret-key',
+        { expiresIn: '7d' }
+      )
+
+      return res.json({
+        token,
+        user: {
+          id: employee._id,
+          name: employee.name,
+          email: employee.email || `${employee.username}@company.com`,
+          role: 'employee'
+        }
+      })
+    }
+
     // Find user by username
     const user = await User.findOne({ username: username.toLowerCase() })
-    
+
     if (!user) {
       // For demo purposes, create default users if none exists
       if (username === 'admin' && password === 'password123') {

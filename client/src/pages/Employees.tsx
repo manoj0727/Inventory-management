@@ -28,11 +28,7 @@ export default function Employees() {
   const [showForm, setShowForm] = useState(false)
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [showCamera, setShowCamera] = useState(false)
   const [photoData, setPhotoData] = useState<string | null>(null)
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [stream, setStream] = useState<MediaStream | null>(null)
   
   const [formData, setFormData] = useState({
     username: '',
@@ -47,20 +43,7 @@ export default function Employees() {
 
   useEffect(() => {
     fetchEmployees()
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop())
-      }
-    }
   }, [])
-
-  // Set up video when showCamera and stream are ready
-  useEffect(() => {
-    if (showCamera && stream && videoRef.current) {
-      videoRef.current.srcObject = stream
-      videoRef.current.play().catch(() => {})
-    }
-  }, [showCamera, stream])
 
   const fetchEmployees = async () => {
     setIsLoading(true)
@@ -77,141 +60,6 @@ export default function Employees() {
     }
   }
 
-  const startCamera = async () => {
-    try {
-      // First set showCamera to true to show the video element
-      setShowCamera(true)
-      
-      // Check if getUserMedia is available
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Camera API not available. Please use HTTPS or localhost.')
-      }
-
-      // Check current permission status if available
-      if (navigator.permissions && navigator.permissions.query) {
-        try {
-          const permissionStatus = await navigator.permissions.query({ name: 'camera' as PermissionName })
-          // Camera permission status checked
-          
-          if (permissionStatus.state === 'denied') {
-            throw new Error('Camera permission denied. Please enable camera access in your browser settings.')
-          }
-        } catch (e) {
-          // Could not check permission status
-        }
-      }
-
-      // Request camera with fallback constraints
-      let mediaStream: MediaStream | null = null
-      
-      // Try different constraint combinations
-      const constraintsList = [
-        { video: true, audio: false },
-        { video: { facingMode: 'user' }, audio: false },
-        { video: { facingMode: 'environment' }, audio: false },
-        { video: { width: 640, height: 480 }, audio: false }
-      ]
-      
-      for (const constraints of constraintsList) {
-        try {
-          // Trying constraints
-          mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
-          if (mediaStream) break
-        } catch (e) {
-          // Failed with constraints
-        }
-      }
-      
-      if (!mediaStream) {
-        throw new Error('Could not access camera with any constraints')
-      }
-      
-      setStream(mediaStream)
-      
-      // Ensure video element is ready and set stream
-      const setupVideo = () => {
-        if (videoRef.current && mediaStream) {
-          // Setting up video element
-          videoRef.current.srcObject = mediaStream
-          
-          // Add event listeners for debugging
-          videoRef.current.onloadedmetadata = () => {
-            // Video metadata loaded
-            videoRef.current?.play().catch(() => {
-              // Play error
-            })
-          }
-          
-          videoRef.current.onplay = () => {
-            // Video started playing
-          }
-          
-          // Force play
-          videoRef.current.play().catch(() => {
-            // Initial play failed, will retry
-            // Retry play after a short delay
-            setTimeout(() => {
-              videoRef.current?.play().catch(() => {})
-            }, 500)
-          })
-        } else {
-          // If video element not ready, try again
-          setTimeout(setupVideo, 100)
-        }
-      }
-      
-      // Start setup immediately and also after a delay
-      setupVideo()
-      setTimeout(setupVideo, 200)
-      
-    } catch (error: any) {
-      // Camera error
-      setShowCamera(false)
-      
-      let errorMessage = 'Could not access camera. '
-      
-      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-        errorMessage = 'Camera permission denied. Please click "Allow" when prompted or check your browser settings (look for camera icon in address bar).'
-      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-        errorMessage = 'No camera found. Please connect a camera and try again.'
-      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-        errorMessage = 'Camera is being used by another application. Please close other apps using the camera.'
-      } else if (error.name === 'OverconstrainedError' || error.name === 'ConstraintNotSatisfiedError') {
-        errorMessage = 'Camera does not support the requested settings.'
-      } else if (error.message?.includes('HTTPS')) {
-        errorMessage = error.message
-      } else if (error.message?.includes('permission')) {
-        errorMessage = error.message
-      } else {
-        errorMessage += error.message || 'Unknown error occurred.'
-      }
-      
-      alert(errorMessage)
-    }
-  }
-
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop())
-      setStream(null)
-    }
-    setShowCamera(false)
-  }
-
-  const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const context = canvasRef.current.getContext('2d')
-      if (context) {
-        canvasRef.current.width = videoRef.current.videoWidth
-        canvasRef.current.height = videoRef.current.videoHeight
-        context.drawImage(videoRef.current, 0, 0)
-        const photo = canvasRef.current.toDataURL('image/jpeg', 0.8)
-        setPhotoData(photo)
-        setFormData({...formData, photo})
-        stopCamera()
-      }
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -306,10 +154,10 @@ export default function Employees() {
       username: employee.username,
       password: '',
       name: employee.name,
-      mobile: employee.mobile,
-      address: employee.address.street,
-      salary: employee.salary.toString(),
-      work: employee.work,
+      mobile: employee.mobile || '',
+      address: employee.address?.street || '',
+      salary: employee.salary?.toString() || '',
+      work: employee.work || '',
       photo: employee.photo || ''
     })
     setPhotoData(employee.photo)
@@ -373,61 +221,40 @@ export default function Employees() {
           </h2>
           
           <form onSubmit={handleSubmit}>
-            {/* Photo Section - Separate from grid */}
+            {/* Photo Section - Simplified */}
             <div style={{ marginBottom: '24px', padding: '20px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-              <label style={{ display: 'block', marginBottom: '16px', fontWeight: '600', fontSize: '16px', color: '#1e293b' }}>Employee Photo</label>
-              {showCamera ? (
-                <div style={{ textAlign: 'center' }}>
-                  <video
-                    ref={videoRef}
+              <label style={{ display: 'block', marginBottom: '12px', fontWeight: '600', fontSize: '16px', color: '#1e293b' }}>
+                Employee Photo URL (Optional)
+              </label>
+              <input
+                type="text"
+                placeholder="Enter photo URL (optional)"
+                value={formData.photo}
+                onChange={(e) => setFormData({...formData, photo: e.target.value})}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '15px'
+                }}
+              />
+              {formData.photo && (
+                <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                  <img
+                    src={formData.photo}
+                    alt="Employee preview"
                     style={{
-                      width: '320px',
-                      height: '240px',
-                      borderRadius: '12px',
-                      background: '#1e293b',
-                      display: 'block',
-                      margin: '0 auto 16px',
-                      objectFit: 'cover',
-                      border: '2px solid #cbd5e1'
-                    }}
-                    autoPlay
-                    playsInline
-                    muted
-                  />
-                  <canvas ref={canvasRef} style={{ display: 'none' }} />
-                  <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                    <button type="button" onClick={capturePhoto} className="btn btn-success">
-                      📸 Capture Photo
-                    </button>
-                    <button type="button" onClick={stopCamera} className="btn btn-secondary">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : photoData ? (
-                <div style={{ textAlign: 'center' }}>
-                  <img 
-                    src={photoData} 
-                    alt="Employee" 
-                    style={{
-                      width: '150px',
-                      height: '150px',
+                      maxWidth: '150px',
+                      maxHeight: '150px',
                       objectFit: 'cover',
                       borderRadius: '8px',
-                      display: 'block',
-                      margin: '0 auto 12px',
                       border: '2px solid #e5e7eb'
                     }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
                   />
-                  <button type="button" onClick={() => { setPhotoData(null); setFormData({...formData, photo: ''}) }} className="btn btn-secondary">
-                    Change Photo
-                  </button>
-                </div>
-              ) : (
-                <div style={{ textAlign: 'center' }}>
-                  <button type="button" onClick={startCamera} className="btn btn-secondary">
-                    📷 Take Photo
-                  </button>
                 </div>
               )}
             </div>
@@ -643,10 +470,10 @@ export default function Employees() {
                     <td style={{ fontWeight: '600' }}>{employee.employeeId}</td>
                     <td>{employee.name}</td>
                     <td>{employee.username}</td>
-                    <td>{employee.mobile}</td>
-                    <td>{employee.address.street || '-'}</td>
-                    <td>{employee.work}</td>
-                    <td>₹{employee.salary.toLocaleString()}</td>
+                    <td>{employee.mobile || '-'}</td>
+                    <td>{employee.address?.street || '-'}</td>
+                    <td>{employee.work || '-'}</td>
+                    <td>₹{employee.salary?.toLocaleString() || '0'}</td>
                     <td>
                       <span className={`badge ${employee.status === 'active' ? 'badge-success' : 'badge-danger'}`}>
                         {employee.status}

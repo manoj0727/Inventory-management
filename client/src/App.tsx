@@ -5,7 +5,6 @@ import ProtectedRoute from './components/ProtectedRoute'
 
 // Pages
 import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import EmployeePortal from './pages/EmployeePortal'
 import Inventory from './pages/Inventory'
@@ -18,11 +17,10 @@ import CuttingInventory from './pages/CuttingInventory'
 import Manufacturing from './pages/Manufacturing'
 import ManufacturingInventory from './pages/ManufacturingInventory'
 import Employees from './pages/Employees'
-import TailorManagement from './pages/TailorManagement'
 import GenerateQR from './pages/GenerateQR'
+import Transactions from './pages/Transactions'
 import QRScanner from './pages/QRScanner'
 import MarkAttendance from './pages/MarkAttendance'
-import AttendanceView from './pages/AttendanceView'
 
 function App() {
   const isAuthenticated = useAuthStore(state => state.isAuthenticated)
@@ -35,7 +33,6 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route path="/" element={<Navigate to={user?.role === 'admin' ? "/admin-dashboard" : "/employee-portal"} />} />
-          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/employee-portal" element={<EmployeePortal />} />
           <Route path="/inventory" element={<Inventory />} />
@@ -48,10 +45,9 @@ function App() {
           <Route path="/manufacturing-inventory" element={<ManufacturingInventory />} />
           <Route path="/generate-qr" element={<GenerateQR />} />
           <Route path="/employees" element={<Employees />} />
-          <Route path="/tailor-management" element={<TailorManagement />} />
           <Route path="/qr-scanner" element={<QRScanner />} />
+          <Route path="/transactions" element={<Transactions />} />
           <Route path="/mark-attendance" element={<MarkAttendance />} />
-          <Route path="/attendance-view" element={<AttendanceView />} />
         </Route>
       </Route>
       

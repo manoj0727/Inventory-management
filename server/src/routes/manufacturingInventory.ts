@@ -108,6 +108,29 @@ router.post('/', async (req, res) => {
   }
 })
 
+// PATCH update manufacturing inventory (partial update)
+router.patch('/:id', async (req, res) => {
+  try {
+    const manufacturingInventory = await ManufacturingInventory.findById(req.params.id)
+    if (!manufacturingInventory) {
+      return res.status(404).json({ message: 'Manufacturing inventory record not found' })
+    }
+
+    // Update only the fields provided
+    Object.keys(req.body).forEach(key => {
+      if (req.body[key] !== undefined && key !== '_id') {
+        (manufacturingInventory as any)[key] = req.body[key]
+      }
+    })
+
+    await manufacturingInventory.save()
+    res.json(manufacturingInventory)
+  } catch (error) {
+    console.error('Manufacturing inventory update error:', error)
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
 // PUT update manufacturing inventory record
 router.put('/:id', async (req, res) => {
   try {

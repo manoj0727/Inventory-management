@@ -8,6 +8,7 @@ import employeesRoutes from './employees'
 import attendanceRoutes from './attendance'
 import tailorsRoutes from './tailors'
 import dashboardRoutes from './dashboard'
+import transactionRoutes from './transactions'
 
 const router = Router()
 
@@ -20,6 +21,7 @@ router.use('/employees', employeesRoutes)
 router.use('/attendance', attendanceRoutes)
 router.use('/tailors', tailorsRoutes)
 router.use('/dashboard', dashboardRoutes)
+router.use('/transactions', transactionRoutes)
 
 // Health check
 router.get('/health', (req, res) => {

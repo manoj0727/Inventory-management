@@ -8,6 +8,7 @@ import {
   ClipboardDocumentListIcon,
   QrCodeIcon,
   ChartBarIcon,
+  DocumentTextIcon,
   Bars3Icon,
   XMarkIcon,
   ArrowRightOnRectangleIcon
@@ -34,14 +35,13 @@ export default function Layout() {
     { path: '/manufacturing-inventory', name: 'Manufacturing Inventory', icon: ChartBarIcon },
     { path: '/generate-qr', name: 'Generate QR', icon: QrCodeIcon },
     { path: '/qr-scanner', name: 'QR Scanner', icon: QrCodeIcon },
+    { path: '/transactions', name: 'Transactions', icon: DocumentTextIcon },
   ]
 
   // Admin-only menu items
   const adminOnlyItems = [
     { path: '/admin-dashboard', name: 'Admin Dashboard', icon: HomeIcon },
     { path: '/employees', name: 'Employees', icon: UsersIcon },
-    { path: '/attendance-view', name: 'Attendance Records', icon: ClipboardDocumentListIcon },
-    { path: '/tailor-management', name: 'Tailor Management', icon: UsersIcon },
   ]
 
   // Employee-only menu items
