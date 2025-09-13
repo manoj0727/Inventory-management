@@ -13,23 +13,28 @@ router.post('/login', async (req, res) => {
     // First check if it's an employee trying to login
     const employee = await Employee.findOne({ username: username.toLowerCase() })
 
-    if (employee && employee.password === password) {
-      // Employee login successful
-      const token = jwt.sign(
-        { id: employee._id, username: employee.username, role: 'employee' },
-        process.env.JWT_SECRET || 'secret-key',
-        { expiresIn: '7d' }
-      )
+    if (employee) {
+      // Use comparePassword method to check hashed password
+      const isPasswordValid = await employee.comparePassword(password)
 
-      return res.json({
-        token,
-        user: {
-          id: employee._id,
-          name: employee.name,
-          email: employee.email || `${employee.username}@company.com`,
-          role: 'employee'
-        }
-      })
+      if (isPasswordValid) {
+        // Employee login successful
+        const token = jwt.sign(
+          { id: employee._id, username: employee.username, role: 'employee' },
+          process.env.JWT_SECRET || 'secret-key',
+          { expiresIn: '7d' }
+        )
+
+        return res.json({
+          token,
+          user: {
+            id: employee._id,
+            name: employee.name,
+            email: employee.email || `${employee.username}@company.com`,
+            role: 'employee'
+          }
+        })
+      }
     }
 
     // Find user by username
