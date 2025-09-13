@@ -1,10 +1,10 @@
 import express, { Request, Response } from 'express';
-const Fabric = require('../models/Fabric');
-const Employee = require('../models/Employee');
-const Attendance = require('../models/Attendance');
-const Tailor = require('../models/Tailor');
-const ManufacturingOrder = require('../models/ManufacturingOrder');
-const CuttingRecord = require('../models/CuttingRecord');
+import { Fabric } from '../models/Fabric';
+import { Employee } from '../models/Employee';
+import Attendance from '../models/Attendance';
+import { Tailor } from '../models/Tailor';
+import { ManufacturingOrder } from '../models/ManufacturingOrder';
+import { CuttingRecord } from '../models/CuttingRecord';
 const router = express.Router();
 
 // Get dashboard statistics
@@ -22,7 +22,7 @@ router.get('/stats', async (req: Request, res: Response) => {
 
     // Fabric Statistics
     const totalFabrics = await Fabric.countDocuments();
-    const activeFabrics = await Fabric.countDocuments({ status: 'in-stock' });
+    const activeFabrics = await Fabric.countDocuments({ status: 'In Stock' });
     const totalFabricQuantity = await Fabric.aggregate([
       { $group: { _id: null, total: { $sum: '$quantity' } } }
     ]);
