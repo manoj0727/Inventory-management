@@ -4,21 +4,16 @@ import { API_URL } from '@/config/api'
 
 interface ManufacturingRecord {
   _id: string
-  id: string
-  productId: string
-  productName: string
+  manufacturingId: string
   cuttingId: string
+  productName: string
   quantity: number
-  quantityProduced: number
+  size: string
+  quantityReceive: number
   quantityRemaining: number
+  dateOfReceive: string
   tailorName: string
-  tailorMobile: string
-  startDate: string
-  completedDate?: string
-  dueDate: string
-  priority: string
   status: string
-  notes?: string
   createdAt: string
 }
 
@@ -33,12 +28,12 @@ export default function ManufacturingInventory() {
   const fetchManufacturingRecords = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`${API_URL}/api/manufacturing-inventory`)
+      const response = await fetch(`${API_URL}/api/manufacturing-orders`)
       if (response.ok) {
         const records = await response.json()
         setManufacturingRecords(records)
       } else {
-        console.error('Failed to fetch manufacturing inventory records')
+        console.error('Failed to fetch manufacturing records')
         setManufacturingRecords([])
       }
     } catch (error) {
@@ -72,9 +67,9 @@ export default function ManufacturingInventory() {
   }
 
   const handleDelete = async (record: ManufacturingRecord) => {
-    if (window.confirm(`Are you sure you want to delete manufacturing record ${record.id}?`)) {
+    if (window.confirm(`Are you sure you want to delete manufacturing record ${record.manufacturingId}?`)) {
       try {
-        const deleteResponse = await fetch(`${API_URL}/api/manufacturing-inventory/${record._id}`, {
+        const deleteResponse = await fetch(`${API_URL}/api/manufacturing-orders/${record._id}`, {
           method: 'DELETE'
         })
         
@@ -93,7 +88,7 @@ export default function ManufacturingInventory() {
 
   const handleSaveEdit = async (updatedRecord: any) => {
     try {
-      const updateResponse = await fetch(`${API_URL}/api/manufacturing-inventory/${editingRecord?._id}`, {
+      const updateResponse = await fetch(`${API_URL}/api/manufacturing-orders/${editingRecord?._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -116,11 +111,11 @@ export default function ManufacturingInventory() {
   }
 
   const filteredRecords = manufacturingRecords.filter(record => {
-    const matchesSearch = record.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          record.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          record.tailorName.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = (record.manufacturingId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (record.productName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (record.tailorName || '').toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = !filterStatus || record.status === filterStatus
-    
+
     return matchesSearch && matchesStatus
   })
 
@@ -182,44 +177,53 @@ export default function ManufacturingInventory() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Manufacturing ID</th>
-                <th>Product</th>
-                <th>Produced</th>
-                <th>Remaining</th>
-                <th>Tailor</th>
-                <th>Due Date</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th style={{ textAlign: 'center' }}>Manufacturing ID</th>
+                <th style={{ textAlign: 'center' }}>Product</th>
+                <th style={{ textAlign: 'center' }}>Quantity</th>
+                <th style={{ textAlign: 'center' }}>Size</th>
+                <th style={{ textAlign: 'center' }}>Quantity Receive</th>
+                <th style={{ textAlign: 'center' }}>Quantity Remaining</th>
+                <th style={{ textAlign: 'center' }}>Tailor</th>
+                <th style={{ textAlign: 'center' }}>Date of Receive</th>
+                <th style={{ textAlign: 'center' }}>Status</th>
+                <th style={{ textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredRecords.length > 0 ? (
-                filteredRecords.map((record) => (
-                  <tr key={record._id}>
-                    <td style={{ fontWeight: '500' }}>{record.id}</td>
-                    <td>{record.productName}</td>
-                    <td>{record.quantityProduced}</td>
-                    <td style={{ color: record.quantityRemaining > 0 ? '#f59e0b' : '#10b981' }}>
-                      {record.quantityRemaining}
-                    </td>
-                    <td>{record.tailorName}</td>
-                    <td>{formatDate(record.dueDate)}</td>
-                    <td>
-                      <span className={`badge ${getStatusBadgeClass(record.status)}`}>
-                        {record.status}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="action-buttons">
-                        <button className="action-btn edit" onClick={() => handleEdit(record)}>✏️</button>
-                        <button className="action-btn delete" onClick={() => handleDelete(record)}>🗑️</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                filteredRecords.map((record) => {
+                  const quantityRemaining = record.quantity - (record.quantityReceive || 0)
+                  const status = quantityRemaining <= 0 ? 'Complete' : 'Pending'
+
+                  return (
+                    <tr key={record._id}>
+                      <td style={{ fontWeight: '500', textAlign: 'center' }}>{record.manufacturingId || record.cuttingId}</td>
+                      <td style={{ textAlign: 'center' }}>{record.productName}</td>
+                      <td style={{ textAlign: 'center' }}>{record.quantity}</td>
+                      <td style={{ textAlign: 'center' }}>{record.size || 'N/A'}</td>
+                      <td style={{ textAlign: 'center' }}>{record.quantityReceive || 0}</td>
+                      <td style={{ textAlign: 'center' }}>{quantityRemaining}</td>
+                      <td style={{ textAlign: 'center' }}>{record.tailorName}</td>
+                      <td style={{ textAlign: 'center' }}>{formatDate(record.dateOfReceive)}</td>
+                      <td style={{ textAlign: 'center' }}>
+                        <span className={`badge ${
+                          status === 'Complete' ? 'badge-success' : 'badge-warning'
+                        }`}>
+                          {status}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <div className="action-buttons">
+                          <button className="action-btn edit" onClick={() => handleEdit(record)}>✏️</button>
+                          <button className="action-btn delete" onClick={() => handleDelete(record)}>🗑️</button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })
               ) : (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     {isLoading ? 'Loading manufacturing inventory...' : 'No manufacturing inventory records found'}
                   </td>
                 </tr>
@@ -257,20 +261,20 @@ export default function ManufacturingInventory() {
               e.preventDefault()
               const formData = new FormData(e.target as HTMLFormElement)
               const updatedRecord = {
-                quantityProduced: parseInt(formData.get('quantityProduced') as string),
+                quantityReceive: parseInt(formData.get('quantityReceive') as string),
                 tailorName: formData.get('tailorName') as string,
-                dueDate: formData.get('dueDate') as string,
+                dateOfReceive: formData.get('dateOfReceive') as string,
                 status: formData.get('status') as string
               }
               handleSaveEdit(updatedRecord)
             }}>
               <div className="form-group">
-                <label htmlFor="quantityProduced">Quantity Produced *</label>
+                <label htmlFor="quantityReceive">Quantity Receive *</label>
                 <input
                   type="number"
-                  id="quantityProduced"
-                  name="quantityProduced"
-                  defaultValue={editingRecord.quantityProduced}
+                  id="quantityReceive"
+                  name="quantityReceive"
+                  defaultValue={editingRecord.quantityReceive}
                   min="0"
                   max={editingRecord.quantity}
                   required
@@ -292,12 +296,12 @@ export default function ManufacturingInventory() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="dueDate">Due Date *</label>
+                <label htmlFor="dateOfReceive">Date of Receive *</label>
                 <input
                   type="date"
-                  id="dueDate"
-                  name="dueDate"
-                  defaultValue={editingRecord.dueDate}
+                  id="dateOfReceive"
+                  name="dateOfReceive"
+                  defaultValue={editingRecord.dateOfReceive}
                   required
                 />
               </div>

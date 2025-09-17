@@ -97,7 +97,7 @@ export default function Manufacturing() {
     }
   }
 
-  const handleCuttingIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCuttingIdChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     const newFormData = { ...formData, cuttingId: value }
 
@@ -117,24 +117,111 @@ export default function Manufacturing() {
     // Auto-fill fields when cutting ID matches exactly
     const selectedRecord = cuttingRecords.find(record => record.id.toUpperCase() === value.toUpperCase())
     if (selectedRecord) {
-      newFormData.productName = selectedRecord.productName
-      newFormData.quantity = selectedRecord.piecesCount.toString()
-      newFormData.quantityReceive = selectedRecord.piecesCount.toString()
-      newFormData.tailorName = selectedRecord.cuttingGivenTo || ''
+      // Check existing manufacturing records for this cutting ID to calculate remaining quantity
+      try {
+        const response = await fetch(`${API_URL}/api/manufacturing-orders`)
+        if (response.ok) {
+          const manufacturingRecords = await response.json()
+
+          // Debug: Log the data to see what we're working with
+          console.log('All manufacturing records:', manufacturingRecords)
+          console.log('Looking for cutting ID:', selectedRecord.id)
+
+          const existingRecords = manufacturingRecords.filter((record: any) =>
+            record.cuttingId === selectedRecord.id
+          )
+
+          console.log('Found existing records:', existingRecords)
+
+          // Calculate total quantity already manufactured/assigned
+          // Use quantityReceive instead of quantity to get actually received pieces
+          const totalReceived = existingRecords.reduce((sum: number, record: any) => {
+            const received = record.quantityReceive || 0
+            console.log(`Record ${record._id}: quantityReceive = ${received}`)
+            return sum + received
+          }, 0)
+
+          console.log('Total received:', totalReceived)
+          console.log('Original pieces count:', selectedRecord.piecesCount)
+
+          // Calculate remaining quantity
+          const remainingQuantity = selectedRecord.piecesCount - totalReceived
+          const displayQuantity = Math.max(0, remainingQuantity) // Ensure not negative
+
+          console.log('Remaining quantity:', remainingQuantity)
+          console.log('Display quantity:', displayQuantity)
+
+          // If displayQuantity is 0 and there are no existing records, use original quantity
+          const finalQuantity = (displayQuantity === 0 && existingRecords.length === 0)
+            ? selectedRecord.piecesCount
+            : displayQuantity
+
+          console.log('Final quantity to display:', finalQuantity)
+
+          newFormData.productName = selectedRecord.productName
+          newFormData.quantity = finalQuantity.toString()
+          newFormData.quantityReceive = finalQuantity.toString()
+          newFormData.tailorName = selectedRecord.cuttingGivenTo || ''
+        }
+      } catch (error) {
+        console.error('Error fetching manufacturing records:', error)
+        // Fallback to original quantity if API call fails
+        newFormData.productName = selectedRecord.productName
+        newFormData.quantity = selectedRecord.piecesCount.toString()
+        newFormData.quantityReceive = selectedRecord.piecesCount.toString()
+        newFormData.tailorName = selectedRecord.cuttingGivenTo || ''
+      }
     }
 
     setFormData(newFormData)
   }
 
-  const handleSuggestionSelect = (record: CuttingRecord) => {
-    setFormData({
-      ...formData,
-      cuttingId: record.id,
-      productName: record.productName,
-      quantity: record.piecesCount.toString(),
-      quantityReceive: record.piecesCount.toString(),
-      tailorName: record.cuttingGivenTo || ''
-    })
+  const handleSuggestionSelect = async (record: CuttingRecord) => {
+    // Calculate remaining quantity for this cutting record
+    try {
+      const response = await fetch(`${API_URL}/api/manufacturing-orders`)
+      if (response.ok) {
+        const manufacturingRecords = await response.json()
+        const existingRecords = manufacturingRecords.filter((mRecord: any) =>
+          mRecord.cuttingId === record.id
+        )
+
+        // Calculate total quantity already received (not assigned)
+        const totalReceived = existingRecords.reduce((sum: number, mRecord: any) =>
+          sum + (mRecord.quantityReceive || 0), 0
+        )
+
+        // Calculate remaining quantity
+        const remainingQuantity = record.piecesCount - totalReceived
+        const displayQuantity = Math.max(0, remainingQuantity) // Ensure not negative
+
+        // If displayQuantity is 0 and there are no existing records, use original quantity
+        const finalQuantity = (displayQuantity === 0 && existingRecords.length === 0)
+          ? record.piecesCount
+          : displayQuantity
+
+        setFormData({
+          ...formData,
+          cuttingId: record.id,
+          productName: record.productName,
+          quantity: finalQuantity.toString(),
+          quantityReceive: finalQuantity.toString(),
+          tailorName: record.cuttingGivenTo || ''
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching manufacturing records:', error)
+      // Fallback to original quantity if API call fails
+      setFormData({
+        ...formData,
+        cuttingId: record.id,
+        productName: record.productName,
+        quantity: record.piecesCount.toString(),
+        quantityReceive: record.piecesCount.toString(),
+        tailorName: record.cuttingGivenTo || ''
+      })
+    }
+
     setShowSuggestions(false)
     setCuttingSuggestions([])
   }
@@ -154,33 +241,80 @@ export default function Manufacturing() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     try {
       setIsLoading(true)
-      const manufacturingOrder = {
-        cuttingId: formData.cuttingId,
-        productName: formData.productName,
-        quantity: parseInt(formData.quantity),
-        quantityReceive: parseInt(formData.quantityReceive),
-        dateOfReceive: formData.dateOfReceive,
-        tailorName: formData.tailorName,
-        priority: 'Normal',
-        status: formData.status,
-        notes: formData.notes
+
+      // First, check if there's an existing manufacturing record for this cutting ID
+      const existingResponse = await fetch(`${API_URL}/api/manufacturing-orders`)
+      if (!existingResponse.ok) {
+        throw new Error('Failed to fetch existing manufacturing records')
       }
-      
-      const response = await fetch(`${API_URL}/api/manufacturing-orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(manufacturingOrder)
-      })
-      
+
+      const existingRecords = await existingResponse.json()
+      const existingRecord = existingRecords.find((record: any) =>
+        record.cuttingId === formData.cuttingId
+      )
+
+      let response
+      let successMessage = ''
+
+      if (existingRecord) {
+        // Update existing record
+        const newQuantityReceive = (existingRecord.quantityReceive || 0) + parseInt(formData.quantityReceive)
+        const newQuantityRemaining = Math.max(0, existingRecord.quantity - newQuantityReceive)
+        const newStatus = newQuantityRemaining <= 0 ? 'Completed' : 'Pending'
+
+        const updateData = {
+          quantityReceive: newQuantityReceive,
+          quantityRemaining: newQuantityRemaining,
+          dateOfReceive: formData.dateOfReceive,
+          status: newStatus,
+          notes: formData.notes
+        }
+
+        response = await fetch(`${API_URL}/api/manufacturing-orders/${existingRecord._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateData)
+        })
+
+        successMessage = `✅ Manufacturing record updated successfully! Status: ${newStatus}`
+      } else {
+        // Create new record only if no existing record found
+        const quantityReceive = parseInt(formData.quantityReceive)
+        const quantity = parseInt(formData.quantity)
+        const quantityRemaining = Math.max(0, quantity - quantityReceive)
+        const status = quantityRemaining <= 0 ? 'Completed' : 'Pending'
+
+        const manufacturingOrder = {
+          cuttingId: formData.cuttingId,
+          productName: formData.productName,
+          quantity: quantity,
+          quantityReceive: quantityReceive,
+          quantityRemaining: quantityRemaining,
+          dateOfReceive: formData.dateOfReceive,
+          tailorName: formData.tailorName,
+          priority: 'Normal',
+          status: status,
+          notes: formData.notes
+        }
+
+        response = await fetch(`${API_URL}/api/manufacturing-orders`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(manufacturingOrder)
+        })
+
+        successMessage = `✅ Manufacturing order created successfully! Status: ${status}`
+      }
+
       if (response.ok) {
-        alert('✅ Manufacturing order assigned to tailor successfully!')
-        
+        alert(successMessage)
+
         // Refresh manufacturing records
         fetchManufacturingRecords()
-        
+
         // Reset form
         setFormData({
           cuttingId: '',
@@ -193,11 +327,11 @@ export default function Manufacturing() {
           notes: ''
         })
       } else {
-        alert('❌ Error creating manufacturing order. Please try again.')
+        alert('❌ Error updating manufacturing order. Please try again.')
       }
     } catch (error) {
-      console.error('Error creating manufacturing order:', error)
-      alert('❌ Error creating manufacturing order. Please try again.')
+      console.error('Error handling manufacturing order:', error)
+      alert('❌ Error handling manufacturing order. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -270,7 +404,7 @@ export default function Manufacturing() {
               )}
               {formData.cuttingId && formData.productName && (
                 <small style={{ color: '#10b981' }}>
-                  ✅ Found: {formData.productName} ({formData.quantity} pieces)
+                  ✅ Found: {formData.productName} ({formData.quantity} pieces remaining)
                 </small>
               )}
             </div>
