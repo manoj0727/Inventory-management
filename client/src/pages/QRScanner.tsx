@@ -102,27 +102,58 @@ export default function QRScanner() {
         }
       }
 
-      // Check if it's a manufacturing item
-      if (!itemData && (qrData.manufacturingId || qrData.type === 'manufacturing')) {
+      // Check if it's a manufactured product or custom product from QR generation
+      if (!itemData && (qrData.manufacturingId || qrData.type === 'MANUFACTURED_PRODUCT' || qrData.type === 'CUSTOM_PRODUCT')) {
         try {
-          const response = await fetch(`${API_URL}/api/manufacturing-inventory`)
-          if (response.ok) {
-            const items = await response.json()
-            const item = items.find((m: any) =>
-              m.id === qrData.manufacturingId ||
-              m.productId === qrData.productId ||
-              m._id === qrData.id
+          // First check QR products database
+          const qrResponse = await fetch(`${API_URL}/api/qr-products`)
+          if (qrResponse.ok) {
+            const qrProducts = await qrResponse.json()
+            const qrProduct = qrProducts.find((p: any) =>
+              p.productId === qrData.manufacturingId ||
+              p.manufacturingId === qrData.manufacturingId ||
+              p.productId === qrData.productId
             )
 
-            if (item) {
+            if (qrProduct) {
               itemData = {
-                _id: item._id,
-                manufacturingId: item.id,
-                productId: item.productId,
+                _id: qrProduct._id,
+                manufacturingId: qrProduct.manufacturingId,
+                productId: qrProduct.productId,
                 type: 'MANUFACTURING',
-                name: item.productName,
-                currentStock: item.quantityProduced || item.quantity || 0,
-                details: item
+                name: qrProduct.productName,
+                currentStock: qrProduct.quantity || 0,
+                details: {
+                  ...qrProduct,
+                  color: qrProduct.color,
+                  size: qrProduct.size,
+                  tailorName: qrProduct.tailorName
+                }
+              }
+            }
+          }
+
+          // If not found in QR products, check manufacturing inventory
+          if (!itemData) {
+            const response = await fetch(`${API_URL}/api/manufacturing-inventory`)
+            if (response.ok) {
+              const items = await response.json()
+              const item = items.find((m: any) =>
+                m.id === qrData.manufacturingId ||
+                m.productId === qrData.productId ||
+                m._id === qrData.id
+              )
+
+              if (item) {
+                itemData = {
+                  _id: item._id,
+                  manufacturingId: item.id,
+                  productId: item.productId,
+                  type: 'MANUFACTURING',
+                  name: item.productName,
+                  currentStock: item.quantityProduced || item.quantity || 0,
+                  details: item
+                }
               }
             }
           }
@@ -220,11 +251,20 @@ export default function QRScanner() {
           break
 
         case 'MANUFACTURING':
-          endpoint = `${API_URL}/api/manufacturing-inventory/${scannedItem._id}`
-          method = 'PATCH'
-          updateData = {
-            quantityProduced: newQuantity,
-            quantity: newQuantity
+          // Check if it's a QR product or manufacturing inventory item
+          if (scannedItem.details && scannedItem.details.manufacturingId) {
+            // Update QR product quantity
+            endpoint = `${API_URL}/api/qr-products/${scannedItem._id}`
+            method = 'PATCH'
+            updateData = { quantity: newQuantity }
+          } else {
+            // Update manufacturing inventory
+            endpoint = `${API_URL}/api/manufacturing-inventory/${scannedItem._id}`
+            method = 'PATCH'
+            updateData = {
+              quantityProduced: newQuantity,
+              quantity: newQuantity
+            }
           }
           break
 

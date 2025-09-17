@@ -7,6 +7,7 @@ export interface IEmployee extends Document {
   name: string;
   email: string;
   mobile: string;
+  aadharNumber?: string;
   address?: {
     street?: string;
     city?: string;
@@ -48,6 +49,11 @@ const employeeSchema = new Schema<IEmployee>({
   mobile: {
     type: String,
     required: true
+  },
+  aadharNumber: {
+    type: String,
+    trim: true,
+    match: /^\d{12}$/  // Validates 12-digit Aadhar number
   },
   address: {
     street: String,

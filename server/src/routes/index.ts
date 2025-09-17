@@ -9,6 +9,7 @@ import attendanceRoutes from './attendance'
 import tailorsRoutes from './tailors'
 import dashboardRoutes from './dashboard'
 import transactionRoutes from './transactions'
+import qrProductsRoutes from './qrProducts'
 
 const router = Router()
 
@@ -22,6 +23,7 @@ router.use('/attendance', attendanceRoutes)
 router.use('/tailors', tailorsRoutes)
 router.use('/dashboard', dashboardRoutes)
 router.use('/transactions', transactionRoutes)
+router.use('/qr-products', qrProductsRoutes)
 
 // Health check
 router.get('/health', (req, res) => {

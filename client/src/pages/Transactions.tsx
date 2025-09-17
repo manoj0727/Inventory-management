@@ -5,21 +5,24 @@ import { API_URL } from '@/config/api'
 interface Transaction {
   id: string
   timestamp: string
-  itemType: 'FABRIC' | 'MANUFACTURING' | 'CUTTING' | 'UNKNOWN'
+  itemType: 'FABRIC' | 'MANUFACTURING' | 'CUTTING' | 'QR_GENERATED' | 'UNKNOWN'
   itemId: string
   itemName: string
-  action: 'ADD' | 'REMOVE'
+  action: 'ADD' | 'REMOVE' | 'QR_GENERATED'
   quantity: number
   previousStock: number
   newStock: number
   performedBy: string
-  source: 'QR_SCANNER' | 'MANUAL'
+  source: 'QR_SCANNER' | 'MANUAL' | 'QR_GENERATION'
+  type?: string
+  productInfo?: any
+  generatedBy?: string
 }
 
 export default function Transactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [filter, setFilter] = useState<'all' | 'add' | 'remove'>('all')
-  const [typeFilter, setTypeFilter] = useState<'all' | 'FABRIC' | 'MANUFACTURING' | 'CUTTING'>('all')
+  const [filter, setFilter] = useState<'all' | 'add' | 'remove' | 'qr_generated'>('all')
+  const [typeFilter, setTypeFilter] = useState<'all' | 'FABRIC' | 'MANUFACTURING' | 'CUTTING' | 'QR_GENERATED'>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [dateFilter, setDateFilter] = useState('')
 
@@ -79,8 +82,12 @@ export default function Transactions() {
 
   const filteredTransactions = transactions.filter(transaction => {
     // Filter by action
-    if (filter !== 'all' && transaction.action.toLowerCase() !== filter) {
-      return false
+    if (filter !== 'all') {
+      if (filter === 'qr_generated' && transaction.action !== 'QR_GENERATED') {
+        return false
+      } else if (filter !== 'qr_generated' && transaction.action.toLowerCase() !== filter) {
+        return false
+      }
     }
 
     // Filter by type
@@ -106,7 +113,12 @@ export default function Transactions() {
   })
 
   const getActionBadgeClass = (action: string) => {
-    return action === 'ADD' ? 'badge-success' : 'badge-danger'
+    switch(action) {
+      case 'ADD': return 'badge-success'
+      case 'REMOVE': return 'badge-danger'
+      case 'QR_GENERATED': return 'badge-info'
+      default: return 'badge-secondary'
+    }
   }
 
   const getTypeBadgeClass = (type: string) => {
@@ -114,6 +126,7 @@ export default function Transactions() {
       case 'FABRIC': return 'badge-info'
       case 'MANUFACTURING': return 'badge-success'
       case 'CUTTING': return 'badge-warning'
+      case 'QR_GENERATED': return 'badge-purple'
       default: return 'badge-secondary'
     }
   }
@@ -128,6 +141,7 @@ export default function Transactions() {
     total: transactions.length,
     additions: transactions.filter(t => t.action === 'ADD').length,
     removals: transactions.filter(t => t.action === 'REMOVE').length,
+    qrGenerated: transactions.filter(t => t.action === 'QR_GENERATED').length,
     today: transactions.filter(t =>
       new Date(t.timestamp).toDateString() === new Date().toDateString()
     ).length
@@ -137,7 +151,7 @@ export default function Transactions() {
     <div className="page-container">
       <div className="page-header">
         <h1>Inventory Transactions</h1>
-        <p>Track all inventory changes from QR scanner operations</p>
+        <p>Track all inventory changes from QR scanner operations and QR code generation</p>
       </div>
 
       {/* Statistics Cards */}
@@ -172,6 +186,15 @@ export default function Transactions() {
         }}>
           <h3 style={{ margin: 0, fontSize: '14px', color: '#ef4444' }}>Stock Removals</h3>
           <p style={{ margin: '8px 0 0 0', fontSize: '32px', fontWeight: 'bold', color: '#ef4444' }}>{stats.removals}</p>
+        </div>
+
+        <div className="content-card" style={{
+          background: 'white',
+          padding: '20px',
+          border: '2px solid #8b5cf6'
+        }}>
+          <h3 style={{ margin: 0, fontSize: '14px', color: '#8b5cf6' }}>QR Generated</h3>
+          <p style={{ margin: '8px 0 0 0', fontSize: '32px', fontWeight: 'bold', color: '#8b5cf6' }}>{stats.qrGenerated}</p>
         </div>
 
         <div className="content-card" style={{
@@ -213,6 +236,7 @@ export default function Transactions() {
             <option value="all">All Actions</option>
             <option value="add">Additions</option>
             <option value="remove">Removals</option>
+            <option value="qr_generated">QR Generated</option>
           </select>
 
           {/* Type Filter */}
@@ -225,6 +249,7 @@ export default function Transactions() {
             <option value="FABRIC">Fabric</option>
             <option value="MANUFACTURING">Manufacturing</option>
             <option value="CUTTING">Cutting</option>
+            <option value="QR_GENERATED">QR Generated</option>
           </select>
 
           {/* Action Buttons */}
@@ -287,7 +312,9 @@ export default function Transactions() {
                     <td style={{ fontSize: '12px', color: '#6b7280' }}>{transaction.itemId}</td>
                     <td>
                       <span className={`badge ${getActionBadgeClass(transaction.action)}`}>
-                        {transaction.action === 'ADD' ? '➕ ADD' : '➖ REMOVE'}
+                        {transaction.action === 'ADD' ? '➕ ADD' :
+                         transaction.action === 'REMOVE' ? '➖ REMOVE' :
+                         '📱 QR GENERATED'}
                       </span>
                     </td>
                     <td style={{ textAlign: 'center', fontWeight: '600' }}>{transaction.quantity}</td>
@@ -308,7 +335,9 @@ export default function Transactions() {
                     </td>
                     <td>
                       <span className="badge badge-secondary">
-                        {transaction.source === 'QR_SCANNER' ? '📱 QR' : '✏️ Manual'}
+                        {transaction.source === 'QR_SCANNER' ? '📱 QR Scanner' :
+                         transaction.source === 'QR_GENERATION' ? '🏷️ QR Gen' :
+                         '✏️ Manual'}
                       </span>
                     </td>
                   </tr>

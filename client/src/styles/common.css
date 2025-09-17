@@ -244,6 +244,16 @@
   color: #1e40af;
 }
 
+.badge-purple {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.badge-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
 /* Action Buttons in Tables */
 .action-buttons {
   display: flex;
