@@ -42,18 +42,18 @@ router.post('/', async (req, res) => {
       pieceLength,
       pieceWidth,
       totalSquareMetersUsed,
-      usageLocation,
-      cuttingEmployee,
+      sizeType,
+      cuttingMaster,
+      cuttingGivenTo,
       date,
       time,
-      status,
       notes
     } = req.body
 
     // Validate required fields
-    if (!id || !productId || !fabricType || !fabricColor || !productName || 
-        !piecesCount || !pieceLength || !pieceWidth || !totalSquareMetersUsed || 
-        !usageLocation || !cuttingEmployee || !date || !time) {
+    if (!id || !productId || !fabricType || !fabricColor || !productName ||
+        !piecesCount || !pieceLength || !pieceWidth || !totalSquareMetersUsed ||
+        !sizeType || !cuttingMaster || !cuttingGivenTo || !date || !time) {
       return res.status(400).json({ message: 'Missing required fields' })
     }
 
@@ -90,11 +90,11 @@ router.post('/', async (req, res) => {
       pieceLength: parseFloat(pieceLength),
       pieceWidth: parseFloat(pieceWidth),
       totalSquareMetersUsed: parseFloat(totalSquareMetersUsed),
-      usageLocation,
-      cuttingEmployee,
+      sizeType,
+      cuttingMaster,
+      cuttingGivenTo,
       date,
       time,
-      status: status || 'Completed',
       notes
     })
 
@@ -156,9 +156,9 @@ router.put('/:id', async (req, res) => {
       piecesCount,
       pieceLength,
       pieceWidth,
-      usageLocation,
-      cuttingEmployee,
-      status,
+      sizeType,
+      cuttingMaster,
+      cuttingGivenTo,
       notes
     } = req.body
 
@@ -167,9 +167,9 @@ router.put('/:id', async (req, res) => {
     if (piecesCount) cuttingRecord.piecesCount = parseInt(piecesCount)
     if (pieceLength) cuttingRecord.pieceLength = parseFloat(pieceLength)
     if (pieceWidth) cuttingRecord.pieceWidth = parseFloat(pieceWidth)
-    if (usageLocation) cuttingRecord.usageLocation = usageLocation
-    if (cuttingEmployee) cuttingRecord.cuttingEmployee = cuttingEmployee
-    if (status) cuttingRecord.status = status
+    if (sizeType) cuttingRecord.sizeType = sizeType
+    if (cuttingMaster) cuttingRecord.cuttingMaster = cuttingMaster
+    if (cuttingGivenTo) cuttingRecord.cuttingGivenTo = cuttingGivenTo
     if (notes !== undefined) cuttingRecord.notes = notes
 
     // Recalculate total square meters used

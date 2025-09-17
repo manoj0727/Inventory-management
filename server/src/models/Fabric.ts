@@ -5,13 +5,11 @@ export interface IFabric extends Document {
   fabricId: string
   fabricType: string
   color: string
-  quality: 'Premium' | 'Standard' | 'Economy'
   length: number
   width: number
   quantity: number
   supplier: string
   purchasePrice?: number
-  location?: string
   notes?: string
   status: 'In Stock' | 'Low Stock' | 'Out of Stock'
   dateReceived: Date
@@ -38,11 +36,6 @@ const FabricSchema: Schema = new Schema({
     required: true,
     trim: true
   },
-  quality: {
-    type: String,
-    required: true,
-    enum: ['Premium', 'Standard', 'Economy']
-  },
   length: {
     type: Number,
     required: true,
@@ -66,10 +59,6 @@ const FabricSchema: Schema = new Schema({
   purchasePrice: {
     type: Number,
     min: 0
-  },
-  location: {
-    type: String,
-    trim: true
   },
   notes: {
     type: String,

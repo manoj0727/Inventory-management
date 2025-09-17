@@ -41,62 +41,6 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({ username: username.toLowerCase() })
 
     if (!user) {
-      // For demo purposes, create default users if none exists
-      if (username === 'admin' && password === 'password123') {
-        const newUser = new User({
-          name: 'Administrator',
-          username: 'admin',
-          email: 'admin@example.com',
-          password: 'password123',
-          role: 'admin'
-        })
-        await newUser.save()
-        
-        const token = jwt.sign(
-          { id: newUser._id, username: newUser.username, role: newUser.role },
-          process.env.JWT_SECRET || 'secret-key',
-          { expiresIn: '7d' }
-        )
-
-        return res.json({
-          token,
-          user: {
-            id: newUser._id,
-            name: newUser.name,
-            email: newUser.email,
-            role: newUser.role
-          }
-        })
-      }
-      
-      // Create default employee user
-      if (username === 'employee' && password === 'emp123') {
-        const newUser = new User({
-          name: 'Employee User',
-          username: 'employee',
-          email: 'employee@example.com',
-          password: 'emp123',
-          role: 'employee'
-        })
-        await newUser.save()
-        
-        const token = jwt.sign(
-          { id: newUser._id, username: newUser.username, role: newUser.role },
-          process.env.JWT_SECRET || 'secret-key',
-          { expiresIn: '7d' }
-        )
-
-        return res.json({
-          token,
-          user: {
-            id: newUser._id,
-            name: newUser.name,
-            email: newUser.email,
-            role: newUser.role
-          }
-        })
-      }
-      
       return res.status(401).json({ message: 'Invalid username or password' })
     }
 

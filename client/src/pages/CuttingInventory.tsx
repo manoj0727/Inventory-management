@@ -10,16 +10,14 @@ interface CuttingRecord {
   fabricColor: string
   productName: string
   piecesCount: number
-  piecesRemaining: number
-  piecesManufactured: number
   pieceLength: number
   pieceWidth: number
   totalSquareMetersUsed: number
-  usageLocation: string
-  cuttingEmployee: string
+  sizeType: string
+  cuttingMaster: string
+  cuttingGivenTo: string
   date: string
   time: string
-  status: string
   notes?: string
 }
 
@@ -120,10 +118,10 @@ export default function CuttingInventory() {
   const filteredRecords = cuttingRecords.filter(record => {
     const matchesSearch = record.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           record.fabricType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          record.fabricColor.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           record.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          record.productId.toLowerCase().includes(searchTerm.toLowerCase())
-    
+                          record.productId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (record.sizeType && record.sizeType.toLowerCase().includes(searchTerm.toLowerCase()))
+
     return matchesSearch
   })
 
@@ -159,43 +157,30 @@ export default function CuttingInventory() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Cutting ID</th>
-                <th>Product Name</th>
-                <th>Fabric</th>
-                <th>Color</th>
-                <th>Total Cut</th>
-                <th>Remaining</th>
-                <th>Manufactured</th>
-                <th>Total Used</th>
-                <th>Employee</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th style={{ textAlign: 'center' }}>Cutting ID</th>
+                <th style={{ textAlign: 'center' }}>Product Name</th>
+                <th style={{ textAlign: 'center' }}>Fabric</th>
+                <th style={{ textAlign: 'center' }}>Size Type</th>
+                <th style={{ textAlign: 'center' }}>Quantity</th>
+                <th style={{ textAlign: 'center' }}>Cutting Master</th>
+                <th style={{ textAlign: 'center' }}>Given To Tailor</th>
+                <th style={{ textAlign: 'center' }}>Date</th>
+                <th style={{ textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredRecords.length > 0 ? (
                 filteredRecords.map((record) => (
                   <tr key={record.id}>
-                    <td style={{ fontWeight: '500' }}>{record.id}</td>
-                    <td>{record.productName}</td>
-                    <td>{record.fabricType}</td>
-                    <td>{record.fabricColor}</td>
-                    <td>{record.piecesCount}</td>
-                    <td style={{ 
-                      fontWeight: '600',
-                      color: record.piecesRemaining === 0 ? '#ef4444' : record.piecesRemaining < 10 ? '#f59e0b' : '#10b981'
-                    }}>
-                      {record.piecesRemaining || record.piecesCount}
-                    </td>
-                    <td>{record.piecesManufactured || 0}</td>
-                    <td>{record.totalSquareMetersUsed} sq.m</td>
-                    <td>{record.cuttingEmployee}</td>
-                    <td>{formatDate(record.date)}</td>
-                    <td>
-                      <span className="badge badge-success">{record.status}</span>
-                    </td>
-                    <td>
+                    <td style={{ fontWeight: '500', textAlign: 'center' }}>{record.id}</td>
+                    <td style={{ textAlign: 'center' }}>{record.productName}</td>
+                    <td style={{ textAlign: 'center' }}>{record.fabricType}</td>
+                    <td style={{ textAlign: 'center' }}>{record.sizeType || 'N/A'}</td>
+                    <td style={{ textAlign: 'center' }}>{record.piecesCount}</td>
+                    <td style={{ textAlign: 'center' }}>{record.cuttingMaster}</td>
+                    <td style={{ textAlign: 'center' }}>{record.cuttingGivenTo || 'N/A'}</td>
+                    <td style={{ textAlign: 'center' }}>{formatDate(record.date)}</td>
+                    <td style={{ textAlign: 'center' }}>
                       <div className="action-buttons">
                         <button className="action-btn edit" onClick={() => handleEdit(record)}>✏️</button>
                         <button className="action-btn delete" onClick={() => handleDelete(record)}>🗑️</button>
@@ -205,7 +190,7 @@ export default function CuttingInventory() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={12} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     {isLoading ? 'Loading cutting records...' : 'No cutting records found'}
                   </td>
                 </tr>
@@ -249,8 +234,9 @@ export default function CuttingInventory() {
                 pieceLength: parseFloat(formData.get('pieceLength') as string),
                 pieceWidth: parseFloat(formData.get('pieceWidth') as string),
                 totalSquareMetersUsed: parseInt(formData.get('piecesCount') as string) * parseFloat(formData.get('pieceLength') as string) * parseFloat(formData.get('pieceWidth') as string),
-                usageLocation: formData.get('usageLocation') as string,
-                cuttingEmployee: formData.get('cuttingEmployee') as string
+                sizeType: formData.get('sizeType') as string,
+                cuttingMaster: formData.get('cuttingMaster') as string,
+                cuttingGivenTo: formData.get('cuttingGivenTo') as string
               }
               handleSaveEdit(updatedRecord)
             }}>
@@ -304,22 +290,41 @@ export default function CuttingInventory() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="usageLocation">Usage Location</label>
+                <label htmlFor="sizeType">Size Type *</label>
+                <select
+                  id="sizeType"
+                  name="sizeType"
+                  defaultValue={editingRecord.sizeType}
+                  required
+                >
+                  <option value="">Select Size</option>
+                  <option value="XXS">XXS</option>
+                  <option value="XS">XS</option>
+                  <option value="S">S</option>
+                  <option value="M">M</option>
+                  <option value="L">L</option>
+                  <option value="XL">XL</option>
+                  <option value="XXL">XXL</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="cuttingMaster">Cutting Master</label>
                 <input
                   type="text"
-                  id="usageLocation"
-                  name="usageLocation"
-                  defaultValue={editingRecord.usageLocation}
+                  id="cuttingMaster"
+                  name="cuttingMaster"
+                  defaultValue={editingRecord.cuttingMaster}
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="cuttingEmployee">Cutting Employee</label>
+                <label htmlFor="cuttingGivenTo">Cutting Given To (Tailor)</label>
                 <input
                   type="text"
-                  id="cuttingEmployee"
-                  name="cuttingEmployee"
-                  defaultValue={editingRecord.cuttingEmployee}
+                  id="cuttingGivenTo"
+                  name="cuttingGivenTo"
+                  defaultValue={editingRecord.cuttingGivenTo}
                 />
               </div>
 

@@ -5,18 +5,16 @@ import { API_URL } from '@/config/api'
 
 interface InventoryItem {
   id: string
-  name: string
+  fabricType: string
   color: string
-  category: string
   quantity: number
-  location: string
   status: string
-  quality: string
   length: number
   width: number
   supplier: string
   purchasePrice: number
   notes: string
+  dateRegistered: string
 }
 
 export default function Inventory() {
@@ -28,10 +26,18 @@ export default function Inventory() {
   const [showEditModal, setShowEditModal] = useState(false)
 
   const generateProductId = (name: string, color: string, quantity: number) => {
-    const nameCode = name.substring(0, 3).toUpperCase()
-    const colorCode = color.substring(0, 2).toUpperCase()
-    const quantityCode = quantity.toString().padStart(3, '0')
-    return `${nameCode}${colorCode}${quantityCode}`
+    const nameCode = name.substring(0, 2).toUpperCase()
+    const colorCode = color.substring(0, 1).toUpperCase()
+    const randomNumber = Math.floor(Math.random() * 900) + 100 // 3-digit random number
+    return `${nameCode}${colorCode}${randomNumber}` // Total 6 characters
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const day = date.getDate().toString().padStart(2, '0')
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const year = date.getFullYear()
+    return `${day}/${month}/${year}`
   }
 
   const fetchInventoryItems = async () => {
@@ -43,18 +49,16 @@ export default function Inventory() {
         const fabrics = await response.json()
         const inventoryItems = fabrics.map((fabric: any) => ({
           id: fabric.productId || generateProductId(fabric.fabricType, fabric.color, Math.floor(fabric.quantity)),
-          name: fabric.fabricType,
+          fabricType: fabric.fabricType,
           color: fabric.color,
-          category: 'Fabric',
           quantity: fabric.quantity,
-          location: fabric.location || 'N/A',
           status: fabric.status,
-          quality: fabric.quality,
           length: fabric.length,
           width: fabric.width,
           supplier: fabric.supplier,
           purchasePrice: fabric.purchasePrice || 0,
-          notes: fabric.notes || ''
+          notes: fabric.notes || '',
+          dateRegistered: fabric.dateReceived || fabric.createdAt || new Date().toISOString()
         }))
         setInventoryItems(inventoryItems)
       }
@@ -70,7 +74,7 @@ export default function Inventory() {
   }, [])
 
   const filteredItems = inventoryItems.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.fabricType.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.color.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.id.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -81,14 +85,14 @@ export default function Inventory() {
   }
 
   const handleDelete = async (item: InventoryItem) => {
-    if (window.confirm(`Are you sure you want to delete ${item.name} - ${item.color}?`)) {
+    if (window.confirm(`Are you sure you want to delete ${item.fabricType} - ${item.color}?`)) {
       try {
         // Find the fabric by matching name and color since we need the MongoDB _id
         const response = await fetch(`${API_URL}/api/fabrics`)
         if (response.ok) {
           const fabrics = await response.json()
-          const fabricToDelete = fabrics.find((fabric: any) => 
-            fabric.fabricType === item.name && fabric.color === item.color
+          const fabricToDelete = fabrics.find((fabric: any) =>
+            fabric.fabricType === item.fabricType && fabric.color === item.color
           )
           
           if (fabricToDelete) {
@@ -117,8 +121,8 @@ export default function Inventory() {
       const response = await fetch(`${API_URL}/api/fabrics`)
       if (response.ok) {
         const fabrics = await response.json()
-        const fabricToUpdate = fabrics.find((fabric: any) => 
-          fabric.fabricType === editingItem?.name && fabric.color === editingItem?.color
+        const fabricToUpdate = fabrics.find((fabric: any) =>
+          fabric.fabricType === editingItem?.fabricType && fabric.color === editingItem?.color
         )
         
         if (fabricToUpdate) {
@@ -128,14 +132,12 @@ export default function Inventory() {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              fabricType: updatedItem.name,
+              fabricType: updatedItem.fabricType,
               color: updatedItem.color,
-              quality: updatedItem.quality,
               length: updatedItem.length,
               width: updatedItem.width,
               supplier: updatedItem.supplier,
               purchasePrice: updatedItem.purchasePrice,
-              location: updatedItem.location,
               notes: updatedItem.notes
             })
           })
@@ -194,29 +196,27 @@ export default function Inventory() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Product ID</th>
-                <th>Name</th>
-                <th>Color</th>
-                <th>Category</th>
-                <th>Quantity</th>
-                <th>Price/m</th>
-                <th>Location</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th style={{ textAlign: 'center' }}>Fabric ID</th>
+                <th style={{ textAlign: 'center' }}>Fabric Type</th>
+                <th style={{ textAlign: 'center' }}>Color</th>
+                <th style={{ textAlign: 'center' }}>Quantity</th>
+                <th style={{ textAlign: 'center' }}>Price/m</th>
+                <th style={{ textAlign: 'center' }}>Date Registered</th>
+                <th style={{ textAlign: 'center' }}>Status</th>
+                <th style={{ textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredItems.length > 0 ? (
                 filteredItems.map((item) => (
                   <tr key={item.id}>
-                    <td style={{ fontWeight: '500' }}>{item.id}</td>
-                    <td>{item.name}</td>
-                    <td>{item.color}</td>
-                    <td>{item.category}</td>
-                    <td>{item.quantity} sq.m</td>
-                    <td>₹{item.purchasePrice > 0 ? item.purchasePrice.toFixed(2) : 'N/A'}</td>
-                    <td>{item.location}</td>
-                    <td>
+                    <td style={{ fontWeight: '500', textAlign: 'center' }}>{item.id}</td>
+                    <td style={{ textAlign: 'center' }}>{item.fabricType}</td>
+                    <td style={{ textAlign: 'center' }}>{item.color}</td>
+                    <td style={{ textAlign: 'center' }}>{item.quantity} sq.m</td>
+                    <td style={{ textAlign: 'center' }}>₹{item.purchasePrice > 0 ? item.purchasePrice.toFixed(2) : 'N/A'}</td>
+                    <td style={{ textAlign: 'center' }}>{formatDate(item.dateRegistered)}</td>
+                    <td style={{ textAlign: 'center' }}>
                       <span className={`badge ${
                         item.status === 'In Stock' ? 'badge-success' : 
                         item.status === 'Low Stock' ? 'badge-warning' : 'badge-danger'
@@ -224,7 +224,7 @@ export default function Inventory() {
                         {item.status}
                       </span>
                     </td>
-                    <td>
+                    <td style={{ textAlign: 'center' }}>
                       <div className="action-buttons">
                         <button className="action-btn edit" onClick={() => handleEdit(item)}>✏️</button>
                         <button className="action-btn delete" onClick={() => handleDelete(item)}>🗑️</button>
@@ -234,7 +234,7 @@ export default function Inventory() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     {isLoading ? 'Loading inventory...' : 'No inventory items found'}
                   </td>
                 </tr>
@@ -273,26 +273,24 @@ export default function Inventory() {
               const formData = new FormData(e.target as HTMLFormElement)
               const updatedItem: InventoryItem = {
                 ...editingItem,
-                name: formData.get('name') as string,
+                fabricType: formData.get('fabricType') as string,
                 color: formData.get('color') as string,
-                quality: formData.get('quality') as string,
                 length: parseFloat(formData.get('length') as string),
                 width: parseFloat(formData.get('width') as string),
                 supplier: formData.get('supplier') as string,
                 purchasePrice: parseFloat(formData.get('purchasePrice') as string) || 0,
-                location: formData.get('location') as string,
                 notes: formData.get('notes') as string
               }
               handleSaveEdit(updatedItem)
             }}>
               <div className="form-grid">
                 <div className="form-group">
-                  <label htmlFor="name">Fabric Type *</label>
+                  <label htmlFor="fabricType">Fabric Type *</label>
                   <input
                     type="text"
-                    id="name"
-                    name="name"
-                    defaultValue={editingItem.name}
+                    id="fabricType"
+                    name="fabricType"
+                    defaultValue={editingItem.fabricType}
                     required
                   />
                 </div>
@@ -306,20 +304,6 @@ export default function Inventory() {
                     defaultValue={editingItem.color}
                     required
                   />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="quality">Quality Grade *</label>
-                  <select
-                    id="quality"
-                    name="quality"
-                    defaultValue={editingItem.quality}
-                    required
-                  >
-                    <option value="Premium">Premium</option>
-                    <option value="Standard">Standard</option>
-                    <option value="Economy">Economy</option>
-                  </select>
                 </div>
 
                 <div className="form-group">
@@ -371,15 +355,6 @@ export default function Inventory() {
                   />
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="location">Storage Location</label>
-                  <input
-                    type="text"
-                    id="location"
-                    name="location"
-                    defaultValue={editingItem.location}
-                  />
-                </div>
               </div>
 
               <div className="form-group">

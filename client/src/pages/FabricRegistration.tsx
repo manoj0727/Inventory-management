@@ -5,13 +5,11 @@ import '../styles/common.css'
 interface FabricForm {
   fabricType: string
   color: string
-  quality: string
   length: string
   width: string
   quantity: string
   supplier: string
   purchasePrice: string
-  location: string
   notes: string
 }
 
@@ -19,7 +17,6 @@ interface RecentFabric {
   productId: string
   fabricType: string
   color: string
-  quality: string
   quantity: number
   dateReceived: string
   status: string
@@ -29,13 +26,11 @@ export default function FabricRegistration() {
   const [formData, setFormData] = useState<FabricForm>({
     fabricType: '',
     color: '',
-    quality: '',
     length: '',
     width: '',
     quantity: '',
     supplier: '',
     purchasePrice: '',
-    location: '',
     notes: ''
   })
   
@@ -52,7 +47,6 @@ export default function FabricRegistration() {
           productId: fabric.productId,
           fabricType: fabric.fabricType,
           color: fabric.color,
-          quality: fabric.quality,
           quantity: fabric.quantity,
           dateReceived: new Date(fabric.dateReceived).toLocaleDateString(),
           status: fabric.status
@@ -90,13 +84,11 @@ export default function FabricRegistration() {
         setFormData({
           fabricType: '',
           color: '',
-          quality: '',
           length: '',
           width: '',
           quantity: '',
           supplier: '',
           purchasePrice: '',
-          location: '',
           notes: ''
         })
         
@@ -164,22 +156,6 @@ export default function FabricRegistration() {
                 placeholder="e.g., Red, Blue, White"
                 required
               />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="quality">Quality Grade *</label>
-              <select
-                id="quality"
-                name="quality"
-                value={formData.quality}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select Quality</option>
-                <option value="Premium">Premium</option>
-                <option value="Standard">Standard</option>
-                <option value="Economy">Economy</option>
-              </select>
             </div>
 
             <div className="form-group">
@@ -251,18 +227,6 @@ export default function FabricRegistration() {
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="location">Storage Location</label>
-              <input
-                type="text"
-                id="location"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                placeholder="e.g., Warehouse A, Rack B3"
-              />
-            </div>
-
           </div>
 
           <div className="form-group">
@@ -288,13 +252,11 @@ export default function FabricRegistration() {
               onClick={() => setFormData({
                 fabricType: '',
                 color: '',
-                quality: '',
                 length: '',
                 width: '',
                 quantity: '',
                 supplier: '',
                 purchasePrice: '',
-                location: '',
                 notes: ''
               })}
             >
@@ -321,26 +283,24 @@ export default function FabricRegistration() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Product ID</th>
-                <th>Type</th>
-                <th>Color</th>
-                <th>Quality</th>
-                <th>Quantity</th>
-                <th>Date</th>
-                <th>Status</th>
+                <th style={{ textAlign: 'center' }}>Fabric ID</th>
+                <th style={{ textAlign: 'center' }}>Fabric Type</th>
+                <th style={{ textAlign: 'center' }}>Color</th>
+                <th style={{ textAlign: 'center' }}>Quantity</th>
+                <th style={{ textAlign: 'center' }}>Date</th>
+                <th style={{ textAlign: 'center' }}>Status</th>
               </tr>
             </thead>
             <tbody>
               {recentFabrics.length > 0 ? (
                 recentFabrics.map((fabric) => (
                   <tr key={fabric.productId}>
-                    <td>{fabric.productId}</td>
-                    <td>{fabric.fabricType}</td>
-                    <td>{fabric.color}</td>
-                    <td>{fabric.quality}</td>
-                    <td>{fabric.quantity} sq.m</td>
-                    <td>{fabric.dateReceived}</td>
-                    <td>
+                    <td style={{ textAlign: 'center' }}>{fabric.productId}</td>
+                    <td style={{ textAlign: 'center' }}>{fabric.fabricType}</td>
+                    <td style={{ textAlign: 'center' }}>{fabric.color}</td>
+                    <td style={{ textAlign: 'center' }}>{fabric.quantity} sq.m</td>
+                    <td style={{ textAlign: 'center' }}>{fabric.dateReceived}</td>
+                    <td style={{ textAlign: 'center' }}>
                       <span className={`badge ${
                         fabric.status === 'In Stock' ? 'badge-success' : 
                         fabric.status === 'Low Stock' ? 'badge-warning' : 'badge-danger'
@@ -352,7 +312,7 @@ export default function FabricRegistration() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     No fabric registrations found
                   </td>
                 </tr>

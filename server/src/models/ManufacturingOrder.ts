@@ -1,12 +1,15 @@
 import mongoose, { Document, Schema } from 'mongoose'
 
 export interface IManufacturingOrder extends Document {
+  manufacturingId: string
   cuttingId: string
   productName: string
   quantity: number
-  dueDate: string
+  size: string
+  quantityReceive: number
+  quantityRemaining: number
+  dateOfReceive: string
   tailorName: string
-  tailorMobile: string
   priority: 'Low' | 'Normal' | 'High' | 'Urgent'
   status: 'Pending' | 'In Progress' | 'Completed' | 'Cancelled'
   notes?: string
@@ -15,6 +18,12 @@ export interface IManufacturingOrder extends Document {
 }
 
 const ManufacturingOrderSchema: Schema = new Schema({
+  manufacturingId: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
   cuttingId: {
     type: String,
     required: true,
@@ -30,16 +39,27 @@ const ManufacturingOrderSchema: Schema = new Schema({
     required: true,
     min: 1
   },
-  dueDate: {
-    type: String,
-    required: true
-  },
-  tailorName: {
+  size: {
     type: String,
     required: true,
     trim: true
   },
-  tailorMobile: {
+  quantityReceive: {
+    type: Number,
+    required: true,
+    min: 0,
+    default: 0
+  },
+  quantityRemaining: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  dateOfReceive: {
+    type: String,
+    required: true
+  },
+  tailorName: {
     type: String,
     required: true,
     trim: true

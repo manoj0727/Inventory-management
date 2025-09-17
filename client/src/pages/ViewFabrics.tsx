@@ -8,18 +8,15 @@ interface Fabric {
   fabricId: string
   fabricType: string
   color: string
-  quality: string
   quantity: number
   supplier: string
   employeeName?: string
   dateReceived: string
   status: string
-  location: string
 }
 
 export default function ViewFabrics() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterQuality, setFilterQuality] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [fabrics, setFabrics] = useState<Fabric[]>([])
   const [loading, setLoading] = useState(true)
@@ -55,10 +52,9 @@ export default function ViewFabrics() {
     const matchesSearch = fabric.fabricType.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           fabric.color.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           fabric.productId?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesQuality = !filterQuality || fabric.quality === filterQuality
     const matchesStatus = !filterStatus || fabric.status === filterStatus
-    
-    return matchesSearch && matchesQuality && matchesStatus
+
+    return matchesSearch && matchesStatus
   })
 
   const getStatusBadgeClass = (status: string) => {
@@ -119,15 +115,6 @@ export default function ViewFabrics() {
           </div>
           <div className="filter-group">
             <select
-              value={filterQuality}
-              onChange={(e) => setFilterQuality(e.target.value)}
-            >
-              <option value="">All Quality</option>
-              <option value="Premium">Premium</option>
-              <option value="Standard">Standard</option>
-              <option value="Economy">Economy</option>
-            </select>
-            <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -165,47 +152,44 @@ export default function ViewFabrics() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Fabric ID</th>
-                <th>Type</th>
-                <th>Color</th>
-                <th>Quality</th>
-                <th>Quantity</th>
-                <th>Supplier</th>
-                <th>Location</th>
-                <th>Date Received</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th style={{ textAlign: 'center' }}>Fabric ID</th>
+                <th style={{ textAlign: 'center' }}>Fabric Type</th>
+                <th style={{ textAlign: 'center' }}>Color</th>
+                <th style={{ textAlign: 'center' }}>Quantity</th>
+                <th style={{ textAlign: 'center' }}>Supplier</th>
+                <th style={{ textAlign: 'center' }}>Date Received</th>
+                <th style={{ textAlign: 'center' }}>Status</th>
+                <th style={{ textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={10} style={{ textAlign: 'center', padding: '40px' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px' }}>
                     Loading fabrics...
                   </td>
                 </tr>
               ) : filteredFabrics.length > 0 ? (
                 filteredFabrics.map((fabric) => (
                   <tr key={fabric._id}>
-                    <td style={{ fontWeight: '500' }}>{fabric.productId || fabric.fabricId}</td>
-                    <td>{fabric.fabricType}</td>
-                    <td>{fabric.color}</td>
-                    <td>{fabric.quality}</td>
-                    <td style={{ 
+                    <td style={{ fontWeight: '500', textAlign: 'center' }}>{fabric.productId || fabric.fabricId}</td>
+                    <td style={{ textAlign: 'center' }}>{fabric.fabricType}</td>
+                    <td style={{ textAlign: 'center' }}>{fabric.color}</td>
+                    <td style={{
                       fontWeight: '600',
-                      color: fabric.quantity === 0 ? '#ef4444' : fabric.quantity <= 20 ? '#f59e0b' : '#10b981'
+                      color: fabric.quantity === 0 ? '#ef4444' : fabric.quantity <= 20 ? '#f59e0b' : '#10b981',
+                      textAlign: 'center'
                     }}>
                       {fabric.quantity.toFixed(2)} sq.m
                     </td>
-                    <td>{fabric.supplier}</td>
-                    <td>{fabric.location || 'N/A'}</td>
-                    <td>{new Date(fabric.dateReceived).toLocaleDateString()}</td>
-                    <td>
+                    <td style={{ textAlign: 'center' }}>{fabric.supplier}</td>
+                    <td style={{ textAlign: 'center' }}>{new Date(fabric.dateReceived).toLocaleDateString()}</td>
+                    <td style={{ textAlign: 'center' }}>
                       <span className={`badge ${getStatusBadgeClass(fabric.status)}`}>
                         {fabric.status}
                       </span>
                     </td>
-                    <td>
+                    <td style={{ textAlign: 'center' }}>
                       <div className="action-buttons">
                         <button className="action-btn view">View</button>
                         <button className="action-btn edit">Edit</button>
@@ -216,7 +200,7 @@ export default function ViewFabrics() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={10} style={{ textAlign: 'center', padding: '40px' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px' }}>
                     <div className="empty-state">
                       <div className="empty-state-icon">📦</div>
                       <h3>No fabrics found</h3>

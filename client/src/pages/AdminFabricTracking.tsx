@@ -7,7 +7,6 @@ interface Fabric {
   id: string
   fabricType: string
   color: string
-  quality: 'Premium' | 'Standard' | 'Economy'
   quantity: number
   supplier: string
   employeeName: string
@@ -23,8 +22,8 @@ interface CuttingRecord {
   piecesCount: number
   meterPerPiece: number
   totalMetersUsed: number
-  usageLocation: string
-  cuttingEmployee: string
+  sizeType: string
+  cuttingMaster: string
   date: string
 }
 
@@ -37,7 +36,6 @@ export default function AdminFabricTracking() {
       id: 'FAB001',
       fabricType: 'Cotton',
       color: 'White',
-      quality: 'Premium',
       quantity: 100,
       supplier: 'ABC Textiles',
       employeeName: 'John Doe',
@@ -48,7 +46,6 @@ export default function AdminFabricTracking() {
       id: 'FAB002',
       fabricType: 'Silk',
       color: 'Red',
-      quality: 'Premium',
       quantity: 50,
       supplier: 'XYZ Fabrics',
       employeeName: 'Jane Smith',
@@ -59,7 +56,6 @@ export default function AdminFabricTracking() {
       id: 'FAB003',
       fabricType: 'Denim',
       color: 'Blue',
-      quality: 'Standard',
       quantity: 10,
       supplier: 'Denim Co',
       employeeName: 'Bob Johnson',
@@ -73,7 +69,6 @@ export default function AdminFabricTracking() {
   const [fabricForm, setFabricForm] = useState({
     fabricType: '',
     color: '',
-    quality: '',
     quantity: '',
     supplier: '',
     employeeName: ''
@@ -84,8 +79,8 @@ export default function AdminFabricTracking() {
     productName: '',
     piecesCount: '',
     meterPerPiece: '',
-    usageLocation: '',
-    cuttingEmployee: ''
+    sizeType: '',
+    cuttingMaster: ''
   })
 
   const handleFabricSubmit = (e: React.FormEvent) => {
@@ -94,7 +89,6 @@ export default function AdminFabricTracking() {
       id: `FAB${String(fabrics.length + 1).padStart(3, '0')}`,
       fabricType: fabricForm.fabricType,
       color: fabricForm.color,
-      quality: fabricForm.quality as 'Premium' | 'Standard' | 'Economy',
       quantity: Number(fabricForm.quantity),
       supplier: fabricForm.supplier,
       employeeName: fabricForm.employeeName,
@@ -105,7 +99,6 @@ export default function AdminFabricTracking() {
     setFabricForm({
       fabricType: '',
       color: '',
-      quality: '',
       quantity: '',
       supplier: '',
       employeeName: ''
@@ -128,8 +121,8 @@ export default function AdminFabricTracking() {
       piecesCount: Number(cuttingForm.piecesCount),
       meterPerPiece: Number(cuttingForm.meterPerPiece),
       totalMetersUsed,
-      usageLocation: cuttingForm.usageLocation,
-      cuttingEmployee: cuttingForm.cuttingEmployee,
+      sizeType: cuttingForm.sizeType,
+      cuttingMaster: cuttingForm.cuttingMaster,
       date: new Date().toISOString().split('T')[0]
     }
 
@@ -145,8 +138,8 @@ export default function AdminFabricTracking() {
       productName: '',
       piecesCount: '',
       meterPerPiece: '',
-      usageLocation: '',
-      cuttingEmployee: ''
+      sizeType: '',
+      cuttingMaster: ''
     })
     alert('✅ Cutting record added successfully!')
   }
@@ -156,6 +149,14 @@ export default function AdminFabricTracking() {
       return Number(cuttingForm.piecesCount) * Number(cuttingForm.meterPerPiece)
     }
     return 0
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const day = date.getDate().toString().padStart(2, '0')
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const year = date.getFullYear()
+    return `${day}/${month}/${year}`
   }
 
   const showSection = (section: TabType) => {
@@ -234,23 +235,7 @@ export default function AdminFabricTracking() {
                   onChange={(e) => setFabricForm({...fabricForm, color: e.target.value})}
                 />
               </div>
-              
-              <div className="form-group">
-                <label htmlFor="quality">Quality:</label>
-                <select 
-                  id="quality" 
-                  name="quality" 
-                  required
-                  value={fabricForm.quality}
-                  onChange={(e) => setFabricForm({...fabricForm, quality: e.target.value})}
-                >
-                  <option value="">Select Quality</option>
-                  <option value="Premium">Premium</option>
-                  <option value="Standard">Standard</option>
-                  <option value="Economy">Economy</option>
-                </select>
-              </div>
-              
+
               <div className="form-group">
                 <label htmlFor="quantity">Quantity (meters):</label>
                 <input 
@@ -316,31 +301,29 @@ export default function AdminFabricTracking() {
               <table id="fabricTable">
                 <thead>
                   <tr>
-                    <th>Fabric Type</th>
-                    <th>Color</th>
-                    <th>Quality</th>
-                    <th>Quantity</th>
-                    <th>Supplier</th>
-                    <th>Date Received</th>
-                    <th>Status</th>
-                    <th>Employee</th>
+                    <th style={{ textAlign: 'center' }}>Fabric Type</th>
+                    <th style={{ textAlign: 'center' }}>Color</th>
+                    <th style={{ textAlign: 'center' }}>Quantity</th>
+                    <th style={{ textAlign: 'center' }}>Supplier</th>
+                    <th style={{ textAlign: 'center' }}>Date Received</th>
+                    <th style={{ textAlign: 'center' }}>Status</th>
+                    <th style={{ textAlign: 'center' }}>Employee</th>
                   </tr>
                 </thead>
                 <tbody id="fabricTableBody">
                   {fabrics.map((fabric) => (
                     <tr key={fabric.id}>
-                      <td>{fabric.fabricType}</td>
-                      <td>{fabric.color}</td>
-                      <td>{fabric.quality}</td>
-                      <td>{fabric.quantity}m</td>
-                      <td>{fabric.supplier}</td>
-                      <td>{fabric.dateReceived}</td>
-                      <td>
+                      <td style={{ textAlign: 'center' }}>{fabric.fabricType}</td>
+                      <td style={{ textAlign: 'center' }}>{fabric.color}</td>
+                      <td style={{ textAlign: 'center' }}>{fabric.quantity}m</td>
+                      <td style={{ textAlign: 'center' }}>{fabric.supplier}</td>
+                      <td style={{ textAlign: 'center' }}>{fabric.dateReceived}</td>
+                      <td style={{ textAlign: 'center' }}>
                         <span className={`status ${fabric.status.toLowerCase().replace(' ', '-')}`}>
                           {fabric.status}
                         </span>
                       </td>
-                      <td>{fabric.employeeName}</td>
+                      <td style={{ textAlign: 'center' }}>{fabric.employeeName}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -423,27 +406,34 @@ export default function AdminFabricTracking() {
               </div>
               
               <div className="form-group">
-                <label htmlFor="usageLocation">Where it will be Used:</label>
-                <input 
-                  type="text" 
-                  id="usageLocation" 
-                  name="usageLocation" 
-                  required 
-                  placeholder="e.g., Production Line A, Warehouse B"
-                  value={cuttingForm.usageLocation}
-                  onChange={(e) => setCuttingForm({...cuttingForm, usageLocation: e.target.value})}
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="cuttingEmployee">Cutting Employee:</label>
-                <input 
-                  type="text" 
-                  id="cuttingEmployee" 
-                  name="cuttingEmployee" 
+                <label htmlFor="sizeType">Size Type:</label>
+                <select
+                  id="sizeType"
+                  name="sizeType"
                   required
-                  value={cuttingForm.cuttingEmployee}
-                  onChange={(e) => setCuttingForm({...cuttingForm, cuttingEmployee: e.target.value})}
+                  value={cuttingForm.sizeType}
+                  onChange={(e) => setCuttingForm({...cuttingForm, sizeType: e.target.value})}
+                >
+                  <option value="">Select Size</option>
+                  <option value="XXS">XXS</option>
+                  <option value="XS">XS</option>
+                  <option value="S">S</option>
+                  <option value="M">M</option>
+                  <option value="L">L</option>
+                  <option value="XL">XL</option>
+                  <option value="XXL">XXL</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="cuttingMaster">Cutting Master:</label>
+                <input
+                  type="text"
+                  id="cuttingMaster"
+                  name="cuttingMaster"
+                  required
+                  value={cuttingForm.cuttingMaster}
+                  onChange={(e) => setCuttingForm({...cuttingForm, cuttingMaster: e.target.value})}
                 />
               </div>
               
@@ -465,29 +455,29 @@ export default function AdminFabricTracking() {
                 <table id="cuttingTable">
                   <thead>
                     <tr>
-                      <th>Cutting ID</th>
-                      <th>Fabric Type</th>
-                      <th>Product</th>
-                      <th>Pieces</th>
-                      <th>Meter/Piece</th>
-                      <th>Total Used</th>
-                      <th>Location</th>
-                      <th>Employee</th>
-                      <th>Date</th>
+                      <th style={{ textAlign: 'center' }}>Cutting ID</th>
+                      <th style={{ textAlign: 'center' }}>Fabric Type</th>
+                      <th style={{ textAlign: 'center' }}>Product</th>
+                      <th style={{ textAlign: 'center' }}>Pieces</th>
+                      <th style={{ textAlign: 'center' }}>Meter/Piece</th>
+                      <th style={{ textAlign: 'center' }}>Total Used</th>
+                      <th style={{ textAlign: 'center' }}>Size</th>
+                      <th style={{ textAlign: 'center' }}>Cutting Master</th>
+                      <th style={{ textAlign: 'center' }}>Date</th>
                     </tr>
                   </thead>
                   <tbody id="cuttingTableBody">
                     {cuttingRecords.map((record) => (
                       <tr key={record.id}>
-                        <td>{record.id}</td>
-                        <td>{record.fabricType}</td>
-                        <td>{record.productName}</td>
-                        <td>{record.piecesCount}</td>
-                        <td>{record.meterPerPiece}m</td>
-                        <td>{record.totalMetersUsed}m</td>
-                        <td>{record.usageLocation}</td>
-                        <td>{record.cuttingEmployee}</td>
-                        <td>{record.date}</td>
+                        <td style={{ textAlign: 'center' }}>{record.id}</td>
+                        <td style={{ textAlign: 'center' }}>{record.fabricType}</td>
+                        <td style={{ textAlign: 'center' }}>{record.productName}</td>
+                        <td style={{ textAlign: 'center' }}>{record.piecesCount}</td>
+                        <td style={{ textAlign: 'center' }}>{record.meterPerPiece}m</td>
+                        <td style={{ textAlign: 'center' }}>{record.totalMetersUsed}m</td>
+                        <td style={{ textAlign: 'center' }}>{record.sizeType}</td>
+                        <td style={{ textAlign: 'center' }}>{record.cuttingMaster}</td>
+                        <td style={{ textAlign: 'center' }}>{formatDate(record.date)}</td>
                       </tr>
                     ))}
                   </tbody>

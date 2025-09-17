@@ -31,7 +31,6 @@ export const typeDefs = `#graphql
     color: String!
     quantity: Float!
     unit: String!
-    location: String!
     supplier: String
     purchaseDate: Date
     price: Float
@@ -307,7 +306,6 @@ export const typeDefs = `#graphql
     color: String!
     quantity: Float!
     unit: String!
-    location: String!
     supplier: String
     purchaseDate: Date
     price: Float

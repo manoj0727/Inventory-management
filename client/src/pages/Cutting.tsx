@@ -9,8 +9,9 @@ interface CuttingForm {
   pieceWidth: string
   piecesCount: string
   totalSquareMetersUsed: string
-  usageLocation: string
-  cuttingEmployee: string
+  sizeType: string
+  cuttingMaster: string
+  cuttingGivenTo: string
   cuttingDate: string
   notes: string
 }
@@ -20,13 +21,11 @@ interface Fabric {
   productId: string
   fabricType: string
   color: string
-  quality: string
   length: number
   width: number
   quantity: number
   supplier: string
   purchasePrice: number
-  location: string
   notes: string
   status: string
 }
@@ -39,30 +38,41 @@ export default function Cutting() {
     pieceWidth: '',
     piecesCount: '',
     totalSquareMetersUsed: '0',
-    usageLocation: '',
-    cuttingEmployee: '',
+    sizeType: '',
+    cuttingMaster: '',
+    cuttingGivenTo: '',
     cuttingDate: new Date().toISOString().split('T')[0],
     notes: ''
   })
 
-  const [, setFabrics] = useState<Fabric[]>([])
+  const [fabrics, setFabrics] = useState<Fabric[]>([])
   const [selectedFabric, setSelectedFabric] = useState<Fabric | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [recentCuttingRecords, setRecentCuttingRecords] = useState<any[]>([])
   const [isLoadingRecords, setIsLoadingRecords] = useState(false)
+  const [fabricSuggestions, setFabricSuggestions] = useState<Fabric[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
   
   const generateCuttingId = (productName: string, color: string) => {
-    const productCode = productName.substring(0, 3).toUpperCase()
-    const colorCode = color.substring(0, 2).toUpperCase()
-    const randomNumber = Math.floor(Math.random() * 9000) + 1000 // 4-digit random number
-    return `CUT${productCode}${colorCode}${randomNumber}`
+    const productCode = productName.substring(0, 2).toUpperCase()
+    const colorCode = color.substring(0, 1).toUpperCase()
+    const randomNumber = Math.floor(Math.random() * 900) + 100 // 3-digit random number
+    return `${productCode}${colorCode}${randomNumber}` // Total 6 characters
   }
 
   const generateProductId = (name: string, color: string, quantity: number) => {
-    const nameCode = name.substring(0, 3).toUpperCase()
-    const colorCode = color.substring(0, 2).toUpperCase()
-    const quantityCode = quantity.toString().padStart(3, '0')
-    return `${nameCode}${colorCode}${quantityCode}`
+    const nameCode = name.substring(0, 2).toUpperCase()
+    const colorCode = color.substring(0, 1).toUpperCase()
+    const quantityCode = Math.floor(Math.random() * 900) + 100 // 3-digit random number
+    return `${nameCode}${colorCode}${quantityCode}` // Total 6 characters
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const day = date.getDate().toString().padStart(2, '0')
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const year = date.getFullYear()
+    return `${day}/${month}/${year}`
   }
 
   const fetchFabrics = async () => {
@@ -114,7 +124,6 @@ export default function Cutting() {
           setSelectedFabric(fabric)
         } else {
           setSelectedFabric(null)
-          alert('❌ Fabric not found with this Product ID')
         }
       }
     } catch (error) {
@@ -130,21 +139,46 @@ export default function Cutting() {
     fetchRecentCuttingRecords()
   }, [])
 
+  const handleFabricIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    const newFormData = { ...formData, productId: value }
+
+    // Show suggestions if input has 2 or more characters
+    if (value.length >= 2) {
+      const filtered = fabrics.filter(fabric =>
+        fabric.productId?.toLowerCase().includes(value.toLowerCase()) ||
+        fabric.fabricType.toLowerCase().includes(value.toLowerCase()) ||
+        fabric.color.toLowerCase().includes(value.toLowerCase())
+      ).slice(0, 5) // Show max 5 suggestions
+      setFabricSuggestions(filtered)
+      setShowSuggestions(true)
+    } else {
+      setShowSuggestions(false)
+      setFabricSuggestions([])
+    }
+
+    // Fetch fabric when product ID changes
+    fetchFabricByProductId(value)
+    setFormData(newFormData)
+  }
+
+  const handleSuggestionSelect = (fabric: Fabric) => {
+    setFormData({ ...formData, productId: fabric.productId || '' })
+    setSelectedFabric(fabric)
+    setShowSuggestions(false)
+    setFabricSuggestions([])
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     const newFormData = { ...formData, [name]: value }
-    
-    // Fetch fabric when product ID changes
-    if (name === 'productId') {
-      fetchFabricByProductId(value)
-    }
-    
+
     // Calculate total square meters when piece dimensions or count changes
     if (name === 'pieceLength' || name === 'pieceWidth' || name === 'piecesCount') {
       const length = name === 'pieceLength' ? parseFloat(value) : parseFloat(formData.pieceLength)
       const width = name === 'pieceWidth' ? parseFloat(value) : parseFloat(formData.pieceWidth)
       const pieces = name === 'piecesCount' ? parseFloat(value) : parseFloat(formData.piecesCount)
-      
+
       if (!isNaN(length) && !isNaN(width) && !isNaN(pieces) && length > 0 && width > 0 && pieces > 0) {
         const squareMetersPerPiece = length * width
         const totalSquareMeters = squareMetersPerPiece * pieces
@@ -153,7 +187,7 @@ export default function Cutting() {
         newFormData.totalSquareMetersUsed = '0'
       }
     }
-    
+
     setFormData(newFormData)
   }
 
@@ -186,11 +220,11 @@ export default function Cutting() {
         pieceLength: parseFloat(formData.pieceLength),
         pieceWidth: parseFloat(formData.pieceWidth),
         totalSquareMetersUsed: totalUsed,
-        usageLocation: formData.usageLocation,
-        cuttingEmployee: formData.cuttingEmployee,
+        sizeType: formData.sizeType,
+        cuttingMaster: formData.cuttingMaster,
+        cuttingGivenTo: formData.cuttingGivenTo,
         date: formData.cuttingDate,
         time: new Date().toLocaleTimeString(),
-        status: 'Completed',
         notes: formData.notes
       }
       
@@ -214,8 +248,9 @@ export default function Cutting() {
           pieceWidth: '',
           piecesCount: '',
           totalSquareMetersUsed: '0',
-          usageLocation: '',
-          cuttingEmployee: '',
+          sizeType: '',
+          cuttingMaster: '',
+          cuttingGivenTo: '',
           cuttingDate: new Date().toISOString().split('T')[0],
           notes: ''
         })
@@ -245,21 +280,66 @@ export default function Cutting() {
       <div className="content-card">
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
-            <div className="form-group">
-              <label htmlFor="productId">Fabric Product ID *</label>
+            <div className="form-group" style={{ position: 'relative' }}>
+              <label htmlFor="productId">Fabric ID *</label>
               <input
                 type="text"
                 id="productId"
                 name="productId"
                 value={formData.productId}
-                onChange={handleChange}
-                placeholder="Enter Product ID (e.g., COTBL025)"
+                onChange={handleFabricIdChange}
+                placeholder="Enter Fabric ID (e.g., COTBL025)"
                 required
+                autoComplete="off"
               />
+              {showSuggestions && fabricSuggestions.length > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  background: 'white',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                  zIndex: 1000,
+                  maxHeight: '200px',
+                  overflowY: 'auto'
+                }}>
+                  {fabricSuggestions.map((fabric) => (
+                    <div
+                      key={fabric._id}
+                      onClick={() => handleSuggestionSelect(fabric)}
+                      style={{
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                        borderBottom: '1px solid #f3f4f6',
+                        fontSize: '14px'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f3f4f6'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'white'
+                      }}
+                    >
+                      <div style={{ fontWeight: '500' }}>{fabric.productId}</div>
+                      <div style={{ color: '#6b7280', fontSize: '12px' }}>
+                        {fabric.fabricType} - {fabric.color} ({fabric.quantity} sq.m)
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
               {isLoading && <small style={{ color: '#6b7280' }}>Looking up fabric...</small>}
               {selectedFabric && (
                 <small style={{ color: '#10b981', fontWeight: '500' }}>
                   ✓ Found: {selectedFabric.fabricType} - {selectedFabric.color} ({selectedFabric.quantity} sq.m available)
+                </small>
+              )}
+              {!isLoading && !selectedFabric && formData.productId.length >= 6 && !showSuggestions && (
+                <small style={{ color: '#ef4444', fontWeight: '500' }}>
+                  ❌ Fabric not found with this ID
                 </small>
               )}
             </div>
@@ -334,27 +414,47 @@ export default function Cutting() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="usageLocation">Usage Location *</label>
+              <label htmlFor="sizeType">Size Type *</label>
+              <select
+                id="sizeType"
+                name="sizeType"
+                value={formData.sizeType}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select Size</option>
+                <option value="XXS">XXS</option>
+                <option value="XS">XS</option>
+                <option value="S">S</option>
+                <option value="M">M</option>
+                <option value="L">L</option>
+                <option value="XL">XL</option>
+                <option value="XXL">XXL</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="cuttingMaster">Cutting Master *</label>
               <input
                 type="text"
-                id="usageLocation"
-                name="usageLocation"
-                value={formData.usageLocation}
+                id="cuttingMaster"
+                name="cuttingMaster"
+                value={formData.cuttingMaster}
                 onChange={handleChange}
-                placeholder="e.g., Production Line A, Tailor Station 1"
+                placeholder="Cutting master name"
                 required
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="cuttingEmployee">Cutting Employee *</label>
+              <label htmlFor="cuttingGivenTo">Cutting Given To (Tailor) *</label>
               <input
                 type="text"
-                id="cuttingEmployee"
-                name="cuttingEmployee"
-                value={formData.cuttingEmployee}
+                id="cuttingGivenTo"
+                name="cuttingGivenTo"
+                value={formData.cuttingGivenTo}
                 onChange={handleChange}
-                placeholder="Employee name"
+                placeholder="Tailor name for manufacturing"
                 required
               />
             </div>
@@ -423,8 +523,9 @@ export default function Cutting() {
                   pieceWidth: '',
                   piecesCount: '',
                   totalSquareMetersUsed: '0',
-                  usageLocation: '',
-                  cuttingEmployee: '',
+                  sizeType: '',
+                  cuttingMaster: '',
+                  cuttingGivenTo: '',
                   cuttingDate: new Date().toISOString().split('T')[0],
                   notes: ''
                 })
@@ -444,41 +545,41 @@ export default function Cutting() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Cutting ID</th>
-                <th>Fabric</th>
-                <th>Product</th>
-                <th>Pieces</th>
-                <th>Total Used</th>
-                <th>Employee</th>
-                <th>Date</th>
-                <th>Status</th>
+                <th style={{ textAlign: 'center' }}>Cutting ID</th>
+                <th style={{ textAlign: 'center' }}>Fabric</th>
+                <th style={{ textAlign: 'center' }}>Product</th>
+                <th style={{ textAlign: 'center' }}>Size</th>
+                <th style={{ textAlign: 'center' }}>Pieces</th>
+                <th style={{ textAlign: 'center' }}>Total Used</th>
+                <th style={{ textAlign: 'center' }}>Cutting Master</th>
+                <th style={{ textAlign: 'center' }}>Given To Tailor</th>
+                <th style={{ textAlign: 'center' }}>Date</th>
               </tr>
             </thead>
             <tbody>
               {isLoadingRecords ? (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     Loading recent records...
                   </td>
                 </tr>
               ) : recentCuttingRecords.length > 0 ? (
                 recentCuttingRecords.map((record) => (
                   <tr key={record._id}>
-                    <td style={{ fontWeight: '500' }}>{record.id}</td>
-                    <td>{record.fabricType} - {record.fabricColor}</td>
-                    <td>{record.productName}</td>
-                    <td>{record.piecesCount}</td>
-                    <td>{record.totalSquareMetersUsed} sq.m</td>
-                    <td>{record.cuttingEmployee}</td>
-                    <td>{record.date}</td>
-                    <td>
-                      <span className="badge badge-success">{record.status}</span>
-                    </td>
+                    <td style={{ fontWeight: '500', textAlign: 'center' }}>{record.id}</td>
+                    <td style={{ textAlign: 'center' }}>{record.fabricType}</td>
+                    <td style={{ textAlign: 'center' }}>{record.productName}</td>
+                    <td style={{ textAlign: 'center' }}>{record.sizeType || 'N/A'}</td>
+                    <td style={{ textAlign: 'center' }}>{record.piecesCount}</td>
+                    <td style={{ textAlign: 'center' }}>{record.totalSquareMetersUsed} sq.m</td>
+                    <td style={{ textAlign: 'center' }}>{record.cuttingMaster || record.cuttingEmployee}</td>
+                    <td style={{ textAlign: 'center' }}>{record.cuttingGivenTo || 'N/A'}</td>
+                    <td style={{ textAlign: 'center' }}>{formatDate(record.date)}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     No cutting records found
                   </td>
                 </tr>

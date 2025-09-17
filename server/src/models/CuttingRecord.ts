@@ -12,11 +12,11 @@ export interface ICuttingRecord extends Document {
   pieceLength: number
   pieceWidth: number
   totalSquareMetersUsed: number
-  usageLocation: string
-  cuttingEmployee: string
+  sizeType: string
+  cuttingMaster: string
+  cuttingGivenTo: string
   date: string
   time: string
-  status: 'Completed' | 'In Progress' | 'Cancelled'
   notes?: string
   createdAt: Date
   updatedAt: Date
@@ -78,12 +78,17 @@ const CuttingRecordSchema: Schema = new Schema({
     required: true,
     min: 0
   },
-  usageLocation: {
+  sizeType: {
+    type: String,
+    required: true,
+    enum: ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL']
+  },
+  cuttingMaster: {
     type: String,
     required: true,
     trim: true
   },
-  cuttingEmployee: {
+  cuttingGivenTo: {
     type: String,
     required: true,
     trim: true
@@ -95,12 +100,6 @@ const CuttingRecordSchema: Schema = new Schema({
   time: {
     type: String,
     required: true
-  },
-  status: {
-    type: String,
-    required: true,
-    enum: ['Completed', 'In Progress', 'Cancelled'],
-    default: 'Completed'
   },
   notes: {
     type: String,

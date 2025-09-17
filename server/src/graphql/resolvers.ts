@@ -28,19 +28,9 @@ export const resolvers = {
   
   Mutation: {
     login: async (parent: any, { username, password }: any) => {
-      // This would normally check the database
-      if (username === 'admin' && password === 'password123') {
-        return {
-          token: 'sample-token',
-          user: {
-            id: '1',
-            name: 'Administrator',
-            email: 'admin@example.com',
-            role: 'ADMIN'
-          }
-        }
-      }
-      throw new Error('Invalid credentials')
+      // This would normally check the database and authenticate properly
+      // For production, implement proper authentication logic
+      throw new Error('Authentication not implemented')
     }
   }
 }

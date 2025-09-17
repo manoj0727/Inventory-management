@@ -37,26 +37,44 @@ router.post('/', async (req, res) => {
       cuttingId,
       productName,
       quantity,
-      dueDate,
+      quantityReceive,
+      dateOfReceive,
       tailorName,
-      tailorMobile,
       priority,
       status,
       notes
     } = req.body
 
     // Validate required fields
-    if (!cuttingId || !productName || !quantity || !dueDate || !tailorName || !tailorMobile) {
+    if (!cuttingId || !productName || !quantity || !dateOfReceive || !tailorName) {
       return res.status(400).json({ message: 'Missing required fields' })
     }
 
+    // Get cutting record to get size information
+    const cuttingRecord = await CuttingRecord.findOne({ id: cuttingId })
+    if (!cuttingRecord) {
+      return res.status(404).json({ message: 'Cutting record not found' })
+    }
+
+    // Generate manufacturing ID
+    const productCode = productName.substring(0, 2).toUpperCase()
+    const tailorCode = tailorName.substring(0, 2).toUpperCase()
+    const randomNumber = Math.floor(Math.random() * 900) + 100
+    const manufacturingId = `MFG${productCode}${tailorCode}${randomNumber}`
+
+    const quantityReceiveNum = parseInt(quantityReceive) || 0
+    const quantityRemaining = parseInt(quantity) - quantityReceiveNum
+
     const manufacturingOrder = new ManufacturingOrder({
+      manufacturingId,
       cuttingId,
       productName,
       quantity: parseInt(quantity),
-      dueDate,
+      size: cuttingRecord.sizeType || 'N/A',
+      quantityReceive: quantityReceiveNum,
+      quantityRemaining,
+      dateOfReceive,
       tailorName,
-      tailorMobile,
       priority: priority || 'Normal',
       status: status || 'Pending',
       notes
@@ -66,15 +84,7 @@ router.post('/', async (req, res) => {
 
     // Also create a manufacturing inventory record
     try {
-      // Get cutting record to find product ID
-      const cuttingRecord = await CuttingRecord.findOne({ id: cuttingId })
       const productId = cuttingRecord?.productId || `PROD${Date.now()}`
-
-      // Generate manufacturing inventory ID
-      const productCode = productName.substring(0, 3).toUpperCase()
-      const tailorCode = tailorName.substring(0, 2).toUpperCase()
-      const randomNumber = Math.floor(Math.random() * 9000) + 1000
-      const manufacturingId = `MFG${productCode}${tailorCode}${randomNumber}`
 
       const manufacturingInventory = new ManufacturingInventory({
         id: manufacturingId,
@@ -82,12 +92,11 @@ router.post('/', async (req, res) => {
         productName,
         cuttingId,
         quantity: parseInt(quantity),
-        quantityProduced: 0,
-        quantityRemaining: parseInt(quantity),
+        quantityProduced: quantityReceiveNum,
+        quantityRemaining,
         tailorName,
-        tailorMobile,
         startDate: new Date().toISOString().split('T')[0],
-        dueDate,
+        dueDate: dateOfReceive,
         priority: priority || 'Normal',
         status: status || 'Pending',
         notes
@@ -119,9 +128,10 @@ router.put('/:id', async (req, res) => {
 
     const {
       quantity,
-      dueDate,
+      quantityReceive,
+      quantityRemaining,
+      dateOfReceive,
       tailorName,
-      tailorMobile,
       priority,
       status,
       notes
@@ -129,9 +139,14 @@ router.put('/:id', async (req, res) => {
 
     // Update fields
     if (quantity) manufacturingOrder.quantity = parseInt(quantity)
-    if (dueDate) manufacturingOrder.dueDate = dueDate
+    if (quantityReceive !== undefined) {
+      manufacturingOrder.quantityReceive = parseInt(quantityReceive)
+    }
+    if (quantityRemaining !== undefined) {
+      manufacturingOrder.quantityRemaining = parseInt(quantityRemaining)
+    }
+    if (dateOfReceive) manufacturingOrder.dateOfReceive = dateOfReceive
     if (tailorName) manufacturingOrder.tailorName = tailorName
-    if (tailorMobile) manufacturingOrder.tailorMobile = tailorMobile
     if (priority) manufacturingOrder.priority = priority
     if (status) manufacturingOrder.status = status
     if (notes !== undefined) manufacturingOrder.notes = notes

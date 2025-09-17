@@ -7,7 +7,6 @@ interface Fabric {
   id: string
   fabricType: string
   color: string
-  quality: 'Premium' | 'Standard' | 'Economy'
   quantity: number
   supplier: string
   employeeName: string
@@ -23,8 +22,8 @@ interface CuttingRecord {
   piecesCount: number
   meterPerPiece: number
   totalMetersUsed: number
-  usageLocation: string
-  cuttingEmployee: string
+  sizeType: string
+  cuttingMaster: string
   date: string
 }
 
@@ -36,7 +35,6 @@ export default function FabricTracking() {
       id: 'FAB001',
       fabricType: 'Cotton',
       color: 'White',
-      quality: 'Premium',
       quantity: 100,
       supplier: 'ABC Textiles',
       employeeName: 'John Doe',
@@ -47,7 +45,6 @@ export default function FabricTracking() {
       id: 'FAB002',
       fabricType: 'Silk',
       color: 'Red',
-      quality: 'Premium',
       quantity: 50,
       supplier: 'XYZ Fabrics',
       employeeName: 'Jane Smith',
@@ -58,7 +55,6 @@ export default function FabricTracking() {
       id: 'FAB003',
       fabricType: 'Denim',
       color: 'Blue',
-      quality: 'Standard',
       quantity: 10,
       supplier: 'Denim Co',
       employeeName: 'Bob Johnson',
@@ -72,7 +68,6 @@ export default function FabricTracking() {
   const [fabricForm, setFabricForm] = useState({
     fabricType: '',
     color: '',
-    quality: '',
     quantity: '',
     supplier: '',
     employeeName: ''
@@ -83,8 +78,8 @@ export default function FabricTracking() {
     productName: '',
     piecesCount: '',
     meterPerPiece: '',
-    usageLocation: '',
-    cuttingEmployee: ''
+    sizeType: '',
+    cuttingMaster: ''
   })
 
   const handleFabricSubmit = (e: React.FormEvent) => {
@@ -93,7 +88,6 @@ export default function FabricTracking() {
       id: `FAB${String(fabrics.length + 1).padStart(3, '0')}`,
       fabricType: fabricForm.fabricType,
       color: fabricForm.color,
-      quality: fabricForm.quality as 'Premium' | 'Standard' | 'Economy',
       quantity: Number(fabricForm.quantity),
       supplier: fabricForm.supplier,
       employeeName: fabricForm.employeeName,
@@ -104,7 +98,6 @@ export default function FabricTracking() {
     setFabricForm({
       fabricType: '',
       color: '',
-      quality: '',
       quantity: '',
       supplier: '',
       employeeName: ''
@@ -127,8 +120,8 @@ export default function FabricTracking() {
       piecesCount: Number(cuttingForm.piecesCount),
       meterPerPiece: Number(cuttingForm.meterPerPiece),
       totalMetersUsed,
-      usageLocation: cuttingForm.usageLocation,
-      cuttingEmployee: cuttingForm.cuttingEmployee,
+      sizeType: cuttingForm.sizeType,
+      cuttingMaster: cuttingForm.cuttingMaster,
       date: new Date().toISOString().split('T')[0]
     }
 
@@ -145,8 +138,8 @@ export default function FabricTracking() {
       productName: '',
       piecesCount: '',
       meterPerPiece: '',
-      usageLocation: '',
-      cuttingEmployee: ''
+      sizeType: '',
+      cuttingMaster: ''
     })
     alert('Cutting record added successfully!')
   }
@@ -156,6 +149,14 @@ export default function FabricTracking() {
       return Number(cuttingForm.piecesCount) * Number(cuttingForm.meterPerPiece)
     }
     return 0
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const day = date.getDate().toString().padStart(2, '0')
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const year = date.getFullYear()
+    return `${day}/${month}/${year}`
   }
 
   return (
@@ -243,23 +244,6 @@ export default function FabricTracking() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Quality
-                </label>
-                <select
-                  required
-                  value={fabricForm.quality}
-                  onChange={(e) => setFabricForm({...fabricForm, quality: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="">Select Quality</option>
-                  <option value="Premium">Premium</option>
-                  <option value="Standard">Standard</option>
-                  <option value="Economy">Economy</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Quantity (meters)
                 </label>
                 <input
@@ -339,28 +323,26 @@ export default function FabricTracking() {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fabric Type</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Color</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quality</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Supplier</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date Received</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">ID</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Fabric Type</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Color</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Supplier</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Date Received</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Employee</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {fabrics.map((fabric) => (
                       <tr key={fabric.id}>
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">{fabric.id}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">{fabric.fabricType}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">{fabric.color}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">{fabric.quality}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">{fabric.quantity}m</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">{fabric.supplier}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">{fabric.dateReceived}</td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900 text-center">{fabric.id}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500 text-center">{fabric.fabricType}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500 text-center">{fabric.color}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500 text-center">{fabric.quantity}m</td>
+                        <td className="px-6 py-4 text-sm text-gray-500 text-center">{fabric.supplier}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500 text-center">{fabric.dateReceived}</td>
+                        <td className="px-6 py-4 text-center">
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             fabric.status === 'In Stock' 
                               ? 'bg-green-100 text-green-800' 
@@ -371,7 +353,7 @@ export default function FabricTracking() {
                             {fabric.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">{fabric.employeeName}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500 text-center">{fabric.employeeName}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -461,27 +443,34 @@ export default function FabricTracking() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Where it will be Used
+                  Size Type
                 </label>
-                <input
-                  type="text"
+                <select
                   required
-                  placeholder="e.g., Production Line A, Warehouse B"
-                  value={cuttingForm.usageLocation}
-                  onChange={(e) => setCuttingForm({...cuttingForm, usageLocation: e.target.value})}
+                  value={cuttingForm.sizeType}
+                  onChange={(e) => setCuttingForm({...cuttingForm, sizeType: e.target.value})}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500"
-                />
+                >
+                  <option value="">Select Size</option>
+                  <option value="XXS">XXS</option>
+                  <option value="XS">XS</option>
+                  <option value="S">S</option>
+                  <option value="M">M</option>
+                  <option value="L">L</option>
+                  <option value="XL">XL</option>
+                  <option value="XXL">XXL</option>
+                </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Cutting Employee
+                  Cutting Master
                 </label>
                 <input
                   type="text"
                   required
-                  value={cuttingForm.cuttingEmployee}
-                  onChange={(e) => setCuttingForm({...cuttingForm, cuttingEmployee: e.target.value})}
+                  value={cuttingForm.cuttingMaster}
+                  onChange={(e) => setCuttingForm({...cuttingForm, cuttingMaster: e.target.value})}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500"
                 />
               </div>
@@ -512,29 +501,29 @@ export default function FabricTracking() {
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fabric</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pieces</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Meter/Piece</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Used</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">ID</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Fabric</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Product</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Pieces</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Meter/Piece</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Total Used</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Size</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Cutting Master</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Date</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {cuttingRecords.map((record) => (
                         <tr key={record.id}>
-                          <td className="px-6 py-4 text-sm font-medium text-gray-900">{record.id}</td>
-                          <td className="px-6 py-4 text-sm text-gray-500">{record.fabricType}</td>
-                          <td className="px-6 py-4 text-sm text-gray-500">{record.productName}</td>
-                          <td className="px-6 py-4 text-sm text-gray-500">{record.piecesCount}</td>
-                          <td className="px-6 py-4 text-sm text-gray-500">{record.meterPerPiece}m</td>
-                          <td className="px-6 py-4 text-sm font-semibold text-primary-600">{record.totalMetersUsed}m</td>
-                          <td className="px-6 py-4 text-sm text-gray-500">{record.usageLocation}</td>
-                          <td className="px-6 py-4 text-sm text-gray-500">{record.cuttingEmployee}</td>
-                          <td className="px-6 py-4 text-sm text-gray-500">{record.date}</td>
+                          <td className="px-6 py-4 text-sm font-medium text-gray-900 text-center">{record.id}</td>
+                          <td className="px-6 py-4 text-sm text-gray-500 text-center">{record.fabricType}</td>
+                          <td className="px-6 py-4 text-sm text-gray-500 text-center">{record.productName}</td>
+                          <td className="px-6 py-4 text-sm text-gray-500 text-center">{record.piecesCount}</td>
+                          <td className="px-6 py-4 text-sm text-gray-500 text-center">{record.meterPerPiece}m</td>
+                          <td className="px-6 py-4 text-sm font-semibold text-primary-600 text-center">{record.totalMetersUsed}m</td>
+                          <td className="px-6 py-4 text-sm text-gray-500 text-center">{record.sizeType}</td>
+                          <td className="px-6 py-4 text-sm text-gray-500 text-center">{record.cuttingMaster}</td>
+                          <td className="px-6 py-4 text-sm text-gray-500 text-center">{formatDate(record.date)}</td>
                         </tr>
                       ))}
                     </tbody>
