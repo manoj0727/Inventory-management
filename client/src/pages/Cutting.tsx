@@ -4,6 +4,8 @@ import { API_URL } from '@/config/api'
 
 interface CuttingForm {
   productId: string
+  fabricType: string
+  fabricColor: string
   productName: string
   pieceLength: string
   pieceWidth: string
@@ -33,6 +35,8 @@ interface Fabric {
 export default function Cutting() {
   const [formData, setFormData] = useState<CuttingForm>({
     productId: '',
+    fabricType: '',
+    fabricColor: '',
     productName: '',
     pieceLength: '',
     pieceWidth: '',
@@ -122,8 +126,18 @@ export default function Cutting() {
         
         if (fabric) {
           setSelectedFabric(fabric)
+          setFormData(prev => ({
+            ...prev,
+            fabricType: fabric.fabricType,
+            fabricColor: fabric.color
+          }))
         } else {
           setSelectedFabric(null)
+          setFormData(prev => ({
+            ...prev,
+            fabricType: '',
+            fabricColor: ''
+          }))
         }
       }
     } catch (error) {
@@ -163,7 +177,12 @@ export default function Cutting() {
   }
 
   const handleSuggestionSelect = (fabric: Fabric) => {
-    setFormData({ ...formData, productId: fabric.productId || '' })
+    setFormData({
+      ...formData,
+      productId: fabric.productId || '',
+      fabricType: fabric.fabricType,
+      fabricColor: fabric.color
+    })
     setSelectedFabric(fabric)
     setShowSuggestions(false)
     setFabricSuggestions([])
@@ -243,6 +262,8 @@ export default function Cutting() {
         // Reset form
         setFormData({
           productId: '',
+          fabricType: '',
+          fabricColor: '',
           productName: '',
           pieceLength: '',
           pieceWidth: '',
@@ -342,6 +363,34 @@ export default function Cutting() {
                   ❌ Fabric not found with this ID
                 </small>
               )}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="fabricType">Fabric Type</label>
+              <input
+                type="text"
+                id="fabricType"
+                name="fabricType"
+                value={formData.fabricType}
+                onChange={handleChange}
+                placeholder="Auto-populated from Fabric ID"
+                readOnly
+                style={{ backgroundColor: '#f9fafb', color: '#6b7280' }}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="fabricColor">Fabric Color</label>
+              <input
+                type="text"
+                id="fabricColor"
+                name="fabricColor"
+                value={formData.fabricColor}
+                onChange={handleChange}
+                placeholder="Auto-populated from Fabric ID"
+                readOnly
+                style={{ backgroundColor: '#f9fafb', color: '#6b7280' }}
+              />
             </div>
 
             <div className="form-group">
@@ -518,6 +567,8 @@ export default function Cutting() {
               onClick={() => {
                 setFormData({
                   productId: '',
+                  fabricType: '',
+                  fabricColor: '',
                   productName: '',
                   pieceLength: '',
                   pieceWidth: '',
@@ -546,7 +597,8 @@ export default function Cutting() {
             <thead>
               <tr>
                 <th style={{ textAlign: 'center' }}>Cutting ID</th>
-                <th style={{ textAlign: 'center' }}>Fabric</th>
+                <th style={{ textAlign: 'center' }}>Fabric Type</th>
+                <th style={{ textAlign: 'center' }}>Fabric Color</th>
                 <th style={{ textAlign: 'center' }}>Product</th>
                 <th style={{ textAlign: 'center' }}>Size</th>
                 <th style={{ textAlign: 'center' }}>Pieces</th>
@@ -559,7 +611,7 @@ export default function Cutting() {
             <tbody>
               {isLoadingRecords ? (
                 <tr>
-                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     Loading recent records...
                   </td>
                 </tr>
@@ -568,6 +620,7 @@ export default function Cutting() {
                   <tr key={record._id}>
                     <td style={{ fontWeight: '500', textAlign: 'center' }}>{record.id}</td>
                     <td style={{ textAlign: 'center' }}>{record.fabricType}</td>
+                    <td style={{ textAlign: 'center' }}>{record.fabricColor}</td>
                     <td style={{ textAlign: 'center' }}>{record.productName}</td>
                     <td style={{ textAlign: 'center' }}>{record.sizeType || 'N/A'}</td>
                     <td style={{ textAlign: 'center' }}>{record.piecesCount}</td>
@@ -579,7 +632,7 @@ export default function Cutting() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     No cutting records found
                   </td>
                 </tr>

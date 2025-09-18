@@ -6,6 +6,8 @@ interface ManufacturingRecord {
   _id: string
   manufacturingId: string
   cuttingId: string
+  fabricType: string
+  fabricColor: string
   productName: string
   quantity: number
   size: string
@@ -178,13 +180,15 @@ export default function ManufacturingInventory() {
             <thead>
               <tr>
                 <th style={{ textAlign: 'center' }}>Manufacturing ID</th>
+                <th style={{ textAlign: 'center' }}>Fabric Type</th>
+                <th style={{ textAlign: 'center' }}>Fabric Color</th>
                 <th style={{ textAlign: 'center' }}>Product</th>
-                <th style={{ textAlign: 'center' }}>Quantity</th>
+                <th style={{ textAlign: 'center' }}>Qty</th>
                 <th style={{ textAlign: 'center' }}>Size</th>
-                <th style={{ textAlign: 'center' }}>Quantity Receive</th>
-                <th style={{ textAlign: 'center' }}>Quantity Remaining</th>
+                <th style={{ textAlign: 'center' }}>Qty Received</th>
+                <th style={{ textAlign: 'center' }}>Qty Remaining</th>
                 <th style={{ textAlign: 'center' }}>Tailor</th>
-                <th style={{ textAlign: 'center' }}>Date of Receive</th>
+                <th style={{ textAlign: 'center' }}>Date Received</th>
                 <th style={{ textAlign: 'center' }}>Status</th>
                 <th style={{ textAlign: 'center' }}>Actions</th>
               </tr>
@@ -198,6 +202,8 @@ export default function ManufacturingInventory() {
                   return (
                     <tr key={record._id}>
                       <td style={{ fontWeight: '500', textAlign: 'center' }}>{record.manufacturingId || record.cuttingId}</td>
+                      <td style={{ textAlign: 'center' }}>{record.fabricType || 'N/A'}</td>
+                      <td style={{ textAlign: 'center' }}>{record.fabricColor || 'N/A'}</td>
                       <td style={{ textAlign: 'center' }}>{record.productName}</td>
                       <td style={{ textAlign: 'center' }}>{record.quantity}</td>
                       <td style={{ textAlign: 'center' }}>{record.size || 'N/A'}</td>
@@ -223,7 +229,7 @@ export default function ManufacturingInventory() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={12} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     {isLoading ? 'Loading manufacturing inventory...' : 'No manufacturing inventory records found'}
                   </td>
                 </tr>
@@ -269,7 +275,7 @@ export default function ManufacturingInventory() {
               handleSaveEdit(updatedRecord)
             }}>
               <div className="form-group">
-                <label htmlFor="quantityReceive">Quantity Receive *</label>
+                <label htmlFor="quantityReceive">Qty Received *</label>
                 <input
                   type="number"
                   id="quantityReceive"
@@ -296,7 +302,7 @@ export default function ManufacturingInventory() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="dateOfReceive">Date of Receive *</label>
+                <label htmlFor="dateOfReceive">Date Received *</label>
                 <input
                   type="date"
                   id="dateOfReceive"

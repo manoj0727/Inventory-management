@@ -4,6 +4,8 @@ import { API_URL } from '@/config/api'
 
 interface ManufacturingOrder {
   cuttingId: string
+  fabricType: string
+  fabricColor: string
   productName: string
   quantity: string
   quantityReceive: string
@@ -19,6 +21,7 @@ interface CuttingRecord {
   productName: string
   piecesCount: number
   fabricType: string
+  fabricColor: string
   cuttingGivenTo: string
   sizeType: string
   totalSquareMetersUsed: number
@@ -28,6 +31,8 @@ interface ManufacturingRecord {
   _id: string
   manufacturingId: string
   cuttingId: string
+  fabricType: string
+  fabricColor: string
   productName: string
   quantity: number
   size: string
@@ -42,6 +47,8 @@ interface ManufacturingRecord {
 export default function Manufacturing() {
   const [formData, setFormData] = useState<ManufacturingOrder>({
     cuttingId: '',
+    fabricType: '',
+    fabricColor: '',
     productName: '',
     quantity: '',
     quantityReceive: '',
@@ -158,6 +165,8 @@ export default function Manufacturing() {
 
           console.log('Final quantity to display:', finalQuantity)
 
+          newFormData.fabricType = selectedRecord.fabricType
+          newFormData.fabricColor = selectedRecord.fabricColor
           newFormData.productName = selectedRecord.productName
           newFormData.quantity = finalQuantity.toString()
           newFormData.quantityReceive = finalQuantity.toString()
@@ -166,6 +175,8 @@ export default function Manufacturing() {
       } catch (error) {
         console.error('Error fetching manufacturing records:', error)
         // Fallback to original quantity if API call fails
+        newFormData.fabricType = selectedRecord.fabricType
+        newFormData.fabricColor = selectedRecord.fabricColor
         newFormData.productName = selectedRecord.productName
         newFormData.quantity = selectedRecord.piecesCount.toString()
         newFormData.quantityReceive = selectedRecord.piecesCount.toString()
@@ -203,6 +214,8 @@ export default function Manufacturing() {
         setFormData({
           ...formData,
           cuttingId: record.id,
+          fabricType: record.fabricType,
+          fabricColor: record.fabricColor,
           productName: record.productName,
           quantity: finalQuantity.toString(),
           quantityReceive: finalQuantity.toString(),
@@ -215,6 +228,8 @@ export default function Manufacturing() {
       setFormData({
         ...formData,
         cuttingId: record.id,
+        fabricType: record.fabricType,
+        fabricColor: record.fabricColor,
         productName: record.productName,
         quantity: record.piecesCount.toString(),
         quantityReceive: record.piecesCount.toString(),
@@ -289,6 +304,8 @@ export default function Manufacturing() {
 
         const manufacturingOrder = {
           cuttingId: formData.cuttingId,
+          fabricType: formData.fabricType,
+          fabricColor: formData.fabricColor,
           productName: formData.productName,
           quantity: quantity,
           quantityReceive: quantityReceive,
@@ -318,6 +335,8 @@ export default function Manufacturing() {
         // Reset form
         setFormData({
           cuttingId: '',
+          fabricType: '',
+          fabricColor: '',
           productName: '',
           quantity: '',
           quantityReceive: '',
@@ -396,7 +415,7 @@ export default function Manufacturing() {
                     >
                       <div style={{ fontWeight: '500' }}>{record.id}</div>
                       <div style={{ color: '#6b7280', fontSize: '12px' }}>
-                        {record.productName} - {record.piecesCount} pieces - {record.fabricType}
+                        {record.productName} - {record.piecesCount} pieces - {record.fabricType} ({record.fabricColor})
                       </div>
                     </div>
                   ))}
@@ -407,6 +426,32 @@ export default function Manufacturing() {
                   ✅ Found: {formData.productName} ({formData.quantity} pieces remaining)
                 </small>
               )}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="fabricType">Fabric Type</label>
+              <input
+                type="text"
+                id="fabricType"
+                name="fabricType"
+                value={formData.fabricType}
+                placeholder="Auto-filled from cutting record"
+                readOnly
+                style={{ background: '#f9fafb', color: '#6b7280' }}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="fabricColor">Fabric Color</label>
+              <input
+                type="text"
+                id="fabricColor"
+                name="fabricColor"
+                value={formData.fabricColor}
+                placeholder="Auto-filled from cutting record"
+                readOnly
+                style={{ background: '#f9fafb', color: '#6b7280' }}
+              />
             </div>
 
             <div className="form-group">
@@ -423,7 +468,7 @@ export default function Manufacturing() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="quantity">Quantity to Manufacture</label>
+              <label htmlFor="quantity">Qty to Manufacture</label>
               <input
                 type="number"
                 id="quantity"
@@ -432,32 +477,6 @@ export default function Manufacturing() {
                 placeholder="Auto-filled from cutting record"
                 readOnly
                 style={{ background: '#f9fafb', color: '#6b7280' }}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="quantityReceive">Quantity Receive *</label>
-              <input
-                type="number"
-                id="quantityReceive"
-                name="quantityReceive"
-                value={formData.quantityReceive}
-                onChange={handleChange}
-                placeholder="Quantity received from tailor"
-                min="0"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="dateOfReceive">Date of Receive *</label>
-              <input
-                type="date"
-                id="dateOfReceive"
-                name="dateOfReceive"
-                value={formData.dateOfReceive}
-                onChange={handleChange}
-                required
               />
             </div>
 
@@ -471,6 +490,32 @@ export default function Manufacturing() {
                 placeholder="Auto-filled from cutting record"
                 readOnly
                 style={{ background: '#f9fafb', color: '#6b7280' }}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="quantityReceive">Qty Received *</label>
+              <input
+                type="number"
+                id="quantityReceive"
+                name="quantityReceive"
+                value={formData.quantityReceive}
+                onChange={handleChange}
+                placeholder="Quantity received from tailor"
+                min="0"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="dateOfReceive">Date Received *</label>
+              <input
+                type="date"
+                id="dateOfReceive"
+                name="dateOfReceive"
+                value={formData.dateOfReceive}
+                onChange={handleChange}
+                required
               />
             </div>
 
@@ -498,6 +543,8 @@ export default function Manufacturing() {
               className="btn btn-secondary"
               onClick={() => setFormData({
                 cuttingId: '',
+                fabricType: '',
+                fabricColor: '',
                 productName: '',
                 quantity: '',
                 quantityReceive: '',
@@ -521,20 +568,22 @@ export default function Manufacturing() {
             <thead>
               <tr>
                 <th style={{ textAlign: 'center' }}>Manufacturing ID</th>
+                <th style={{ textAlign: 'center' }}>Fabric Type</th>
+                <th style={{ textAlign: 'center' }}>Fabric Color</th>
                 <th style={{ textAlign: 'center' }}>Product</th>
-                <th style={{ textAlign: 'center' }}>Quantity</th>
+                <th style={{ textAlign: 'center' }}>Qty</th>
                 <th style={{ textAlign: 'center' }}>Size</th>
-                <th style={{ textAlign: 'center' }}>Quantity Receive</th>
-                <th style={{ textAlign: 'center' }}>Quantity Remaining</th>
+                <th style={{ textAlign: 'center' }}>Qty Received</th>
+                <th style={{ textAlign: 'center' }}>Qty Remaining</th>
                 <th style={{ textAlign: 'center' }}>Tailor</th>
-                <th style={{ textAlign: 'center' }}>Date of Receive</th>
+                <th style={{ textAlign: 'center' }}>Date Received</th>
                 <th style={{ textAlign: 'center' }}>Status</th>
               </tr>
             </thead>
             <tbody>
               {isLoadingRecords ? (
                 <tr>
-                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={11} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     Loading manufacturing assignments...
                   </td>
                 </tr>
@@ -546,6 +595,8 @@ export default function Manufacturing() {
                   return (
                     <tr key={record._id}>
                       <td style={{ fontWeight: '500', textAlign: 'center' }}>{record.manufacturingId || record.cuttingId}</td>
+                      <td style={{ textAlign: 'center' }}>{record.fabricType || 'N/A'}</td>
+                      <td style={{ textAlign: 'center' }}>{record.fabricColor || 'N/A'}</td>
                       <td style={{ textAlign: 'center' }}>{record.productName}</td>
                       <td style={{ textAlign: 'center' }}>{record.quantity}</td>
                       <td style={{ textAlign: 'center' }}>{record.size || 'N/A'}</td>
@@ -565,7 +616,7 @@ export default function Manufacturing() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={11} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     No manufacturing assignments found
                   </td>
                 </tr>

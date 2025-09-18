@@ -35,6 +35,8 @@ router.post('/', async (req, res) => {
   try {
     const {
       cuttingId,
+      fabricType,
+      fabricColor,
       productName,
       quantity,
       quantityReceive,
@@ -46,7 +48,7 @@ router.post('/', async (req, res) => {
     } = req.body
 
     // Validate required fields
-    if (!cuttingId || !productName || !quantity || !dateOfReceive || !tailorName) {
+    if (!cuttingId || !productName || !quantity || !dateOfReceive || !tailorName || !fabricType || !fabricColor) {
       return res.status(400).json({ message: 'Missing required fields' })
     }
 
@@ -68,6 +70,8 @@ router.post('/', async (req, res) => {
     const manufacturingOrder = new ManufacturingOrder({
       manufacturingId,
       cuttingId,
+      fabricType,
+      fabricColor,
       productName,
       quantity: parseInt(quantity),
       size: cuttingRecord.sizeType || 'N/A',
@@ -127,6 +131,8 @@ router.put('/:id', async (req, res) => {
     }
 
     const {
+      fabricType,
+      fabricColor,
       quantity,
       quantityReceive,
       quantityRemaining,
@@ -138,6 +144,8 @@ router.put('/:id', async (req, res) => {
     } = req.body
 
     // Update fields
+    if (fabricType) manufacturingOrder.fabricType = fabricType
+    if (fabricColor) manufacturingOrder.fabricColor = fabricColor
     if (quantity) manufacturingOrder.quantity = parseInt(quantity)
     if (quantityReceive !== undefined) {
       manufacturingOrder.quantityReceive = parseInt(quantityReceive)

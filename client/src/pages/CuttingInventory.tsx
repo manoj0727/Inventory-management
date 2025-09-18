@@ -159,7 +159,8 @@ export default function CuttingInventory() {
               <tr>
                 <th style={{ textAlign: 'center' }}>Cutting ID</th>
                 <th style={{ textAlign: 'center' }}>Product Name</th>
-                <th style={{ textAlign: 'center' }}>Fabric</th>
+                <th style={{ textAlign: 'center' }}>Fabric Type</th>
+                <th style={{ textAlign: 'center' }}>Fabric Color</th>
                 <th style={{ textAlign: 'center' }}>Size Type</th>
                 <th style={{ textAlign: 'center' }}>Quantity</th>
                 <th style={{ textAlign: 'center' }}>Cutting Master</th>
@@ -175,6 +176,7 @@ export default function CuttingInventory() {
                     <td style={{ fontWeight: '500', textAlign: 'center' }}>{record.id}</td>
                     <td style={{ textAlign: 'center' }}>{record.productName}</td>
                     <td style={{ textAlign: 'center' }}>{record.fabricType}</td>
+                    <td style={{ textAlign: 'center' }}>{record.fabricColor}</td>
                     <td style={{ textAlign: 'center' }}>{record.sizeType || 'N/A'}</td>
                     <td style={{ textAlign: 'center' }}>{record.piecesCount}</td>
                     <td style={{ textAlign: 'center' }}>{record.cuttingMaster}</td>
@@ -190,7 +192,7 @@ export default function CuttingInventory() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     {isLoading ? 'Loading cutting records...' : 'No cutting records found'}
                   </td>
                 </tr>

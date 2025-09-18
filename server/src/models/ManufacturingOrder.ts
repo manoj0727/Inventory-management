@@ -3,6 +3,8 @@ import mongoose, { Document, Schema } from 'mongoose'
 export interface IManufacturingOrder extends Document {
   manufacturingId: string
   cuttingId: string
+  fabricType: string
+  fabricColor: string
   productName: string
   quantity: number
   size: string
@@ -25,6 +27,16 @@ const ManufacturingOrderSchema: Schema = new Schema({
     trim: true
   },
   cuttingId: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  fabricType: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  fabricColor: {
     type: String,
     required: true,
     trim: true

@@ -268,30 +268,40 @@ export default function GenerateQR() {
     if (!editingRecord) return
 
     try {
-      const response = await fetch(`${API_URL}/api/manufacturing-inventory/${editingRecord._id}`, {
+      // Update QR product record
+      const response = await fetch(`${API_URL}/api/qr-products/${editingRecord._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(updatedData)
       })
-      
+
       if (response.ok) {
-        alert('✅ Manufacturing record updated successfully!')
+        alert('✅ QR product updated successfully!')
         setShowEditModal(false)
         setEditingRecord(null)
+
+        // Refresh the records
         fetchManufacturingRecords()
+
         // Clear cache for this record since data changed
         const oldCacheKey = `${editingRecord.id}_${editingRecord.quantityProduced > 0 ? editingRecord.quantityProduced : editingRecord.quantity}_${editingRecord.completedDate || 'no-date'}`
         const newCache = new Map(qrCodeCache)
         newCache.delete(oldCacheKey)
         setQrCodeCache(newCache)
+
+        // If QR code was already generated, regenerate it with updated info
+        if (editingRecord.qrCodeData) {
+          const updatedRecord = { ...editingRecord, ...updatedData }
+          await generateQRCode(updatedRecord)
+        }
       } else {
-        alert('❌ Error updating manufacturing record. Please try again.')
+        alert('❌ Error updating QR product. Please try again.')
       }
     } catch (error) {
-      console.error('Error updating manufacturing record:', error)
-      alert('❌ Error updating manufacturing record. Please try again.')
+      console.error('Error updating QR product:', error)
+      alert('❌ Error updating QR product. Please try again.')
     }
   }
 
@@ -468,100 +478,150 @@ export default function GenerateQR() {
                       <td>{formatDate(record.completedDate || record.updatedAt || '')}</td>
                       <td style={{ textAlign: 'center' }}>
                         {record.qrCodeData ? (
+                          <div style={{ position: 'relative', display: 'inline-block' }}>
                           <img
                             src={record.qrCodeData}
                             alt="QR Code"
+                            title={`${record.productName}\nSize: ${record.size || 'N/A'}\nColor: ${record.color || 'N/A'}\nQty: ${record.quantityProduced > 0 ? record.quantityProduced : record.quantity}\nClick to print label`}
                             style={{
                               width: '60px',
                               height: '60px',
                               cursor: 'pointer',
-                              border: '1px solid #e5e7eb',
-                              borderRadius: '4px'
+                              border: '2px solid #e5e7eb',
+                              borderRadius: '4px',
+                              padding: '2px',
+                              background: 'white',
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'scale(1.1)'
+                              e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.15)'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)'
+                              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'
                             }}
                             onClick={() => {
                               const win = window.open('', '_blank')
                               if (win) {
+                                const formatPrintDate = (dateStr: string) => {
+                                  if (!dateStr) return 'N/A'
+                                  try {
+                                    const date = new Date(dateStr)
+                                    return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear().toString().slice(-2)}`
+                                  } catch {
+                                    return 'N/A'
+                                  }
+                                }
                                 win.document.write(`
                                   <html>
                                     <head>
-                                      <title>QR Code - ${record.productName}</title>
+                                      <title>QR Label - ${record.productName}</title>
                                       <style>
                                         @page {
-                                          size: 3in 3in;
+                                          size: 2in 2in;
                                           margin: 0;
                                         }
-                                        body {
+                                        * {
                                           margin: 0;
                                           padding: 0;
-                                          font-family: Arial, sans-serif;
-                                          display: flex;
-                                          justify-content: center;
-                                          align-items: center;
-                                          min-height: 100vh;
+                                          box-sizing: border-box;
+                                        }
+                                        body {
+                                          font-family: 'Arial', sans-serif;
                                           background: #f0f0f0;
+                                          display: flex;
+                                          flex-direction: column;
+                                          align-items: center;
+                                          justify-content: center;
+                                          min-height: 100vh;
+                                          padding: 20px;
                                         }
                                         .label-container {
                                           background: white;
-                                          width: 3in;
-                                          height: 3in;
+                                          width: 2in;
+                                          height: 2in;
+                                          border: 1px solid #000;
+                                          padding: 0.1in;
                                           display: flex;
-                                          justify-content: center;
+                                          flex-direction: column;
                                           align-items: center;
-                                          box-sizing: border-box;
+                                          justify-content: center;
+                                          position: relative;
                                           page-break-after: always;
                                         }
                                         .qr-code {
-                                          width: 2.5in;
-                                          height: 2.5in;
+                                          width: 1.2in;
+                                          height: 1.2in;
+                                        }
+                                        .product-name {
+                                          font-size: 14px;
+                                          font-weight: bold;
+                                          text-align: center;
+                                          text-transform: uppercase;
+                                          margin-top: 8px;
+                                          color: #000;
                                           max-width: 100%;
-                                          max-height: 100%;
+                                          overflow: hidden;
+                                          text-overflow: ellipsis;
+                                        }
+                                        .size-badge {
+                                          display: inline-block;
+                                          background: #000;
+                                          color: white;
+                                          padding: 4px 12px;
+                                          border-radius: 4px;
+                                          font-weight: bold;
+                                          font-size: 16px;
+                                          margin-top: 6px;
                                         }
                                         .actions {
                                           text-align: center;
-                                          margin: 20px;
+                                          margin: 30px;
                                         }
                                         .actions button {
-                                          padding: 10px 20px;
+                                          padding: 12px 24px;
                                           margin: 0 10px;
-                                          font-size: 14px;
+                                          font-size: 16px;
                                           cursor: pointer;
                                           background: #3b82f6;
                                           color: white;
                                           border: none;
-                                          border-radius: 5px;
+                                          border-radius: 6px;
+                                          font-weight: 500;
                                         }
                                         .actions button:hover {
                                           background: #2563eb;
+                                          transform: translateY(-1px);
+                                          box-shadow: 0 4px 8px rgba(0,0,0,0.2);
                                         }
                                         @media print {
                                           body {
                                             background: white;
                                             margin: 0;
                                             padding: 0;
+                                            display: block;
                                           }
                                           .actions {
                                             display: none;
                                           }
                                           .label-container {
                                             margin: 0;
+                                            box-shadow: none;
+                                            border: 1px solid #000;
                                           }
                                         }
                                       </style>
                                     </head>
                                     <body>
-                                      <div>
-                                        <div class="label-container">
-                                          <img src="${record.qrCodeData}" class="qr-code" alt="QR Code" />
-                                        </div>
-                                        <div class="actions">
-                                          <button onclick="window.print()">🖨️ Print QR Code</button>
-                                          <button onclick="
-                                            const a = document.createElement('a');
-                                            a.href = '${record.qrCodeData}';
-                                            a.download = 'QR_${record.id || record.manufacturingId}.png';
-                                            a.click();
-                                          ">💾 Download QR Code</button>
-                                        </div>
+                                      <div class="label-container">
+                                        <img src="${record.qrCodeData}" class="qr-code" alt="QR Code" />
+                                        <div class="product-name">${record.productName}</div>
+                                        <div class="size-badge">SIZE: ${record.size || 'N/A'}</div>
+                                      </div>
+                                      <div class="actions">
+                                        <button onclick="window.print()">🖨️ Print Label</button>
                                       </div>
                                     </body>
                                   </html>
@@ -570,8 +630,9 @@ export default function GenerateQR() {
                               }
                             }}
                           />
+                          </div>
                         ) : (
-                          <span style={{ color: '#9ca3af' }}>Not Generated</span>
+                          <span style={{ color: '#9ca3af', fontSize: '12px', padding: '4px 8px', background: '#f3f4f6', borderRadius: '4px', display: 'inline-block' }}>Not Generated</span>
                         )}
                       </td>
                       <td style={{ textAlign: 'center' }}>
@@ -653,18 +714,76 @@ export default function GenerateQR() {
             maxHeight: '90vh',
             overflow: 'auto'
           }}>
-            <h2 style={{ marginBottom: '20px', color: '#374151' }}>Edit Manufacturing Record</h2>
+            <h2 style={{ marginBottom: '20px', color: '#374151' }}>Edit QR Product</h2>
             <form onSubmit={(e) => {
               e.preventDefault()
               const formData = new FormData(e.target as HTMLFormElement)
               const updatedRecord = {
-                quantityProduced: parseInt(formData.get('quantityProduced') as string),
-                quantity: parseInt(formData.get('quantity') as string),
-                tailorName: formData.get('tailorName') as string,
-                status: formData.get('status') as string
+                manufacturingId: formData.get('manufacturingId') as string,
+                productName: formData.get('productName') as string,
+                color: formData.get('color') as string,
+                size: formData.get('size') as string,
+                quantity: parseInt(formData.get('quantity') as string)
               }
               handleSaveEdit(updatedRecord)
             }}>
+              <div className="form-group">
+                <label htmlFor="manufacturingId">Manufacturing ID *</label>
+                <input
+                  type="text"
+                  id="manufacturingId"
+                  name="manufacturingId"
+                  defaultValue={editingRecord.manufacturingId || editingRecord.id}
+                  required
+                  readOnly
+                  style={{ backgroundColor: '#f9fafb', color: '#6b7280' }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="productName">Product Name *</label>
+                <input
+                  type="text"
+                  id="productName"
+                  name="productName"
+                  defaultValue={editingRecord.productName}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="color">Color *</label>
+                <input
+                  type="text"
+                  id="color"
+                  name="color"
+                  defaultValue={editingRecord.color || 'N/A'}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="size">Size *</label>
+                <select
+                  id="size"
+                  name="size"
+                  defaultValue={editingRecord.size || 'N/A'}
+                  required
+                  style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}
+                >
+                  <option value="XXS">XXS</option>
+                  <option value="XS">XS</option>
+                  <option value="S">S</option>
+                  <option value="M">M</option>
+                  <option value="L">L</option>
+                  <option value="XL">XL</option>
+                  <option value="XXL">XXL</option>
+                  <option value="XXXL">XXXL</option>
+                  <option value="Free Size">Free Size</option>
+                  <option value="N/A">N/A</option>
+                </select>
+              </div>
+
               <div className="form-group">
                 <label htmlFor="quantity">Total Quantity *</label>
                 <input
@@ -677,54 +796,12 @@ export default function GenerateQR() {
                 />
               </div>
 
-              <div className="form-group">
-                <label htmlFor="quantityProduced">Quantity Produced *</label>
-                <input
-                  type="number"
-                  id="quantityProduced"
-                  name="quantityProduced"
-                  defaultValue={editingRecord.quantityProduced}
-                  min="0"
-                  max={editingRecord.quantity}
-                  required
-                />
-                <small style={{ color: '#6b7280' }}>
-                  Maximum: {editingRecord.quantity} (Total ordered)
-                </small>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="tailorName">Tailor Name *</label>
-                <input
-                  type="text"
-                  id="tailorName"
-                  name="tailorName"
-                  defaultValue={editingRecord.tailorName}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="status">Status *</label>
-                <select
-                  id="status"
-                  name="status"
-                  defaultValue={editingRecord.status}
-                  required
-                >
-                  <option value="Pending">Pending</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Cancelled">Cancelled</option>
-                </select>
-              </div>
-
               <div className="btn-group">
                 <button type="submit" className="btn btn-primary">
                   Save Changes
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn btn-secondary"
                   onClick={() => {
                     setShowEditModal(false)
