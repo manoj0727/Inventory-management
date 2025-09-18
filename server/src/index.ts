@@ -1,44 +1,24 @@
 import express from 'express'
 import cors from 'cors'
 import { createServer } from 'http'
-import { ApolloServer } from '@apollo/server'
-import { expressMiddleware } from '@apollo/server/express4'
-import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer'
-import { makeExecutableSchema } from '@graphql-tools/schema'
-import { WebSocketServer } from 'ws'
-import { useServer } from 'graphql-ws/lib/use/ws'
 import mongoose from 'mongoose'
-import Redis from 'ioredis'
 import dotenv from 'dotenv'
-import { typeDefs } from './graphql/typeDefs'
-import { resolvers } from './graphql/resolvers'
+import path from 'path'
 import { authMiddleware } from './middleware/auth'
 import { logger } from './utils/logger'
 import { setupMongoIndexes } from './utils/dbOptimization'
 import apiRoutes from './routes'
 
-dotenv.config()
+// Load environment variables from .env file explicitly
+const result = dotenv.config({ path: path.resolve(__dirname, '../.env') })
+if (result.error) {
+  console.error('Error loading .env file:', result.error)
+  process.exit(1)
+}
 
 const app = express()
 const httpServer = createServer(app)
 const PORT = process.env.PORT || 4000
-
-// Redis client setup (optional - will work without it)
-let redis: any = null
-try {
-  redis = new Redis({
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    password: process.env.REDIS_PASSWORD,
-    maxRetriesPerRequest: 0,
-    lazyConnect: true,
-  })
-  redis.on('connect', () => logger.info('Redis connected'))
-  redis.on('error', () => {}) // Silently ignore Redis errors
-} catch (error) {
-  logger.info('Redis not available - running without cache')
-}
-export { redis }
 
 // MongoDB connection with optimization
 mongoose.set('strictQuery', false)
@@ -46,7 +26,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/inventory
   maxPoolSize: 10,
   minPoolSize: 5,
   socketTimeoutMS: 45000,
-  serverSelectionTimeoutMS: 5000,
+  serverSelectionTimeoutMS: 10000,
 })
 
 mongoose.connection.on('connected', async () => {
@@ -58,91 +38,32 @@ mongoose.connection.on('error', (err) => {
   logger.error('MongoDB error:', err)
 })
 
-// GraphQL schema
-const schema = makeExecutableSchema({ typeDefs, resolvers })
-
-// WebSocket server for subscriptions
-const wsServer = new WebSocketServer({
-  server: httpServer,
-  path: '/graphql',
-})
-
-const serverCleanup = useServer(
-  {
-    schema,
-    context: async (ctx) => {
-      return { 
-        redis,
-        user: ctx.connectionParams?.authorization 
-          ? await authMiddleware.verifyToken(ctx.connectionParams.authorization as string)
-          : null
-      }
-    },
-  },
-  wsServer
-)
-
-// Apollo Server setup
-const apolloServer = new ApolloServer({
-  schema,
-  plugins: [
-    ApolloServerPluginDrainHttpServer({ httpServer }),
-    {
-      async serverWillStart() {
-        return {
-          async drainServer() {
-            await serverCleanup.dispose()
-          },
-        }
-      },
-    },
-  ],
-})
-
 async function startServer() {
-  await apolloServer.start()
-
-  // Express middleware - Temporary fix for CORS
+  // Express middleware - CORS configuration
   app.use(cors({
-    origin: true, // Allow all origins temporarily
+    origin: process.env.NODE_ENV === 'production'
+      ? process.env.CLIENT_URL
+      : true, // Allow all origins in development
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     preflightContinue: false,
     optionsSuccessStatus: 204
   }))
-  
+
   app.use(express.json({ limit: '10mb' }))
   app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
-  // REST API routes (for file uploads, legacy support)
+  // REST API routes
   app.use('/api', apiRoutes)
-
-  // GraphQL middleware
-  app.use(
-    '/graphql',
-    expressMiddleware(apolloServer, {
-      context: async ({ req }) => {
-        const token = req.headers.authorization?.replace('Bearer ', '')
-        const user = token ? await authMiddleware.verifyToken(token) : null
-        
-        return {
-          user,
-          redis,
-          req,
-        }
-      },
-    })
-  )
 
   // Health check
   app.get('/health', (_req, res) => {
-    res.json({ 
+    res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
       services: {
-        mongodb: mongoose.connection.readyState === 1,
-        redis: redis.status === 'ready'
+        mongodb: mongoose.connection.readyState === 1
       }
     })
   })
@@ -151,21 +72,28 @@ async function startServer() {
   app.get('/', (_req, res) => {
     res.json({
       message: 'Inventory Management API',
-      version: '1.0.0',
-      graphql: '/graphql',
+      version: '2.0.0',
       health: '/health',
       timestamp: new Date().toISOString()
     })
   })
 
+  // Error handling middleware
+  app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    logger.error('Unhandled error:', err)
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: process.env.NODE_ENV === 'development' ? err.message : undefined
+    })
+  })
+
   httpServer.listen(PORT, () => {
     logger.info(`🚀 Server ready at http://localhost:${PORT}`)
-    logger.info(`🚀 GraphQL endpoint: http://localhost:${PORT}/graphql`)
-    logger.info(`🚀 WebSocket endpoint: ws://localhost:${PORT}/graphql`)
+    logger.info(`📦 REST API available at http://localhost:${PORT}/api`)
   })
 }
 
-startServer().catch((err) => {
+startServer().catch(err => {
   logger.error('Failed to start server:', err)
   process.exit(1)
 })

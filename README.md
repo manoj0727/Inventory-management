@@ -2,6 +2,23 @@
 
 A modern full-stack inventory management system with real-time tracking, employee management, and manufacturing workflow.
 
+## 🔐 Default Admin Credentials
+
+The admin credentials are configured via environment variables for better security.
+
+**Default Login:**
+- Username: `admin`
+- Password: `admin123`
+
+To change admin credentials, update these values in the server's `.env` file:
+```env
+ADMIN_USERNAME=your_admin_username
+ADMIN_PASSWORD=your_secure_password
+ADMIN_EMAIL=admin@yourcompany.com
+```
+
+**⚠️ Important:** Always change the default credentials in production!
+
 ## 🚀 Features
 
 - **Inventory Management** - Track fabrics, materials, and products
@@ -25,8 +42,8 @@ inventory-management/
 ├── server/               # Node.js + Express backend
 │   ├── src/
 │   │   ├── models/      # MongoDB schemas
-│   │   ├── routes/      # API endpoints
-│   │   └── graphql/     # GraphQL setup
+│   │   ├── routes/      # REST API endpoints
+│   │   └── middleware/  # Auth & validation
 │   └── dist/           # Compiled TypeScript
 ├── render.yaml          # Render deployment config
 └── DEPLOY.md           # Deployment guide
@@ -38,13 +55,14 @@ inventory-management/
 - React 18 + TypeScript
 - Vite
 - TailwindCSS
-- Apollo Client
+- QR Code Generation & Scanning
 
 **Backend:**
 - Node.js + Express
 - MongoDB + Mongoose
-- GraphQL + Apollo Server
+- REST API
 - JWT Authentication
+- Bcrypt Password Hashing
 
 ## 🚀 Quick Start
 
