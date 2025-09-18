@@ -9,11 +9,12 @@ import { logger } from './utils/logger'
 import { setupMongoIndexes } from './utils/dbOptimization'
 import apiRoutes from './routes'
 
-// Load environment variables from .env file explicitly
+// Load environment variables from .env file if it exists
+// In production, environment variables should be set directly
 const result = dotenv.config({ path: path.resolve(__dirname, '../.env') })
 if (result.error) {
-  console.error('Error loading .env file:', result.error)
-  process.exit(1)
+  // Only log a warning, don't exit - environment variables might be set directly
+  console.log('Note: .env file not found, using environment variables')
 }
 
 const app = express()
