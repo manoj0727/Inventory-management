@@ -15,6 +15,7 @@ export interface ICuttingRecord extends Document {
   sizeType: string
   cuttingMaster: string
   cuttingGivenTo: string
+  tailorItemPerPiece?: number
   date: string
   time: string
   notes?: string
@@ -92,6 +93,11 @@ const CuttingRecordSchema: Schema = new Schema({
     type: String,
     required: true,
     trim: true
+  },
+  tailorItemPerPiece: {
+    type: Number,
+    min: 0,
+    default: 0
   },
   date: {
     type: String,

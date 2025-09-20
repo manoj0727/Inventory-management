@@ -14,6 +14,7 @@ interface CuttingForm {
   sizeType: string
   cuttingMaster: string
   cuttingGivenTo: string
+  tailorItemPerPiece: string
   cuttingDate: string
   notes: string
 }
@@ -45,6 +46,7 @@ export default function Cutting() {
     sizeType: '',
     cuttingMaster: '',
     cuttingGivenTo: '',
+    tailorItemPerPiece: '',
     cuttingDate: new Date().toISOString().split('T')[0],
     notes: ''
   })
@@ -242,6 +244,7 @@ export default function Cutting() {
         sizeType: formData.sizeType,
         cuttingMaster: formData.cuttingMaster,
         cuttingGivenTo: formData.cuttingGivenTo,
+        tailorItemPerPiece: parseFloat(formData.tailorItemPerPiece) || 0,
         date: formData.cuttingDate,
         time: new Date().toLocaleTimeString(),
         notes: formData.notes
@@ -272,6 +275,7 @@ export default function Cutting() {
           sizeType: '',
           cuttingMaster: '',
           cuttingGivenTo: '',
+          tailorItemPerPiece: '',
           cuttingDate: new Date().toISOString().split('T')[0],
           notes: ''
         })
@@ -509,6 +513,20 @@ export default function Cutting() {
             </div>
 
             <div className="form-group">
+              <label htmlFor="tailorItemPerPiece">Tailor Item Per Piece (₹)</label>
+              <input
+                type="number"
+                id="tailorItemPerPiece"
+                name="tailorItemPerPiece"
+                value={formData.tailorItemPerPiece}
+                onChange={handleChange}
+                placeholder="Price per piece for tailor"
+                min="0"
+                step="0.01"
+              />
+            </div>
+
+            <div className="form-group">
               <label htmlFor="cuttingDate">Cutting Date *</label>
               <input
                 type="date"
@@ -577,6 +595,7 @@ export default function Cutting() {
                   sizeType: '',
                   cuttingMaster: '',
                   cuttingGivenTo: '',
+                  tailorItemPerPiece: '',
                   cuttingDate: new Date().toISOString().split('T')[0],
                   notes: ''
                 })
@@ -605,13 +624,14 @@ export default function Cutting() {
                 <th style={{ textAlign: 'center' }}>Total Used</th>
                 <th style={{ textAlign: 'center' }}>Cutting Master</th>
                 <th style={{ textAlign: 'center' }}>Given To Tailor</th>
+                <th style={{ textAlign: 'center' }}>Tailor Price/Piece</th>
                 <th style={{ textAlign: 'center' }}>Date</th>
               </tr>
             </thead>
             <tbody>
               {isLoadingRecords ? (
                 <tr>
-                  <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={11} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     Loading recent records...
                   </td>
                 </tr>
@@ -627,12 +647,13 @@ export default function Cutting() {
                     <td style={{ textAlign: 'center' }}>{record.totalSquareMetersUsed} sq.m</td>
                     <td style={{ textAlign: 'center' }}>{record.cuttingMaster || record.cuttingEmployee}</td>
                     <td style={{ textAlign: 'center' }}>{record.cuttingGivenTo || 'N/A'}</td>
+                    <td style={{ textAlign: 'center' }}>₹{record.tailorItemPerPiece || 0}</td>
                     <td style={{ textAlign: 'center' }}>{formatDate(record.date)}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={11} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     No cutting records found
                   </td>
                 </tr>

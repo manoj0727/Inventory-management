@@ -13,19 +13,51 @@ interface ManufacturingRecord {
   size: string
   quantityReceive: number
   quantityRemaining: number
+  itemsReceived?: number
+  pricePerPiece?: number
+  totalPrice?: number
   dateOfReceive: string
   tailorName: string
   status: string
   createdAt: string
 }
 
+interface CuttingRecord {
+  _id: string
+  id: string
+  tailorItemPerPiece?: number
+}
+
 export default function ManufacturingInventory() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [manufacturingRecords, setManufacturingRecords] = useState<ManufacturingRecord[]>([])
+  const [cuttingRecords, setCuttingRecords] = useState<CuttingRecord[]>([])
+  const [priceMap, setPriceMap] = useState<{[key: string]: number}>({})
   const [isLoading, setIsLoading] = useState(false)
   const [editingRecord, setEditingRecord] = useState<ManufacturingRecord | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
+
+  const fetchCuttingRecords = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/cutting-records`)
+      if (response.ok) {
+        const records = await response.json()
+        setCuttingRecords(records)
+
+        // Create price map from cutting records
+        const map: {[key: string]: number} = {}
+        records.forEach((record: CuttingRecord) => {
+          if (record.id && record.tailorItemPerPiece) {
+            map[record.id] = record.tailorItemPerPiece
+          }
+        })
+        setPriceMap(map)
+      }
+    } catch (error) {
+      console.error('Error fetching cutting records:', error)
+    }
+  }
 
   const fetchManufacturingRecords = async () => {
     setIsLoading(true)
@@ -47,6 +79,7 @@ export default function ManufacturingInventory() {
   }
 
   useEffect(() => {
+    fetchCuttingRecords()
     fetchManufacturingRecords()
   }, [])
 
@@ -187,6 +220,8 @@ export default function ManufacturingInventory() {
                 <th style={{ textAlign: 'center' }}>Size</th>
                 <th style={{ textAlign: 'center' }}>Qty Received</th>
                 <th style={{ textAlign: 'center' }}>Qty Remaining</th>
+                <th style={{ textAlign: 'center' }}>Price/Piece</th>
+                <th style={{ textAlign: 'center' }}>Total Amount</th>
                 <th style={{ textAlign: 'center' }}>Tailor</th>
                 <th style={{ textAlign: 'center' }}>Date Received</th>
                 <th style={{ textAlign: 'center' }}>Status</th>
@@ -199,6 +234,10 @@ export default function ManufacturingInventory() {
                   const quantityRemaining = record.quantity - (record.quantityReceive || 0)
                   const status = quantityRemaining <= 0 ? 'Complete' : 'Pending'
 
+                  // Auto-detect price from cutting record
+                  const pricePerPiece = record.pricePerPiece || priceMap[record.cuttingId] || 0
+                  const totalAmount = (record.quantityReceive || 0) * pricePerPiece
+
                   return (
                     <tr key={record._id}>
                       <td style={{ fontWeight: '500', textAlign: 'center' }}>{record.manufacturingId || record.cuttingId}</td>
@@ -209,6 +248,8 @@ export default function ManufacturingInventory() {
                       <td style={{ textAlign: 'center' }}>{record.size || 'N/A'}</td>
                       <td style={{ textAlign: 'center' }}>{record.quantityReceive || 0}</td>
                       <td style={{ textAlign: 'center' }}>{quantityRemaining}</td>
+                      <td style={{ textAlign: 'center' }}>₹{pricePerPiece}</td>
+                      <td style={{ textAlign: 'center', fontWeight: '600' }}>₹{totalAmount}</td>
                       <td style={{ textAlign: 'center' }}>{record.tailorName}</td>
                       <td style={{ textAlign: 'center' }}>{formatDate(record.dateOfReceive)}</td>
                       <td style={{ textAlign: 'center' }}>
@@ -229,7 +270,7 @@ export default function ManufacturingInventory() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={12} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={14} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     {isLoading ? 'Loading manufacturing inventory...' : 'No manufacturing inventory records found'}
                   </td>
                 </tr>

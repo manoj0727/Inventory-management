@@ -40,6 +40,9 @@ router.post('/', async (req, res) => {
       productName,
       quantity,
       quantityReceive,
+      itemsReceived,
+      pricePerPiece,
+      totalPrice,
       dateOfReceive,
       tailorName,
       priority,
@@ -52,7 +55,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Missing required fields' })
     }
 
-    // Get cutting record to get size information
+    // Get cutting record to get size and price information
     const cuttingRecord = await CuttingRecord.findOne({ id: cuttingId })
     if (!cuttingRecord) {
       return res.status(404).json({ message: 'Cutting record not found' })
@@ -67,6 +70,11 @@ router.post('/', async (req, res) => {
     const quantityReceiveNum = parseInt(quantityReceive) || 0
     const quantityRemaining = parseInt(quantity) - quantityReceiveNum
 
+    // Auto-detect price from cutting record if not provided
+    const finalPricePerPiece = pricePerPiece !== undefined ? pricePerPiece : (cuttingRecord.tailorItemPerPiece || 0)
+    const finalItemsReceived = itemsReceived || quantityReceiveNum
+    const finalTotalPrice = totalPrice !== undefined ? totalPrice : (finalItemsReceived * finalPricePerPiece)
+
     const manufacturingOrder = new ManufacturingOrder({
       manufacturingId,
       cuttingId,
@@ -77,6 +85,9 @@ router.post('/', async (req, res) => {
       size: cuttingRecord.sizeType || 'N/A',
       quantityReceive: quantityReceiveNum,
       quantityRemaining,
+      itemsReceived: finalItemsReceived,
+      pricePerPiece: finalPricePerPiece,
+      totalPrice: finalTotalPrice,
       dateOfReceive,
       tailorName,
       priority: priority || 'Normal',
@@ -136,6 +147,9 @@ router.put('/:id', async (req, res) => {
       quantity,
       quantityReceive,
       quantityRemaining,
+      itemsReceived,
+      pricePerPiece,
+      totalPrice,
       dateOfReceive,
       tailorName,
       priority,
@@ -152,6 +166,25 @@ router.put('/:id', async (req, res) => {
     }
     if (quantityRemaining !== undefined) {
       manufacturingOrder.quantityRemaining = parseInt(quantityRemaining)
+    }
+    if (itemsReceived !== undefined) {
+      manufacturingOrder.itemsReceived = itemsReceived
+    }
+    if (pricePerPiece !== undefined) {
+      manufacturingOrder.pricePerPiece = pricePerPiece
+    } else if (!manufacturingOrder.pricePerPiece) {
+      // If no price, try to get from cutting record
+      const cuttingRecord = await CuttingRecord.findOne({ id: manufacturingOrder.cuttingId })
+      if (cuttingRecord && cuttingRecord.tailorItemPerPiece) {
+        manufacturingOrder.pricePerPiece = cuttingRecord.tailorItemPerPiece
+      }
+    }
+    if (totalPrice !== undefined) {
+      manufacturingOrder.totalPrice = totalPrice
+    } else {
+      // Auto-calculate total price
+      const items = manufacturingOrder.itemsReceived || manufacturingOrder.quantityReceive || 0
+      manufacturingOrder.totalPrice = items * (manufacturingOrder.pricePerPiece || 0)
     }
     if (dateOfReceive) manufacturingOrder.dateOfReceive = dateOfReceive
     if (tailorName) manufacturingOrder.tailorName = tailorName

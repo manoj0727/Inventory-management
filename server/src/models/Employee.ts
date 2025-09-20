@@ -7,6 +7,7 @@ export interface IEmployee extends Document {
   name: string;
   email: string;
   mobile: string;
+  dob: Date;
   aadharNumber?: string;
   address?: {
     street?: string;
@@ -48,6 +49,10 @@ const employeeSchema = new Schema<IEmployee>({
   },
   mobile: {
     type: String,
+    required: true
+  },
+  dob: {
+    type: Date,
     required: true
   },
   aadharNumber: {
@@ -108,12 +113,27 @@ employeeSchema.pre('save', async function(next) {
   }
 });
 
-// Generate employee ID
+// Generate employee ID with format WI25EMP01
 employeeSchema.pre('save', async function(next) {
   if (!this.employeeId) {
     try {
-      const count = await (this.constructor as any).countDocuments();
-      this.employeeId = `EMP${String(count + 1).padStart(4, '0')}`;
+      const year = new Date().getFullYear().toString().slice(-2); // Get last 2 digits of year
+      const prefix = `WI${year}EMP`;
+
+      // Find the highest existing employee number with this prefix
+      const lastEmployee = await (this.constructor as any)
+        .findOne({ employeeId: { $regex: `^${prefix}` } })
+        .sort({ employeeId: -1 });
+
+      let nextNumber = 1;
+      if (lastEmployee && lastEmployee.employeeId) {
+        const match = lastEmployee.employeeId.match(/WI\d{2}EMP(\d+)/);
+        if (match) {
+          nextNumber = parseInt(match[1]) + 1;
+        }
+      }
+
+      this.employeeId = `${prefix}${String(nextNumber).padStart(2, '0')}`;
     } catch (error: any) {
       return next(error);
     }

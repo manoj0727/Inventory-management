@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import '../styles/common.css'
 import { API_URL } from '@/config/api'
+import { compressImage, getBase64SizeInKB } from '@/utils/imageCompression'
 
 interface Employee {
   _id: string
@@ -9,6 +10,7 @@ interface Employee {
   name: string
   email: string
   mobile: string
+  dob: string
   aadharNumber?: string
   address: {
     street: string
@@ -36,6 +38,7 @@ export default function Employees() {
     password: '',
     name: '',
     mobile: '',
+    dob: '',
     aadharNumber: '',
     address: '',
     salary: '',
@@ -96,7 +99,12 @@ export default function Employees() {
       alert('Please enter work type')
       return
     }
-    
+
+    if (!formData.dob) {
+      alert('Please enter date of birth')
+      return
+    }
+
     setIsLoading(true)
     
     try {
@@ -105,6 +113,7 @@ export default function Employees() {
         name: formData.name.trim(),
         email: `${formData.username.trim().toLowerCase()}@company.com`,
         mobile: formData.mobile.trim(),
+        dob: formData.dob || null,
         aadharNumber: formData.aadharNumber.trim(),
         address: {
           street: formData.address.trim(),
@@ -158,6 +167,7 @@ export default function Employees() {
       password: '',
       name: employee.name,
       mobile: employee.mobile || '',
+      dob: employee.dob ? new Date(employee.dob).toISOString().split('T')[0] : '',
       aadharNumber: employee.aadharNumber || '',
       address: employee.address?.street || '',
       salary: employee.salary?.toString() || '',
@@ -191,6 +201,7 @@ export default function Employees() {
       password: '',
       name: '',
       mobile: '',
+      dob: '',
       aadharNumber: '',
       address: '',
       salary: '',
@@ -203,10 +214,12 @@ export default function Employees() {
   }
 
   const generateIDCard = (employee: Employee) => {
-    const printWindow = window.open('', '_blank')
-    if (!printWindow) return
+    // Format DOB for display
+    const dob = employee.dob && employee.dob !== ''
+      ? new Date(employee.dob).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      : 'Not Available'
 
-    const idCardHTML = `
+    const idCardContent = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -222,7 +235,7 @@ export default function Employees() {
             box-sizing: border-box;
           }
           body {
-            font-family: 'Arial', 'Helvetica', sans-serif;
+            font-family: 'Times New Roman', serif;
             margin: 0;
             padding: 0;
             display: flex;
@@ -230,120 +243,133 @@ export default function Employees() {
             justify-content: center;
             min-height: 100vh;
             background: white;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            color-adjust: exact;
           }
           .id-card {
             width: 3.5in;
             height: 2.25in;
             background: white;
-            border: 2px solid #1e40af;
-            border-radius: 10px;
+            border: 3px solid #001f3f;
+            border-radius: 8px;
             overflow: hidden;
             position: relative;
             display: flex;
             flex-direction: column;
           }
           .id-card-header {
-            background: linear-gradient(90deg, #1e40af 0%, #3b82f6 100%);
+            background: #001f3f !important;
             padding: 10px 0;
             text-align: center;
-            color: white;
+            color: white !important;
+            border-bottom: 2px solid #ffd700;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
           .company-name {
-            font-size: 18px;
+            font-size: 22px;
             font-weight: bold;
             margin: 0;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-family: 'Times New Roman', serif;
+            color: white !important;
+          }
+          .company-tagline {
+            font-size: 7px;
+            margin-top: 3px;
             letter-spacing: 1px;
             text-transform: uppercase;
+            color: #ffd700 !important;
+            font-family: 'Times New Roman', serif;
           }
           .id-card-body {
             flex: 1;
-            padding: 15px;
+            padding: 12px;
+            display: flex;
+            gap: 15px;
+            background: white;
+            position: relative;
+          }
+          .left-section {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: white;
-          }
-          .photo-container {
-            margin-bottom: 12px;
-            text-align: center;
           }
           .photo {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            border: 3px solid #1e40af;
-            background: #f3f4f6;
-            display: inline-flex;
+            width: 90px;
+            height: 90px;
+            border-radius: 6px;
+            border: 2px solid #001f3f;
+            background: #f8f9fa;
+            display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
-            color: #6b7280;
+            font-size: 36px;
+            color: #000000;
             font-weight: bold;
             overflow: hidden;
-            margin: 0 auto;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
           }
           .photo img {
             width: 100%;
             height: 100%;
             object-fit: cover;
           }
-          .employee-info {
-            text-align: center;
-            width: 100%;
+          .right-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-left: 5px;
           }
-          .employee-name {
-            font-size: 20px;
-            font-weight: bold;
-            color: #1e293b;
-            margin-bottom: 4px;
-          }
-          .employee-id {
-            display: inline-block;
-            background: #1e40af;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 15px;
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 10px;
-          }
-          .employee-role {
-            font-size: 14px;
-            color: #64748b;
-            font-weight: 600;
-            margin-bottom: 12px;
-            text-transform: uppercase;
-          }
-          .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            width: 100%;
-            max-width: 280px;
-            margin: 0 auto;
+          .info-row {
+            margin-bottom: 6px;
+            display: flex;
+            align-items: baseline;
             font-size: 11px;
-          }
-          .info-item {
-            text-align: left;
           }
           .info-label {
             font-weight: 600;
-            color: #64748b;
-            display: inline;
+            color: #000000;
+            min-width: 65px;
+            font-family: 'Times New Roman', serif;
           }
           .info-value {
-            color: #1e293b;
-            display: inline;
-            margin-left: 4px;
+            color: #000000;
+            font-weight: 500;
+            flex: 1;
+            font-family: 'Times New Roman', serif;
           }
-          .id-card-footer {
-            background: #f8fafc;
-            padding: 6px;
+          .employee-name {
+            font-size: 15px;
+            font-weight: bold;
+            color: #000000;
+            font-family: 'Times New Roman', serif;
+          }
+          .employee-id {
+            font-size: 13px;
+            font-weight: bold;
+            color: #001f3f;
+            font-family: 'Times New Roman', serif;
+          }
+          .signature-section {
+            position: absolute;
+            bottom: 8px;
+            right: 15px;
             text-align: center;
-            border-top: 1px solid #e2e8f0;
+            width: 80px;
+          }
+          .signature-label {
             font-size: 9px;
-            color: #94a3b8;
+            color: #000000;
+            margin-top: 20px;
+            border-top: 1px solid #001f3f;
+            padding-top: 3px;
+            font-family: 'Times New Roman', serif;
+            font-weight: 600;
           }
           @media print {
             body {
@@ -351,10 +377,17 @@ export default function Employees() {
               padding: 0;
               background: white;
               min-height: auto;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
             }
             .id-card {
-              border: 2px solid #1e40af;
+              border: 3px solid #001f3f !important;
               page-break-inside: avoid;
+            }
+            .id-card-header {
+              background: #001f3f !important;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
             }
           }
         </style>
@@ -362,10 +395,11 @@ export default function Employees() {
       <body>
         <div class="id-card">
           <div class="id-card-header">
-            <h1 class="company-name">Employee ID Card</h1>
+            <h1 class="company-name">WESTO INDIA</h1>
+            <div class="company-tagline">A NAME BEHIND MANY SUCCESSFUL BRANDS</div>
           </div>
           <div class="id-card-body">
-            <div class="photo-container">
+            <div class="left-section">
               <div class="photo">
                 ${employee.photo
                   ? `<img src="${employee.photo}" alt="${employee.name}" />`
@@ -373,48 +407,72 @@ export default function Employees() {
                 }
               </div>
             </div>
-            <div class="employee-info">
-              <div class="employee-name">${employee.name}</div>
-              <div class="employee-id">${employee.employeeId}</div>
-              <div class="employee-role">${employee.work}</div>
-              <div class="info-grid">
-                <div class="info-item">
-                  <span class="info-label">Mobile:</span>
-                  <span class="info-value">${employee.mobile}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Joined:</span>
-                  <span class="info-value">${new Date(employee.joiningDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
-                </div>
-                ${employee.aadharNumber ? `
-                <div class="info-item">
-                  <span class="info-label">Aadhar:</span>
-                  <span class="info-value">****-${employee.aadharNumber.slice(-4)}</span>
-                </div>
-                ` : ''}
-                <div class="info-item">
-                  <span class="info-label">Status:</span>
-                  <span class="info-value" style="color: ${employee.status === 'active' ? '#10b981' : '#ef4444'}; font-weight: 600;">${employee.status.toUpperCase()}</span>
-                </div>
+            <div class="right-section">
+              <div class="info-row">
+                <span class="info-label">Name:</span>
+                <span class="info-value employee-name">${employee.name}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">DOB:</span>
+                <span class="info-value">${dob}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Mobile:</span>
+                <span class="info-value">${employee.mobile}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">EMP ID:</span>
+                <span class="info-value employee-id">${employee.employeeId}</span>
               </div>
             </div>
-          </div>
-          <div class="id-card-footer">
-            This card is property of the company. If found, please return.
+            <div class="signature-section">
+              <div class="signature-label">Authorized Sign</div>
+            </div>
           </div>
         </div>
         <script>
-          window.onload = () => {
-            setTimeout(() => {
-              window.print();
-            }, 500);
-          };
+          function printCard() {
+            window.print();
+          }
         </script>
+        <div class="print-button-container" style="
+          position: fixed;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 1000;
+          text-align: center;
+        ">
+          <button onclick="printCard()" style="
+            background: #001f3f;
+            color: white;
+            padding: 12px 40px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            font-family: 'Times New Roman', serif;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+          "
+          onmouseover="this.style.background='#003366'; this.style.transform='scale(1.05)';"
+          onmouseout="this.style.background='#001f3f'; this.style.transform='scale(1)';"
+          >Print ID Card</button>
+        </div>
+        <style>
+          @media print {
+            .print-button-container { display: none !important; }
+          }
+        </style>
       </body>
       </html>
     `
 
-    printWindow.document.write(idCardHTML)
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+
+    printWindow.document.write(idCardContent)
     printWindow.document.close()
   }
 
@@ -465,20 +523,24 @@ export default function Employees() {
                     type="file"
                     accept="image/*"
                     style={{ display: 'none' }}
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0]
                       if (file) {
                         if (file.size > 5 * 1024 * 1024) {
                           alert('Image size should be less than 5MB')
                           return
                         }
-                        const reader = new FileReader()
-                        reader.onloadend = () => {
-                          const base64String = reader.result as string
-                          setPhotoData(base64String)
-                          setFormData({...formData, photo: base64String})
+                        try {
+                          // Compress the image before storing
+                          const compressedBase64 = await compressImage(file, 200, 200, 0.6)
+                          const sizeInKB = getBase64SizeInKB(compressedBase64)
+                          console.log(`Image compressed to ${sizeInKB}KB`)
+                          setPhotoData(compressedBase64)
+                          setFormData({...formData, photo: compressedBase64})
+                        } catch (error) {
+                          console.error('Error compressing image:', error)
+                          alert('Failed to process image. Please try again.')
                         }
-                        reader.readAsDataURL(file)
                       }
                     }}
                   />
@@ -491,6 +553,7 @@ export default function Employees() {
                   placeholder="Enter photo URL"
                   value={formData.photo.startsWith('data:') ? '' : formData.photo}
                   onChange={(e) => {
+                    // For URL images, store as-is (they're already optimized on the server)
                     setFormData({...formData, photo: e.target.value})
                     setPhotoData(e.target.value)
                   }}
@@ -520,6 +583,11 @@ export default function Employees() {
                       e.currentTarget.style.display = 'none'
                     }}
                   />
+                  {photoData && photoData.startsWith('data:') && (
+                    <p style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                      Image compressed to ~{getBase64SizeInKB(photoData)}KB
+                    </p>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
@@ -618,6 +686,23 @@ export default function Employees() {
                   required
                   pattern="[0-9]{10}"
                   maxLength={10}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '15px'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontWeight: '500', fontSize: '14px', color: '#475569' }}>Date of Birth *</label>
+                <input
+                  type="date"
+                  value={formData.dob}
+                  onChange={(e) => setFormData({...formData, dob: e.target.value})}
+                  required
                   style={{
                     width: '100%',
                     padding: '10px 12px',
@@ -740,6 +825,7 @@ export default function Employees() {
                 <th>ID</th>
                 <th>Name</th>
                 <th>Username</th>
+                <th>DOB</th>
                 <th>Mobile</th>
                 <th>Aadhar</th>
                 <th>Address</th>
@@ -752,7 +838,7 @@ export default function Employees() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={11} style={{ textAlign: 'center', padding: '40px' }}>
+                  <td colSpan={12} style={{ textAlign: 'center', padding: '40px' }}>
                     Loading employees...
                   </td>
                 </tr>
@@ -792,6 +878,7 @@ export default function Employees() {
                     <td style={{ fontWeight: '600' }}>{employee.employeeId}</td>
                     <td>{employee.name}</td>
                     <td>{employee.username}</td>
+                    <td>{employee.dob ? new Date(employee.dob).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}</td>
                     <td>{employee.mobile || '-'}</td>
                     <td>{employee.aadharNumber ? `XXXX-${employee.aadharNumber.slice(-4)}` : '-'}</td>
                     <td>{employee.address?.street || '-'}</td>
@@ -819,7 +906,7 @@ export default function Employees() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={11} className="empty-state">
+                  <td colSpan={12} className="empty-state">
                     <div className="empty-state-icon">👥</div>
                     <h3>No Employees</h3>
                     <p>Click "Add New Employee" to get started</p>

@@ -9,6 +9,9 @@ interface ManufacturingOrder {
   productName: string
   quantity: string
   quantityReceive: string
+  itemsReceived: string
+  pricePerPiece: string
+  totalPrice: string
   dateOfReceive: string
   tailorName: string
   status: string
@@ -24,6 +27,7 @@ interface CuttingRecord {
   fabricColor: string
   cuttingGivenTo: string
   sizeType: string
+  tailorItemPerPiece?: number
   totalSquareMetersUsed: number
 }
 
@@ -38,6 +42,9 @@ interface ManufacturingRecord {
   size: string
   quantityReceive: number
   quantityRemaining: number
+  itemsReceived?: number
+  pricePerPiece?: number
+  totalPrice?: number
   dateOfReceive: string
   tailorName: string
   status: string
@@ -52,6 +59,9 @@ export default function Manufacturing() {
     productName: '',
     quantity: '',
     quantityReceive: '',
+    itemsReceived: '',
+    pricePerPiece: '',
+    totalPrice: '0',
     dateOfReceive: '',
     tailorName: '',
     status: 'Pending',
@@ -171,6 +181,12 @@ export default function Manufacturing() {
           newFormData.quantity = finalQuantity.toString()
           newFormData.quantityReceive = finalQuantity.toString()
           newFormData.tailorName = selectedRecord.cuttingGivenTo || ''
+          newFormData.pricePerPiece = selectedRecord.tailorItemPerPiece?.toString() || ''
+
+          // Auto-calculate total price if items received is set
+          const items = parseFloat(newFormData.itemsReceived) || parseFloat(newFormData.quantityReceive) || 0
+          const price = selectedRecord.tailorItemPerPiece || 0
+          newFormData.totalPrice = (items * price).toFixed(2)
         }
       } catch (error) {
         console.error('Error fetching manufacturing records:', error)
@@ -181,6 +197,12 @@ export default function Manufacturing() {
         newFormData.quantity = selectedRecord.piecesCount.toString()
         newFormData.quantityReceive = selectedRecord.piecesCount.toString()
         newFormData.tailorName = selectedRecord.cuttingGivenTo || ''
+        newFormData.pricePerPiece = selectedRecord.tailorItemPerPiece?.toString() || ''
+
+        // Auto-calculate total price if items received is set
+        const items = parseFloat(newFormData.itemsReceived) || selectedRecord.piecesCount || 0
+        const price = selectedRecord.tailorItemPerPiece || 0
+        newFormData.totalPrice = (items * price).toFixed(2)
       }
     }
 
@@ -219,6 +241,9 @@ export default function Manufacturing() {
           productName: record.productName,
           quantity: finalQuantity.toString(),
           quantityReceive: finalQuantity.toString(),
+          itemsReceived: '',
+          pricePerPiece: record.tailorItemPerPiece?.toString() || '',
+          totalPrice: '0',
           tailorName: record.cuttingGivenTo || ''
         })
       }
@@ -233,6 +258,9 @@ export default function Manufacturing() {
         productName: record.productName,
         quantity: record.piecesCount.toString(),
         quantityReceive: record.piecesCount.toString(),
+        itemsReceived: '',
+        pricePerPiece: record.tailorItemPerPiece?.toString() || '',
+        totalPrice: '0',
         tailorName: record.cuttingGivenTo || ''
       })
     }
@@ -283,6 +311,9 @@ export default function Manufacturing() {
         const updateData = {
           quantityReceive: newQuantityReceive,
           quantityRemaining: newQuantityRemaining,
+          itemsReceived: parseFloat(formData.itemsReceived) || 0,
+          pricePerPiece: parseFloat(formData.pricePerPiece) || 0,
+          totalPrice: parseFloat(formData.totalPrice) || 0,
           dateOfReceive: formData.dateOfReceive,
           status: newStatus,
           notes: formData.notes
@@ -310,6 +341,9 @@ export default function Manufacturing() {
           quantity: quantity,
           quantityReceive: quantityReceive,
           quantityRemaining: quantityRemaining,
+          itemsReceived: parseFloat(formData.itemsReceived) || 0,
+          pricePerPiece: parseFloat(formData.pricePerPiece) || 0,
+          totalPrice: parseFloat(formData.totalPrice) || 0,
           dateOfReceive: formData.dateOfReceive,
           tailorName: formData.tailorName,
           priority: 'Normal',
@@ -340,6 +374,9 @@ export default function Manufacturing() {
           productName: '',
           quantity: '',
           quantityReceive: '',
+          itemsReceived: '',
+          pricePerPiece: '',
+          totalPrice: '0',
           dateOfReceive: '',
           tailorName: '',
           status: 'Pending',
@@ -508,6 +545,67 @@ export default function Manufacturing() {
             </div>
 
             <div className="form-group">
+              <label htmlFor="itemsReceived">Items Received</label>
+              <input
+                type="number"
+                id="itemsReceived"
+                name="itemsReceived"
+                value={formData.itemsReceived}
+                onChange={(e) => {
+                  handleChange(e)
+                  // Calculate total price
+                  const items = parseFloat(e.target.value) || parseFloat(formData.quantityReceive) || 0
+                  const price = parseFloat(formData.pricePerPiece) || 0
+                  setFormData(prev => ({
+                    ...prev,
+                    itemsReceived: e.target.value,
+                    totalPrice: (items * price).toFixed(2)
+                  }))
+                }}
+                placeholder="Number of items received"
+                min="0"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="pricePerPiece">Price Per Piece (₹)</label>
+              <input
+                type="number"
+                id="pricePerPiece"
+                name="pricePerPiece"
+                value={formData.pricePerPiece}
+                onChange={(e) => {
+                  handleChange(e)
+                  // Calculate total price
+                  const items = parseFloat(formData.itemsReceived) || parseFloat(formData.quantityReceive) || 0
+                  const price = parseFloat(e.target.value) || 0
+                  setFormData(prev => ({
+                    ...prev,
+                    pricePerPiece: e.target.value,
+                    totalPrice: (items * price).toFixed(2)
+                  }))
+                }}
+                placeholder="Auto-filled from cutting record"
+                min="0"
+                step="0.01"
+                readOnly={!!formData.cuttingId && !!formData.pricePerPiece}
+                style={formData.cuttingId && formData.pricePerPiece ? { background: '#f9fafb', color: '#374151', fontWeight: '600' } : {}}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="totalPrice">Total Price (₹)</label>
+              <input
+                type="text"
+                id="totalPrice"
+                name="totalPrice"
+                value={formData.totalPrice}
+                readOnly
+                style={{ background: '#f9fafb', color: '#374151', fontWeight: 'bold' }}
+              />
+            </div>
+
+            <div className="form-group">
               <label htmlFor="dateOfReceive">Date Received *</label>
               <input
                 type="date"
@@ -548,6 +646,9 @@ export default function Manufacturing() {
                 productName: '',
                 quantity: '',
                 quantityReceive: '',
+                itemsReceived: '',
+                pricePerPiece: '',
+                totalPrice: '0',
                 dateOfReceive: '',
                 tailorName: '',
                 status: 'Pending',
@@ -575,6 +676,9 @@ export default function Manufacturing() {
                 <th style={{ textAlign: 'center' }}>Size</th>
                 <th style={{ textAlign: 'center' }}>Qty Received</th>
                 <th style={{ textAlign: 'center' }}>Qty Remaining</th>
+                <th style={{ textAlign: 'center' }}>Items Received</th>
+                <th style={{ textAlign: 'center' }}>Price/Piece</th>
+                <th style={{ textAlign: 'center' }}>Total Price</th>
                 <th style={{ textAlign: 'center' }}>Tailor</th>
                 <th style={{ textAlign: 'center' }}>Date Received</th>
                 <th style={{ textAlign: 'center' }}>Status</th>
@@ -583,7 +687,7 @@ export default function Manufacturing() {
             <tbody>
               {isLoadingRecords ? (
                 <tr>
-                  <td colSpan={11} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={14} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     Loading manufacturing assignments...
                   </td>
                 </tr>
@@ -602,6 +706,9 @@ export default function Manufacturing() {
                       <td style={{ textAlign: 'center' }}>{record.size || 'N/A'}</td>
                       <td style={{ textAlign: 'center' }}>{record.quantityReceive || 0}</td>
                       <td style={{ textAlign: 'center' }}>{quantityRemaining}</td>
+                      <td style={{ textAlign: 'center' }}>{record.itemsReceived || 0}</td>
+                      <td style={{ textAlign: 'center' }}>₹{record.pricePerPiece || 0}</td>
+                      <td style={{ textAlign: 'center', fontWeight: 'bold' }}>₹{record.totalPrice || 0}</td>
                       <td style={{ textAlign: 'center' }}>{record.tailorName}</td>
                       <td style={{ textAlign: 'center' }}>{formatDate(record.dateOfReceive)}</td>
                       <td style={{ textAlign: 'center' }}>
@@ -616,7 +723,7 @@ export default function Manufacturing() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={11} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={14} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     No manufacturing assignments found
                   </td>
                 </tr>

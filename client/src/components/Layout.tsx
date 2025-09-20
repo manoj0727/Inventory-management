@@ -77,18 +77,18 @@ export default function Layout() {
       )}
       
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-64 transition-transform duration-300 bg-white shadow-lg lg:shadow-none`}>
+      <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-64 transition-transform duration-300 bg-[#001f3f] shadow-lg lg:shadow-none`}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-between p-4 border-b">
-            <h1 className="font-bold text-xl text-primary-600">
-              QR Inventory
+          <div className="flex items-center justify-between p-4 border-b border-[#003366]">
+            <h1 className="font-bold text-xl text-white">
+              WESTO INDIA
             </h1>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
+              className="lg:hidden p-2 rounded-lg hover:bg-[#003366]"
             >
-              <XMarkIcon className="h-5 w-5" />
+              <XMarkIcon className="h-5 w-5 text-white" />
             </button>
           </div>
 
@@ -106,8 +106,8 @@ export default function Layout() {
                       onClick={() => setSidebarOpen(false)}
                       className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
                         isActive
-                          ? 'bg-primary-100 text-primary-700'
-                          : 'hover:bg-gray-100 text-gray-700'
+                          ? 'bg-[#003366] text-white'
+                          : 'hover:bg-[#003366] text-gray-300'
                       }`}
                     >
                       <Icon className="h-5 w-5" />
@@ -120,15 +120,15 @@ export default function Layout() {
           </nav>
 
           {/* User Section */}
-          <div className="border-t p-4">
+          <div className="border-t border-[#003366] p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-gray-800">{user?.name || 'User'}</p>
-                <p className="text-sm text-gray-500">{user?.role || 'Role'}</p>
+                <p className="font-medium text-white">{user?.name || 'User'}</p>
+                <p className="text-sm text-gray-400">{user?.role || 'Role'}</p>
               </div>
               <button
                 onClick={handleLogout}
-                className="p-2 rounded-lg hover:bg-gray-100 text-red-600"
+                className="p-2 rounded-lg hover:bg-[#003366] text-white"
                 title="Logout"
               >
                 <ArrowRightOnRectangleIcon className="h-5 w-5" />
@@ -141,14 +141,14 @@ export default function Layout() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile Header */}
-        <div className="lg:hidden bg-white shadow-sm p-4 flex items-center justify-between">
+        <div className="lg:hidden bg-[#001f3f] shadow-sm p-4 flex items-center justify-between">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg hover:bg-gray-100"
+            className="p-2 rounded-lg hover:bg-[#003366]"
           >
-            <Bars3Icon className="h-6 w-6" />
+            <Bars3Icon className="h-6 w-6 text-white" />
           </button>
-          <h1 className="font-bold text-lg text-primary-600">QR Inventory</h1>
+          <h1 className="font-bold text-lg text-white">WESTO INDIA</h1>
           <div className="w-10" />
         </div>
         

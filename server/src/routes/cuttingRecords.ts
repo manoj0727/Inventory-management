@@ -45,6 +45,7 @@ router.post('/', async (req, res) => {
       sizeType,
       cuttingMaster,
       cuttingGivenTo,
+      tailorItemPerPiece,
       date,
       time,
       notes
@@ -93,6 +94,7 @@ router.post('/', async (req, res) => {
       sizeType,
       cuttingMaster,
       cuttingGivenTo,
+      tailorItemPerPiece: parseFloat(tailorItemPerPiece) || 0,
       date,
       time,
       notes
@@ -159,6 +161,7 @@ router.put('/:id', async (req, res) => {
       sizeType,
       cuttingMaster,
       cuttingGivenTo,
+      tailorItemPerPiece,
       notes
     } = req.body
 
@@ -170,6 +173,7 @@ router.put('/:id', async (req, res) => {
     if (sizeType) cuttingRecord.sizeType = sizeType
     if (cuttingMaster) cuttingRecord.cuttingMaster = cuttingMaster
     if (cuttingGivenTo) cuttingRecord.cuttingGivenTo = cuttingGivenTo
+    if (tailorItemPerPiece !== undefined) cuttingRecord.tailorItemPerPiece = parseFloat(tailorItemPerPiece) || 0
     if (notes !== undefined) cuttingRecord.notes = notes
 
     // Recalculate total square meters used

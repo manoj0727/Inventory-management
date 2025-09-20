@@ -16,6 +16,7 @@ interface CuttingRecord {
   sizeType: string
   cuttingMaster: string
   cuttingGivenTo: string
+  tailorItemPerPiece?: number
   date: string
   time: string
   notes?: string
@@ -165,6 +166,7 @@ export default function CuttingInventory() {
                 <th style={{ textAlign: 'center' }}>Quantity</th>
                 <th style={{ textAlign: 'center' }}>Cutting Master</th>
                 <th style={{ textAlign: 'center' }}>Given To Tailor</th>
+                <th style={{ textAlign: 'center' }}>Tailor Price/Piece</th>
                 <th style={{ textAlign: 'center' }}>Date</th>
                 <th style={{ textAlign: 'center' }}>Actions</th>
               </tr>
@@ -181,6 +183,7 @@ export default function CuttingInventory() {
                     <td style={{ textAlign: 'center' }}>{record.piecesCount}</td>
                     <td style={{ textAlign: 'center' }}>{record.cuttingMaster}</td>
                     <td style={{ textAlign: 'center' }}>{record.cuttingGivenTo || 'N/A'}</td>
+                    <td style={{ textAlign: 'center' }}>₹{record.tailorItemPerPiece || 0}</td>
                     <td style={{ textAlign: 'center' }}>{formatDate(record.date)}</td>
                     <td style={{ textAlign: 'center' }}>
                       <div className="action-buttons">
@@ -192,7 +195,7 @@ export default function CuttingInventory() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={11} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     {isLoading ? 'Loading cutting records...' : 'No cutting records found'}
                   </td>
                 </tr>
@@ -238,7 +241,8 @@ export default function CuttingInventory() {
                 totalSquareMetersUsed: parseInt(formData.get('piecesCount') as string) * parseFloat(formData.get('pieceLength') as string) * parseFloat(formData.get('pieceWidth') as string),
                 sizeType: formData.get('sizeType') as string,
                 cuttingMaster: formData.get('cuttingMaster') as string,
-                cuttingGivenTo: formData.get('cuttingGivenTo') as string
+                cuttingGivenTo: formData.get('cuttingGivenTo') as string,
+                tailorItemPerPiece: parseFloat(formData.get('tailorItemPerPiece') as string) || 0
               }
               handleSaveEdit(updatedRecord)
             }}>
@@ -327,6 +331,18 @@ export default function CuttingInventory() {
                   id="cuttingGivenTo"
                   name="cuttingGivenTo"
                   defaultValue={editingRecord.cuttingGivenTo}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="tailorItemPerPiece">Tailor Price Per Piece (₹)</label>
+                <input
+                  type="number"
+                  id="tailorItemPerPiece"
+                  name="tailorItemPerPiece"
+                  defaultValue={editingRecord.tailorItemPerPiece || 0}
+                  min="0"
+                  step="0.01"
                 />
               </div>
 

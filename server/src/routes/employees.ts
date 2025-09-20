@@ -32,9 +32,9 @@ router.post('/', async (req: Request, res: Response) => {
     console.log('Creating employee with data:', req.body);
     
     // Ensure required fields are present
-    if (!req.body.username || !req.body.password || !req.body.name) {
-      return res.status(400).json({ 
-        message: 'Username, password, and name are required' 
+    if (!req.body.username || !req.body.password || !req.body.name || !req.body.dob) {
+      return res.status(400).json({
+        message: 'Username, password, name, and date of birth are required'
       });
     }
     

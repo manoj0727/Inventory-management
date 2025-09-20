@@ -10,6 +10,9 @@ export interface IManufacturingOrder extends Document {
   size: string
   quantityReceive: number
   quantityRemaining: number
+  itemsReceived?: number
+  pricePerPiece?: number
+  totalPrice?: number
   dateOfReceive: string
   tailorName: string
   priority: 'Low' | 'Normal' | 'High' | 'Urgent'
@@ -66,6 +69,21 @@ const ManufacturingOrderSchema: Schema = new Schema({
     type: Number,
     required: true,
     min: 0
+  },
+  itemsReceived: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
+  pricePerPiece: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
+  totalPrice: {
+    type: Number,
+    min: 0,
+    default: 0
   },
   dateOfReceive: {
     type: String,
