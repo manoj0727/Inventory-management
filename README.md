@@ -87,7 +87,7 @@ cp .env.example .env
 # Edit .env with your MongoDB URI
 npm run dev
 ```
-
+ 
 3. **Setup Frontend:**
 ```bash
 cd client
