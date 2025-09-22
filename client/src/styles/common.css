@@ -1,4 +1,13 @@
 /* Common Styles for All Pages */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .page-container {
   min-height: 100vh;
   background: #ffffff;

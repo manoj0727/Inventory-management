@@ -105,6 +105,23 @@ export default function GenerateQR() {
     fetchManufacturingIds()
   }, [])
 
+  // Auto-generate QR codes for records without them
+  useEffect(() => {
+    const generateMissingQRCodes = async () => {
+      const recordsWithoutQR = manufacturingRecords.filter(record => !record.qrCodeData && !record.isGenerated)
+
+      for (const record of recordsWithoutQR) {
+        // Add a small delay between generations to avoid overwhelming the system
+        await new Promise(resolve => setTimeout(resolve, 500))
+        await generateQRCode(record)
+      }
+    }
+
+    if (manufacturingRecords.length > 0 && !isGenerating) {
+      generateMissingQRCodes()
+    }
+  }, [manufacturingRecords])
+
   const formatDate = (dateString: string) => {
     if (!dateString) return '-'
     try {
@@ -422,10 +439,23 @@ export default function GenerateQR() {
           <div style={{ display: 'flex', gap: '10px' }}>
             <button
               className="btn btn-primary"
-              onClick={() => setShowManualForm(true)}
+              onClick={() => {
+                setManualEntryMode('manufacturing')
+                setShowManualForm(true)
+              }}
               style={{ backgroundColor: '#8b5cf6', borderColor: '#8b5cf6', color: 'white' }}
             >
               Manual QR Entry
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                setManualEntryMode('custom')
+                setShowManualForm(true)
+              }}
+              style={{ backgroundColor: '#3b82f6', borderColor: '#3b82f6', color: 'white' }}
+            >
+              Custom Product
             </button>
             {qrCodeCache.size > 0 && (
               <button
@@ -456,12 +486,12 @@ export default function GenerateQR() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Product ID</th>
-                  <th>Product Name</th>
-                  <th>Color</th>
-                  <th>Size</th>
-                  <th>Quantity</th>
-                  <th>Generated Date</th>
+                  <th style={{ textAlign: 'center' }}>Product ID</th>
+                  <th style={{ textAlign: 'center' }}>Product Name</th>
+                  <th style={{ textAlign: 'center' }}>Color</th>
+                  <th style={{ textAlign: 'center' }}>Size</th>
+                  <th style={{ textAlign: 'center' }}>Quantity</th>
+                  <th style={{ textAlign: 'center' }}>Generated Date</th>
                   <th style={{ textAlign: 'center' }}>QR Code</th>
                   <th style={{ textAlign: 'center' }}>Actions</th>
                 </tr>
@@ -470,12 +500,12 @@ export default function GenerateQR() {
                 {filteredRecords.length > 0 ? (
                   filteredRecords.map((record) => (
                     <tr key={record._id}>
-                      <td style={{ fontWeight: '500' }}>{record.id || record.manufacturingId}</td>
-                      <td>{record.productName}</td>
-                      <td>{record.color || 'N/A'}</td>
-                      <td>{record.size || 'N/A'}</td>
-                      <td>{record.quantityProduced > 0 ? record.quantityProduced : record.quantity}</td>
-                      <td>{formatDate(record.completedDate || record.updatedAt || '')}</td>
+                      <td style={{ fontWeight: '500', textAlign: 'center' }}>{record.id || record.manufacturingId}</td>
+                      <td style={{ textAlign: 'center' }}>{record.productName}</td>
+                      <td style={{ textAlign: 'center' }}>{record.color || 'N/A'}</td>
+                      <td style={{ textAlign: 'center' }}>{record.size || 'N/A'}</td>
+                      <td style={{ textAlign: 'center' }}>{record.quantityProduced > 0 ? record.quantityProduced : record.quantity}</td>
+                      <td style={{ textAlign: 'center' }}>{formatDate(record.completedDate || record.updatedAt || '')}</td>
                       <td style={{ textAlign: 'center' }}>
                         {record.qrCodeData ? (
                           <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -632,48 +662,66 @@ export default function GenerateQR() {
                           />
                           </div>
                         ) : (
-                          <span style={{ color: '#9ca3af', fontSize: '12px', padding: '4px 8px', background: '#f3f4f6', borderRadius: '4px', display: 'inline-block' }}>Not Generated</span>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '16px', animation: 'spin 1s linear infinite' }}>⏳</span>
+                            <span style={{ color: '#9ca3af', fontSize: '12px' }}>Generating...</span>
+                          </div>
                         )}
                       </td>
                       <td style={{ textAlign: 'center' }}>
-                        <div className="action-buttons" style={{ justifyContent: 'center' }}>
-                          {!record.qrCodeData && (
-                            <button
-                              className="btn btn-primary"
-                              onClick={() => generateQRCode(record)}
-                              disabled={isLoading || isGenerating}
-                              style={{
-                                marginRight: '8px',
-                                backgroundColor: '#8b5cf6',
-                                borderColor: '#8b5cf6',
-                                color: 'white'
-                              }}
-                            >
-                              {isGenerating ? 'Generating...' : 'Generate QR'}
-                            </button>
-                          )}
+                        <div style={{
+                          display: 'flex',
+                          gap: '4px',
+                          justifyContent: 'center',
+                          alignItems: 'center'
+                        }}>
                           <button
-                            className="btn btn-secondary"
                             onClick={() => handleEdit(record)}
+                            title="Edit Record"
                             style={{
-                              marginRight: '8px',
-                              backgroundColor: '#3b82f6',
-                              borderColor: '#3b82f6',
-                              color: 'white'
+                              padding: '8px',
+                              background: 'transparent',
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontSize: '20px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'scale(1.2)'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)'
                             }}
                           >
-                            Edit
+                            ✏️
                           </button>
                           <button
-                            className="btn btn-danger"
                             onClick={() => handleDelete(record)}
+                            title="Delete Record"
                             style={{
-                              backgroundColor: '#ef4444',
-                              borderColor: '#ef4444',
-                              color: 'white'
+                              padding: '8px',
+                              background: 'transparent',
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontSize: '20px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'scale(1.2)'
+                              e.currentTarget.style.filter = 'brightness(0.8)'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)'
+                              e.currentTarget.style.filter = 'brightness(1)'
                             }}
                           >
-                            Delete
+                            🗑️
                           </button>
                         </div>
                       </td>
@@ -681,8 +729,23 @@ export default function GenerateQR() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-                      {isLoading ? 'Loading completed products...' : 'No completed products available for QR generation'}
+                    <td colSpan={8} style={{ textAlign: 'center', padding: '60px' }}>
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '20px'
+                      }}>
+                        <span style={{ fontSize: '48px' }}>📦</span>
+                        <div>
+                          <p style={{ fontSize: '18px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                            {isLoading ? 'Loading products...' : 'No Products Found'}
+                          </p>
+                          <p style={{ color: '#6b7280', fontSize: '14px' }}>
+                            {isLoading ? 'Please wait while we fetch the products' : 'Start by adding products using the buttons above'}
+                          </p>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -839,32 +902,9 @@ export default function GenerateQR() {
             maxHeight: '90vh',
             overflow: 'auto'
           }}>
-            <h2 style={{ marginBottom: '20px', color: '#374151' }}>Manual QR Code Generation</h2>
-
-            {/* Entry Mode Selection */}
-            <div className="form-group">
-              <label>Entry Mode</label>
-              <div style={{ display: 'flex', gap: '15px', marginTop: '8px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <input
-                    type="radio"
-                    value="manufacturing"
-                    checked={manualEntryMode === 'manufacturing'}
-                    onChange={(e) => setManualEntryMode(e.target.value as 'manufacturing' | 'custom')}
-                  />
-                  Manufacturing ID
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <input
-                    type="radio"
-                    value="custom"
-                    checked={manualEntryMode === 'custom'}
-                    onChange={(e) => setManualEntryMode(e.target.value as 'manufacturing' | 'custom')}
-                  />
-                  Custom Product
-                </label>
-              </div>
-            </div>
+            <h2 style={{ marginBottom: '20px', color: '#374151' }}>
+              {manualEntryMode === 'manufacturing' ? 'Manual QR Code Generation' : 'Custom Product QR'}
+            </h2>
 
             <form onSubmit={(e) => {
               e.preventDefault()
@@ -921,6 +961,7 @@ export default function GenerateQR() {
                       style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}
                     >
                       <option value="">Select Size</option>
+                      <option value="XXS">XXS</option>
                       <option value="XS">XS</option>
                       <option value="S">S</option>
                       <option value="M">M</option>
@@ -929,7 +970,6 @@ export default function GenerateQR() {
                       <option value="XXL">XXL</option>
                       <option value="XXXL">XXXL</option>
                       <option value="Free Size">Free Size</option>
-                      <option value="Custom">Custom</option>
                     </select>
                   </div>
 
