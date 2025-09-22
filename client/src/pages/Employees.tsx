@@ -923,21 +923,19 @@ export default function Employees() {
                           title="Edit Employee"
                           style={{
                             padding: '6px 8px',
-                            background: '#3b82f6',
-                            color: 'white',
+                            background: 'transparent',
                             border: 'none',
                             borderRadius: '6px',
                             cursor: 'pointer',
-                            fontSize: '13px',
-                            fontWeight: '500',
+                            fontSize: '16px',
                             transition: 'all 0.2s',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '4px',
+                            justifyContent: 'center',
                             minWidth: 'auto'
                           }}
-                          onMouseOver={(e) => e.currentTarget.style.background = '#2563eb'}
-                          onMouseOut={(e) => e.currentTarget.style.background = '#3b82f6'}
+                          onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.2)'}
+                          onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                         >
                           ✏️
                         </button>
@@ -946,21 +944,19 @@ export default function Employees() {
                           title="Generate ID Card"
                           style={{
                             padding: '6px 8px',
-                            background: '#10b981',
-                            color: 'white',
+                            background: 'transparent',
                             border: 'none',
                             borderRadius: '6px',
                             cursor: 'pointer',
-                            fontSize: '13px',
-                            fontWeight: '500',
+                            fontSize: '16px',
                             transition: 'all 0.2s',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '4px',
+                            justifyContent: 'center',
                             minWidth: 'auto'
                           }}
-                          onMouseOver={(e) => e.currentTarget.style.background = '#059669'}
-                          onMouseOut={(e) => e.currentTarget.style.background = '#10b981'}
+                          onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.2)'}
+                          onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                         >
                           🆔
                         </button>
@@ -969,21 +965,19 @@ export default function Employees() {
                           title="Delete Employee"
                           style={{
                             padding: '6px 8px',
-                            background: '#ef4444',
-                            color: 'white',
+                            background: 'transparent',
                             border: 'none',
                             borderRadius: '6px',
                             cursor: 'pointer',
-                            fontSize: '13px',
-                            fontWeight: '500',
+                            fontSize: '16px',
                             transition: 'all 0.2s',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '4px',
+                            justifyContent: 'center',
                             minWidth: 'auto'
                           }}
-                          onMouseOver={(e) => e.currentTarget.style.background = '#dc2626'}
-                          onMouseOut={(e) => e.currentTarget.style.background = '#ef4444'}
+                          onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.2)'}
+                          onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                         >
                           🗑️
                         </button>
