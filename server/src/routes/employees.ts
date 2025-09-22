@@ -3,10 +3,10 @@ import { Employee } from '../models/Employee';
 
 const router = Router();
 
-// Get all employees
+// Get all employees (only active employees)
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const employees = await Employee.find().select('-password');
+    const employees = await Employee.find({ status: 'active' }).select('-password');
     res.json(employees);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -113,15 +113,19 @@ router.put('/:id/password', async (req: Request, res: Response) => {
   }
 });
 
-// Delete employee
+// Delete employee (soft delete - changes status to inactive)
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const employee = await Employee.findByIdAndDelete(req.params.id);
-    
+    const employee = await Employee.findByIdAndUpdate(
+      req.params.id,
+      { status: 'inactive' },
+      { new: true }
+    );
+
     if (!employee) {
       return res.status(404).json({ message: 'Employee not found' });
     }
-    
+
     res.json({ message: 'Employee deleted successfully' });
   } catch (error: any) {
     res.status(500).json({ message: error.message });

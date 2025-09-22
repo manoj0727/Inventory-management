@@ -176,6 +176,15 @@ export default function Employees() {
     })
     setPhotoData(employee.photo)
     setShowForm(true)
+    // Smooth scroll to top with a small delay to ensure form is rendered
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      // Also try to focus on the first input for better UX
+      const firstInput = document.querySelector('input[type="text"]') as HTMLInputElement
+      if (firstInput) {
+        firstInput.focus()
+      }
+    }, 100)
   }
 
   const handleDelete = async (id: string) => {
@@ -505,9 +514,15 @@ export default function Employees() {
 
       {/* Employee Form */}
       {showForm && (
-        <div className="content-card">
-          <h2 style={{ marginBottom: '24px' }}>
-            {editingEmployee ? 'Edit Employee' : 'Add New Employee'}
+        <div className="content-card" style={{
+          border: editingEmployee ? '2px solid #3b82f6' : '1px solid #e5e7eb',
+          boxShadow: editingEmployee ? '0 4px 6px rgba(59, 130, 246, 0.1)' : 'none'
+        }}>
+          <h2 style={{
+            marginBottom: '24px',
+            color: editingEmployee ? '#3b82f6' : 'inherit'
+          }}>
+            {editingEmployee ? '✏️ Edit Employee' : '➕ Add New Employee'}
           </h2>
           
           <form onSubmit={handleSubmit}>
@@ -624,9 +639,9 @@ export default function Employees() {
             </div>
 
             {/* Form Fields in Grid */}
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(2, 1fr)', 
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
               gap: '24px',
               padding: '24px',
               background: '#ffffff',
@@ -635,7 +650,7 @@ export default function Employees() {
               marginBottom: '24px'
             }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontWeight: '500', fontSize: '14px', color: '#475569' }}>Username *</label>
+                <label style={{ fontWeight: '500', fontSize: 'clamp(12px, 2.5vw, 14px)', color: '#475569' }}>Username *</label>
                 <input
                   type="text"
                   value={formData.username}
@@ -654,7 +669,7 @@ export default function Employees() {
               </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontWeight: '500', fontSize: '14px', color: '#475569' }}>Password *</label>
+                <label style={{ fontWeight: '500', fontSize: 'clamp(12px, 2.5vw, 14px)', color: '#475569' }}>Password *</label>
                 <input
                   type="text"
                   value={formData.password}
@@ -672,7 +687,7 @@ export default function Employees() {
               </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontWeight: '500', fontSize: '14px', color: '#475569' }}>Full Name *</label>
+                <label style={{ fontWeight: '500', fontSize: 'clamp(12px, 2.5vw, 14px)', color: '#475569' }}>Full Name *</label>
                 <input
                   type="text"
                   value={formData.name}
@@ -689,7 +704,7 @@ export default function Employees() {
               </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontWeight: '500', fontSize: '14px', color: '#475569' }}>Mobile Number *</label>
+                <label style={{ fontWeight: '500', fontSize: 'clamp(12px, 2.5vw, 14px)', color: '#475569' }}>Mobile Number *</label>
                 <input
                   type="tel"
                   value={formData.mobile}
@@ -708,7 +723,7 @@ export default function Employees() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontWeight: '500', fontSize: '14px', color: '#475569' }}>Date of Birth *</label>
+                <label style={{ fontWeight: '500', fontSize: 'clamp(12px, 2.5vw, 14px)', color: '#475569' }}>Date of Birth *</label>
                 <input
                   type="date"
                   value={formData.dob}
@@ -725,7 +740,7 @@ export default function Employees() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontWeight: '500', fontSize: '14px', color: '#475569' }}>Aadhar Number</label>
+                <label style={{ fontWeight: '500', fontSize: 'clamp(12px, 2.5vw, 14px)', color: '#475569' }}>Aadhar Number</label>
                 <input
                   type="text"
                   value={formData.aadharNumber}
@@ -749,11 +764,13 @@ export default function Employees() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontWeight: '500', fontSize: '14px', color: '#475569' }}>Work Type *</label>
-                <select
+                <label style={{ fontWeight: '500', fontSize: 'clamp(12px, 2.5vw, 14px)', color: '#475569' }}>Work Type *</label>
+                <input
+                  type="text"
                   value={formData.work}
                   onChange={(e) => setFormData({...formData, work: e.target.value})}
                   required
+                  placeholder="Enter work type"
                   style={{
                     width: '100%',
                     padding: '10px 12px',
@@ -761,20 +778,11 @@ export default function Employees() {
                     border: '1px solid #cbd5e1',
                     fontSize: '15px'
                   }}
-                >
-                  <option value="">Select Work Type</option>
-                  <option value="Tailor">Tailor</option>
-                  <option value="Cutter">Cutter</option>
-                  <option value="Helper">Helper</option>
-                  <option value="Supervisor">Supervisor</option>
-                  <option value="Quality Check">Quality Check</option>
-                  <option value="Packing">Packing</option>
-                  <option value="Other">Other</option>
-                </select>
+                />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontWeight: '500', fontSize: '14px', color: '#475569' }}>Monthly Salary (₹) *</label>
+                <label style={{ fontWeight: '500', fontSize: 'clamp(12px, 2.5vw, 14px)', color: '#475569' }}>Monthly Salary (₹) *</label>
                 <input
                   type="number"
                   value={formData.salary}
@@ -794,7 +802,7 @@ export default function Employees() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontWeight: '500', fontSize: '14px', color: '#475569' }}>Address</label>
+                <label style={{ fontWeight: '500', fontSize: 'clamp(12px, 2.5vw, 14px)', color: '#475569' }}>Address</label>
                 <textarea
                   value={formData.address}
                   onChange={(e) => setFormData({...formData, address: e.target.value})}
@@ -832,18 +840,18 @@ export default function Employees() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Photo</th>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Username</th>
-                <th>DOB</th>
-                <th>Mobile</th>
-                <th>Aadhar</th>
-                <th>Address</th>
-                <th>Work</th>
-                <th>Salary</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th style={{ textAlign: 'center' }}>Photo</th>
+                <th style={{ textAlign: 'center' }}>ID</th>
+                <th style={{ textAlign: 'center' }}>Name</th>
+                <th style={{ textAlign: 'center' }}>Username</th>
+                <th style={{ textAlign: 'center' }}>DOB</th>
+                <th style={{ textAlign: 'center' }}>Mobile</th>
+                <th style={{ textAlign: 'center' }}>Aadhar</th>
+                <th style={{ textAlign: 'center' }}>Address</th>
+                <th style={{ textAlign: 'center' }}>Work</th>
+                <th style={{ textAlign: 'center' }}>Salary</th>
+                <th style={{ textAlign: 'center' }}>Status</th>
+                <th style={{ textAlign: 'center', width: '120px' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -856,7 +864,7 @@ export default function Employees() {
               ) : employees.length > 0 ? (
                 employees.map(employee => (
                   <tr key={employee._id}>
-                    <td>
+                    <td style={{ textAlign: 'center' }}>
                       {employee.photo ? (
                         <img
                           src={employee.photo}
@@ -866,7 +874,9 @@ export default function Employees() {
                             height: '40px',
                             borderRadius: '50%',
                             objectFit: 'cover',
-                            transform: 'scaleX(-1)'
+                            transform: 'scaleX(-1)',
+                            margin: '0 auto',
+                            display: 'block'
                           }}
                         />
                       ) : (
@@ -880,36 +890,102 @@ export default function Employees() {
                           justifyContent: 'center',
                           fontSize: '16px',
                           fontWeight: '600',
-                          color: '#6b7280'
+                          color: '#6b7280',
+                          margin: '0 auto'
                         }}>
                           {employee.name.charAt(0).toUpperCase()}
                         </div>
                       )}
                     </td>
-                    <td style={{ fontWeight: '600' }}>{employee.employeeId}</td>
-                    <td>{employee.name}</td>
-                    <td>{employee.username}</td>
-                    <td>{employee.dob ? new Date(employee.dob).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}</td>
-                    <td>{employee.mobile || '-'}</td>
-                    <td>{employee.aadharNumber ? `XXXX-${employee.aadharNumber.slice(-4)}` : '-'}</td>
-                    <td>{employee.address?.street || '-'}</td>
-                    <td>{employee.work || '-'}</td>
-                    <td>₹{employee.salary?.toLocaleString() || '0'}</td>
-                    <td>
+                    <td style={{ fontWeight: '600', textAlign: 'center' }}>{employee.employeeId}</td>
+                    <td style={{ textAlign: 'center' }}>{employee.name}</td>
+                    <td style={{ textAlign: 'center' }}>{employee.username}</td>
+                    <td style={{ textAlign: 'center' }}>{employee.dob ? new Date(employee.dob).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}</td>
+                    <td style={{ textAlign: 'center' }}>{employee.mobile || '-'}</td>
+                    <td style={{ textAlign: 'center' }}>{employee.aadharNumber ? `XXXX-${employee.aadharNumber.slice(-4)}` : '-'}</td>
+                    <td style={{ textAlign: 'center' }}>{employee.address?.street || '-'}</td>
+                    <td style={{ textAlign: 'center' }}>{employee.work || '-'}</td>
+                    <td style={{ textAlign: 'center' }}>₹{employee.salary?.toLocaleString() || '0'}</td>
+                    <td style={{ textAlign: 'center' }}>
                       <span className={`badge ${employee.status === 'active' ? 'badge-success' : 'badge-danger'}`}>
                         {employee.status}
                       </span>
                     </td>
-                    <td>
-                      <div className="action-buttons">
-                        <button onClick={() => handleEdit(employee)} className="action-btn edit">
-                          Edit
+                    <td style={{ textAlign: 'center' }}>
+                      <div style={{
+                        display: 'flex',
+                        gap: '4px',
+                        justifyContent: 'center',
+                        alignItems: 'center'
+                      }}>
+                        <button
+                          onClick={() => handleEdit(employee)}
+                          title="Edit Employee"
+                          style={{
+                            padding: '6px 8px',
+                            background: '#3b82f6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            fontWeight: '500',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            minWidth: 'auto'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = '#2563eb'}
+                          onMouseOut={(e) => e.currentTarget.style.background = '#3b82f6'}
+                        >
+                          ✏️
                         </button>
-                        <button onClick={() => generateIDCard(employee)} className="action-btn" style={{ background: '#10b981' }}>
-                          ID Card
+                        <button
+                          onClick={() => generateIDCard(employee)}
+                          title="Generate ID Card"
+                          style={{
+                            padding: '6px 8px',
+                            background: '#10b981',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            fontWeight: '500',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            minWidth: 'auto'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = '#059669'}
+                          onMouseOut={(e) => e.currentTarget.style.background = '#10b981'}
+                        >
+                          🆔
                         </button>
-                        <button onClick={() => handleDelete(employee._id)} className="action-btn delete">
-                          Delete
+                        <button
+                          onClick={() => handleDelete(employee._id)}
+                          title="Delete Employee"
+                          style={{
+                            padding: '6px 8px',
+                            background: '#ef4444',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            fontWeight: '500',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            minWidth: 'auto'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = '#dc2626'}
+                          onMouseOut={(e) => e.currentTarget.style.background = '#ef4444'}
+                        >
+                          🗑️
                         </button>
                       </div>
                     </td>
