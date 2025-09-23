@@ -28,14 +28,12 @@ router.get('/:id', async (req: Request, res: Response) => {
 // Create tailor
 router.post('/', async (req: Request, res: Response) => {
   try {
-    console.log('Creating tailor with data:', req.body);
     
     const tailor = new Tailor(req.body);
     await tailor.save();
     
     res.status(201).json(tailor);
   } catch (error: any) {
-    console.error('Error creating tailor:', error);
     
     if (error.code === 11000) {
       return res.status(400).json({ 

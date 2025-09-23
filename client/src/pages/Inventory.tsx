@@ -70,7 +70,6 @@ export default function Inventory() {
         setInventoryItems(inventoryItems)
       }
     } catch (error) {
-      console.error('Error fetching inventory:', error)
     } finally {
       setIsLoading(false)
     }
@@ -116,7 +115,6 @@ export default function Inventory() {
           }
         }
       } catch (error) {
-        console.error('Error deleting item:', error)
         alert('❌ Error deleting item. Please try again.')
       }
     }
@@ -160,7 +158,6 @@ export default function Inventory() {
         }
       }
     } catch (error) {
-      console.error('Error updating item:', error)
       alert('❌ Error updating item. Please try again.')
     }
   }

@@ -22,7 +22,16 @@ class AuthService {
       })
       return response.data
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Login failed')
+      if (error.code === 'ERR_NETWORK') {
+        throw new Error('Cannot connect to server. Please check if the server is running.')
+      }
+      if (error.response?.status === 500) {
+        throw new Error(error.response?.data?.message || 'Server error. Please check server configuration.')
+      }
+      if (error.response?.status === 401) {
+        throw new Error('Invalid username or password')
+      }
+      throw new Error(error.response?.data?.message || 'Login failed. Please try again.')
     }
   }
 

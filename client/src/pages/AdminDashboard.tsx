@@ -73,7 +73,6 @@ export default function AdminDashboard() {
         setStats(data)
       }
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error)
     } finally {
       setIsLoading(false)
     }
@@ -87,7 +86,6 @@ export default function AdminDashboard() {
         setChartData(data)
       }
     } catch (error) {
-      console.error('Error fetching chart data:', error)
     }
   }
 

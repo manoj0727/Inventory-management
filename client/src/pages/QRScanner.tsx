@@ -96,7 +96,6 @@ export default function QRScanner() {
 
       return null
     } catch (error) {
-      console.error('Error fetching product:', error)
       return null
     }
   }
@@ -208,7 +207,6 @@ export default function QRScanner() {
       })
 
       if (!transactionResponse.ok) {
-        console.log('Transaction logging failed, but stock was updated')
       }
 
       setScannedProduct({
@@ -226,7 +224,6 @@ export default function QRScanner() {
       }, 2000)
 
     } catch (error) {
-      console.error('Stock update error:', error)
       showMessage('error', 'Failed to update stock')
     } finally {
       setIsLoading(false)
@@ -275,7 +272,6 @@ export default function QRScanner() {
       setQrScanner(scanner)
 
     } catch (error: any) {
-      console.error('Camera error:', error)
       showMessage('error', `Camera error: ${error.message || 'Unknown error'}`)
       setScanMode(false)
     } finally {

@@ -560,11 +560,9 @@ export default function Employees() {
                           // Compress the image before storing
                           const compressedBase64 = await compressImage(file, 200, 200, 0.6)
                           const sizeInKB = getBase64SizeInKB(compressedBase64)
-                          console.log(`Image compressed to ${sizeInKB}KB`)
                           setPhotoData(compressedBase64)
                           setFormData({...formData, photo: compressedBase64})
                         } catch (error) {
-                          console.error('Error compressing image:', error)
                           alert('Failed to process image. Please try again.')
                         }
                       }

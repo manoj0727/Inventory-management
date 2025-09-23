@@ -55,7 +55,6 @@ export default function ManufacturingInventory() {
         setPriceMap(map)
       }
     } catch (error) {
-      console.error('Error fetching cutting records:', error)
     }
   }
 
@@ -67,11 +66,9 @@ export default function ManufacturingInventory() {
         const records = await response.json()
         setManufacturingRecords(records)
       } else {
-        console.error('Failed to fetch manufacturing records')
         setManufacturingRecords([])
       }
     } catch (error) {
-      console.error('Error fetching manufacturing records:', error)
       setManufacturingRecords([])
     } finally {
       setIsLoading(false)
@@ -115,7 +112,6 @@ export default function ManufacturingInventory() {
           alert('❌ Error deleting manufacturing record. Please try again.')
         }
       } catch (error) {
-        console.error('Error deleting manufacturing record:', error)
         alert('❌ Error deleting manufacturing record. Please try again.')
       }
     }
@@ -140,7 +136,6 @@ export default function ManufacturingInventory() {
         alert('❌ Error updating manufacturing record. Please try again.')
       }
     } catch (error) {
-      console.error('Error updating manufacturing record:', error)
       alert('❌ Error updating manufacturing record. Please try again.')
     }
   }

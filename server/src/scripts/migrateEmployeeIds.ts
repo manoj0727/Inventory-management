@@ -8,14 +8,12 @@ async function migrateEmployeeIds() {
   try {
     // Connect to MongoDB
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/inventory');
-    console.log('Connected to MongoDB');
 
     // Get all employees with old format IDs
     const employees = await Employee.find({
       employeeId: { $regex: /^EMP\d+$/ }
     });
 
-    console.log(`Found ${employees.length} employees with old ID format`);
 
     // Update each employee with new format
     for (let i = 0; i < employees.length; i++) {
@@ -26,13 +24,10 @@ async function migrateEmployeeIds() {
       employee.employeeId = newEmployeeId;
       await employee.save();
 
-      console.log(`Updated ${employee.name}: ${employee.employeeId}`);
     }
 
-    console.log('Migration completed successfully');
     process.exit(0);
   } catch (error) {
-    console.error('Migration failed:', error);
     process.exit(1);
   }
 }

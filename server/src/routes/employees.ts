@@ -29,7 +29,6 @@ router.get('/:id', async (req: Request, res: Response) => {
 // Create employee
 router.post('/', async (req: Request, res: Response) => {
   try {
-    console.log('Creating employee with data:', req.body);
     
     // Ensure required fields are present
     if (!req.body.username || !req.body.password || !req.body.name || !req.body.dob) {
@@ -44,7 +43,6 @@ router.post('/', async (req: Request, res: Response) => {
     const savedEmployee = await Employee.findById(employee._id).select('-password');
     res.status(201).json(savedEmployee);
   } catch (error: any) {
-    console.error('Error creating employee:', error);
     
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];

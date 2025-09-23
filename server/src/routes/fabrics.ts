@@ -9,7 +9,6 @@ router.get('/', async (req, res) => {
     const fabrics = await Fabric.find().sort({ createdAt: -1 })
     res.json(fabrics)
   } catch (error: any) {
-    console.error('Get fabrics error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -23,7 +22,6 @@ router.get('/:id', async (req, res) => {
     }
     res.json(fabric)
   } catch (error: any) {
-    console.error('Get fabric error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -67,7 +65,6 @@ router.post('/', async (req, res) => {
       fabric
     })
   } catch (error: any) {
-    console.error('Create fabric error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -94,7 +91,6 @@ router.patch('/:id', async (req, res) => {
     await fabric.save()
     res.json(fabric)
   } catch (error) {
-    console.error('Fabric update error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -146,7 +142,6 @@ router.put('/:id', async (req, res) => {
       fabric
     })
   } catch (error: any) {
-    console.error('Update fabric error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -162,7 +157,6 @@ router.delete('/:id', async (req, res) => {
     await Fabric.findByIdAndDelete(req.params.id)
     res.json({ message: 'Fabric deleted successfully' })
   } catch (error: any) {
-    console.error('Delete fabric error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -187,7 +181,6 @@ router.get('/stats/overview', async (req, res) => {
       totalQuantity: totalQuantity[0]?.total || 0
     })
   } catch (error: any) {
-    console.error('Get fabric stats error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })

@@ -54,7 +54,6 @@ export default function FabricRegistration() {
         setRecentFabrics(recentFabrics)
       }
     } catch (error) {
-      console.error('Error fetching recent fabrics:', error)
     } finally {
       setIsLoading(false)
     }
@@ -98,7 +97,6 @@ export default function FabricRegistration() {
         alert('❌ Error registering fabric. Please try again.')
       }
     } catch (error) {
-      console.error('Error:', error)
       alert('❌ Error registering fabric. Please try again.')
     }
   }

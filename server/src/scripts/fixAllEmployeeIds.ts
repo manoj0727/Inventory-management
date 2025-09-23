@@ -8,11 +8,9 @@ async function fixAllEmployeeIds() {
   try {
     // Connect to MongoDB
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/inventory');
-    console.log('Connected to MongoDB');
 
     // Get all employees
     const employees = await Employee.find().sort({ createdAt: 1 });
-    console.log(`Found ${employees.length} employees to update`);
 
     const year = new Date().getFullYear().toString().slice(-2);
 
@@ -27,13 +25,10 @@ async function fixAllEmployeeIds() {
         { $set: { employeeId: newEmployeeId } }
       );
 
-      console.log(`Updated ${employee.name}: ${employee.employeeId} -> ${newEmployeeId}`);
     }
 
-    console.log('All employee IDs updated successfully');
     process.exit(0);
   } catch (error) {
-    console.error('Migration failed:', error);
     process.exit(1);
   }
 }

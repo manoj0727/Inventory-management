@@ -114,7 +114,6 @@ router.get('/stats', async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('Dashboard stats error:', error);
     res.status(500).json({ message: error.message });
   }
 });

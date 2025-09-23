@@ -52,11 +52,9 @@ export default function CuttingInventory() {
         const records = await response.json()
         setCuttingRecords(records)
       } else {
-        console.error('Failed to fetch cutting records')
         setCuttingRecords([])
       }
     } catch (error) {
-      console.error('Error fetching cutting records:', error)
       setCuttingRecords([])
     } finally {
       setIsLoading(false)
@@ -82,7 +80,6 @@ export default function CuttingInventory() {
           alert('❌ Error deleting cutting record. Please try again.')
         }
       } catch (error) {
-        console.error('Error deleting cutting record:', error)
         alert('❌ Error deleting cutting record. Please try again.')
       }
     }
@@ -107,7 +104,6 @@ export default function CuttingInventory() {
         alert('❌ Error updating cutting record. Please try again.')
       }
     } catch (error) {
-      console.error('Error updating cutting record:', error)
       alert('❌ Error updating cutting record. Please try again.')
     }
   }

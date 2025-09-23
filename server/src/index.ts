@@ -14,7 +14,6 @@ import apiRoutes from './routes'
 const result = dotenv.config({ path: path.resolve(__dirname, '../.env') })
 if (result.error) {
   // Only log a warning, don't exit - environment variables might be set directly
-  console.log('Note: .env file not found, using environment variables')
 }
 
 const app = express()

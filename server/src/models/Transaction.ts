@@ -112,7 +112,6 @@ TransactionSchema.pre('save', async function(next) {
 
       this.transactionId = finalId
     } catch (error) {
-      console.error('Error generating transaction ID:', error)
       this.transactionId = `TXN${Date.now()}`
     }
   }

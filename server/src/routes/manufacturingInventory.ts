@@ -10,7 +10,6 @@ router.get('/', async (req, res) => {
     const manufacturingInventory = await ManufacturingInventory.find().sort({ createdAt: -1 })
     res.json(manufacturingInventory)
   } catch (error: any) {
-    console.error('Get manufacturing inventory error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -24,7 +23,6 @@ router.get('/:id', async (req, res) => {
     }
     res.json(manufacturingInventory)
   } catch (error: any) {
-    console.error('Get manufacturing inventory record error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -99,7 +97,6 @@ router.post('/', async (req, res) => {
       cuttingRecordRemaining: cuttingRecord.piecesRemaining
     })
   } catch (error: any) {
-    console.error('Create manufacturing inventory record error:', error)
     if (error.code === 11000) {
       res.status(400).json({ message: 'Manufacturing inventory record with this ID already exists' })
     } else {
@@ -126,7 +123,6 @@ router.patch('/:id', async (req, res) => {
     await manufacturingInventory.save()
     res.json(manufacturingInventory)
   } catch (error) {
-    console.error('Manufacturing inventory update error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -194,7 +190,6 @@ router.put('/:id', async (req, res) => {
       manufacturingInventory
     })
   } catch (error: any) {
-    console.error('Update manufacturing inventory record error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -210,7 +205,6 @@ router.delete('/:id', async (req, res) => {
     await ManufacturingInventory.findByIdAndDelete(req.params.id)
     res.json({ message: 'Manufacturing inventory record deleted successfully' })
   } catch (error: any) {
-    console.error('Delete manufacturing inventory record error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })

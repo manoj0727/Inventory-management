@@ -36,13 +36,10 @@ export default function Transactions() {
       const response = await fetch(`${API_URL}/api/transactions`)
       if (response.ok) {
         const data = await response.json()
-        console.log('Loaded transactions:', data)
         setTransactions(data.transactions || data)
       } else {
-        console.error('Failed to fetch transactions:', response.status)
       }
     } catch (error) {
-      console.error('Error loading transactions:', error)
       // Fallback to localStorage if API fails
       const savedTransactions = localStorage.getItem('inventory_transactions')
       if (savedTransactions) {
@@ -66,7 +63,6 @@ export default function Transactions() {
           localStorage.removeItem('inventory_transactions') // Also clear localStorage
         }
       } catch (error) {
-        console.error('Error clearing transactions:', error)
         alert('Failed to clear transactions')
       }
     }

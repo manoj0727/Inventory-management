@@ -10,7 +10,6 @@ router.get('/', async (req, res) => {
     const qrProducts = await QRProduct.find().sort({ createdAt: -1 })
     res.json(qrProducts)
   } catch (error: any) {
-    console.error('Get QR products error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -24,7 +23,6 @@ router.get('/:id', async (req, res) => {
     }
     res.json(qrProduct)
   } catch (error: any) {
-    console.error('Get QR product error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -84,7 +82,6 @@ router.post('/', async (req, res) => {
           { $set: { qrGenerated: true } }
         )
       } catch (err) {
-        console.log('Error updating manufacturing order:', err)
       }
     }
 
@@ -93,7 +90,6 @@ router.post('/', async (req, res) => {
       qrProduct
     })
   } catch (error: any) {
-    console.error('Create QR product error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -129,7 +125,6 @@ router.put('/:id', async (req, res) => {
     await qrProduct.save()
     res.json(qrProduct)
   } catch (error: any) {
-    console.error('Update QR product error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -150,7 +145,6 @@ router.patch('/:id', async (req, res) => {
     await qrProduct.save()
     res.json(qrProduct)
   } catch (error: any) {
-    console.error('Update QR product error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -158,15 +152,12 @@ router.patch('/:id', async (req, res) => {
 // DELETE QR product
 router.delete('/:id', async (req, res) => {
   try {
-    console.log('Attempting to delete QR product with ID:', req.params.id)
 
     const qrProduct = await QRProduct.findById(req.params.id)
     if (!qrProduct) {
-      console.log('QR product not found with ID:', req.params.id)
       return res.status(404).json({ message: 'QR product not found' })
     }
 
-    console.log('Found QR product to delete:', qrProduct)
 
     // If it's a manufacturing ID that's not manual, mark it as QR not generated
     if (qrProduct.manufacturingId && !qrProduct.manufacturingId.startsWith('MFG') && qrProduct.cuttingId !== 'MANUAL') {
@@ -176,17 +167,14 @@ router.delete('/:id', async (req, res) => {
           { $set: { qrGenerated: false } }
         )
       } catch (err) {
-        console.log('Error updating manufacturing order:', err)
       }
     }
 
     // Delete the QR product
     await QRProduct.findByIdAndDelete(req.params.id)
-    console.log('Successfully deleted QR product')
 
     res.json({ message: 'QR product deleted successfully' })
   } catch (error: any) {
-    console.error('Delete QR product error:', error)
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 })
@@ -208,7 +196,6 @@ router.get('/available/manufacturing-ids', async (req, res) => {
 
     res.json(availableOrders)
   } catch (error: any) {
-    console.error('Get available manufacturing IDs error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })

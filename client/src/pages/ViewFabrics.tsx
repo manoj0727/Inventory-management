@@ -41,7 +41,6 @@ export default function ViewFabrics() {
         setLastUpdated(new Date())
       }
     } catch (error) {
-      console.error('Error fetching fabrics:', error)
     } finally {
       setLoading(false)
     }

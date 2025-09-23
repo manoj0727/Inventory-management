@@ -136,7 +136,6 @@ export default function QRInventory() {
               dateB = Date.now()
             }
           } catch (error) {
-            console.error('Date parsing error:', error)
           }
 
           return dateB - dateA // Newest first
@@ -145,7 +144,6 @@ export default function QRInventory() {
         setQrProducts(sortedProducts)
       }
     } catch (error) {
-      console.error('Error fetching QR products:', error)
       setQrProducts([])
     } finally {
       setIsLoading(false)
@@ -182,7 +180,6 @@ export default function QRInventory() {
             })
             setQrCodes(prev => new Map(prev).set(product.manufacturingId, qrCodeDataUrl))
           } catch (error) {
-            console.error('Error generating QR code:', error)
           }
         }
       }
@@ -239,7 +236,6 @@ export default function QRInventory() {
         isGenerated: true
       }
 
-      console.log('Submitting manual product:', newQRProduct)
 
       const response = await fetch(`${API_URL}/api/qr-products`, {
         method: 'POST',
@@ -265,11 +261,9 @@ export default function QRInventory() {
         // Refresh the products list
         await fetchQRProducts()
       } else {
-        console.error('Server error:', data)
         alert(`❌ Error adding product: ${data.message || 'Unknown error'}`)
       }
     } catch (error) {
-      console.error('Error adding manual product:', error)
       alert(`❌ Error adding product: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
@@ -306,7 +300,6 @@ export default function QRInventory() {
           alert('❌ Cannot delete manufacturing-based QR products. These are auto-generated from manufacturing orders.')
         }
       } catch (error) {
-        console.error('Error deleting product:', error)
         alert('❌ Error deleting product')
       }
     }
@@ -349,7 +342,6 @@ export default function QRInventory() {
         setShowEditModal(false)
       }
     } catch (error) {
-      console.error('Error updating product:', error)
       alert('❌ Error updating product')
     }
   }

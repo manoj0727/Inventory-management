@@ -105,7 +105,6 @@ export default function Cutting() {
         setFabrics(fabricsData)
       }
     } catch (error) {
-      console.error('Error fetching fabrics:', error)
     }
   }
 
@@ -120,7 +119,6 @@ export default function Cutting() {
         setRecentCuttingRecords(recentRecords)
       }
     } catch (error) {
-      console.error('Error fetching recent cutting records:', error)
     } finally {
       setIsLoadingRecords(false)
     }
@@ -159,7 +157,6 @@ export default function Cutting() {
         }
       }
     } catch (error) {
-      console.error('Error fetching fabric:', error)
       setSelectedFabric(null)
     } finally {
       setIsLoading(false)
@@ -305,7 +302,6 @@ export default function Cutting() {
         alert('❌ Error creating cutting record: ' + error)
       }
     } catch (error) {
-      console.error('Error updating fabric inventory:', error)
       alert('❌ Error updating fabric inventory. Please try again.')
     }
   }

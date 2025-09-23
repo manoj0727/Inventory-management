@@ -10,7 +10,6 @@ router.get('/', async (req, res) => {
     const cuttingRecords = await CuttingRecord.find().sort({ createdAt: -1 })
     res.json(cuttingRecords)
   } catch (error: any) {
-    console.error('Get cutting records error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -24,7 +23,6 @@ router.get('/:id', async (req, res) => {
     }
     res.json(cuttingRecord)
   } catch (error: any) {
-    console.error('Get cutting record error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -113,7 +111,6 @@ router.post('/', async (req, res) => {
       fabricRemainingQuantity: fabric.quantity
     })
   } catch (error: any) {
-    console.error('Create cutting record error:', error)
     if (error.code === 11000) {
       res.status(400).json({ message: 'Cutting record with this ID already exists' })
     } else {
@@ -140,7 +137,6 @@ router.patch('/:id', async (req, res) => {
     await cuttingRecord.save()
     res.json(cuttingRecord)
   } catch (error) {
-    console.error('Cutting record update error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -185,7 +181,6 @@ router.put('/:id', async (req, res) => {
       cuttingRecord
     })
   } catch (error: any) {
-    console.error('Update cutting record error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -201,7 +196,6 @@ router.delete('/:id', async (req, res) => {
     await CuttingRecord.findByIdAndDelete(req.params.id)
     res.json({ message: 'Cutting record deleted successfully' })
   } catch (error: any) {
-    console.error('Delete cutting record error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })

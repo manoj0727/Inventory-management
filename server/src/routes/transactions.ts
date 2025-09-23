@@ -73,7 +73,6 @@ router.get('/', async (req, res) => {
       }
     })
   } catch (error: any) {
-    console.error('Get transactions error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -87,7 +86,6 @@ router.get('/:id', async (req, res) => {
     }
     res.json(transaction)
   } catch (error: any) {
-    console.error('Get transaction error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -150,7 +148,6 @@ router.post('/', async (req, res) => {
       transaction
     })
   } catch (error: any) {
-    console.error('Create transaction error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -169,7 +166,6 @@ router.delete('/:id', async (req, res) => {
       deletedTransaction: transaction
     })
   } catch (error: any) {
-    console.error('Delete transaction error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -183,7 +179,6 @@ router.delete('/', async (req, res) => {
       deletedCount: result.deletedCount
     })
   } catch (error: any) {
-    console.error('Delete all transactions error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -227,7 +222,6 @@ router.get('/stats/overview', async (req, res) => {
       }, {})
     })
   } catch (error: any) {
-    console.error('Get transaction stats error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -260,7 +254,6 @@ router.get('/item/:itemId', async (req, res) => {
       }
     })
   } catch (error: any) {
-    console.error('Get item transactions error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })

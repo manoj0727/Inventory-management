@@ -125,7 +125,6 @@ ManufacturingInventorySchema.pre('save', async function(next) {
       this.id = finalId
       this.quantityRemaining = (this.quantity as number) - (this.quantityProduced as number)
     } catch (error) {
-      console.error('Error generating manufacturing inventory ID:', error)
       this.id = `MFG${Date.now()}`
     }
   }

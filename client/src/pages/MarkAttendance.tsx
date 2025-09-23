@@ -31,7 +31,6 @@ export default function MarkAttendance() {
         setAttendanceStatus(data)
       }
     } catch (error) {
-      console.error('Error checking attendance:', error)
     }
   }
 
@@ -55,12 +54,10 @@ export default function MarkAttendance() {
         if (videoRef.current && mediaStream) {
           videoRef.current.srcObject = mediaStream
           videoRef.current.play().catch(err => {
-            console.warn('Auto-play prevented:', err)
           })
         }
       }, 100)
     } catch (error: any) {
-      console.error('Error accessing camera:', error)
       
       let errorMessage = 'Could not access camera. '
       

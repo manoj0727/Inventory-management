@@ -80,7 +80,6 @@ export default function Manufacturing() {
         setCuttingRecords(records)
       }
     } catch (error) {
-      console.error('Error fetching cutting records:', error)
     }
   }
 
@@ -93,7 +92,6 @@ export default function Manufacturing() {
         setManufacturingRecords(records.slice(0, 10))
       }
     } catch (error) {
-      console.error('Error fetching manufacturing records:', error)
     } finally {
       setIsLoadingRecords(false)
     }
@@ -139,39 +137,30 @@ export default function Manufacturing() {
           const manufacturingRecords = await response.json()
 
           // Debug: Log the data to see what we're working with
-          console.log('All manufacturing records:', manufacturingRecords)
-          console.log('Looking for cutting ID:', selectedRecord.id)
 
           const existingRecords = manufacturingRecords.filter((record: any) =>
             record.cuttingId === selectedRecord.id
           )
 
-          console.log('Found existing records:', existingRecords)
 
           // Calculate total quantity already manufactured/assigned
           // Use itemsReceived to get actually received pieces
           const totalReceived = existingRecords.reduce((sum: number, record: any) => {
             const received = record.itemsReceived || 0
-            console.log(`Record ${record._id}: itemsReceived = ${received}`)
             return sum + received
           }, 0)
 
-          console.log('Total received:', totalReceived)
-          console.log('Original pieces count:', selectedRecord.piecesCount)
 
           // Calculate remaining quantity
           const remainingQuantity = selectedRecord.piecesCount - totalReceived
           const displayQuantity = Math.max(0, remainingQuantity) // Ensure not negative
 
-          console.log('Remaining quantity:', remainingQuantity)
-          console.log('Display quantity:', displayQuantity)
 
           // If displayQuantity is 0 and there are no existing records, use original quantity
           const finalQuantity = (displayQuantity === 0 && existingRecords.length === 0)
             ? selectedRecord.piecesCount
             : displayQuantity
 
-          console.log('Final quantity to display:', finalQuantity)
 
           newFormData.fabricType = selectedRecord.fabricType
           newFormData.fabricColor = selectedRecord.fabricColor
@@ -186,7 +175,6 @@ export default function Manufacturing() {
           newFormData.totalPrice = (items * price).toFixed(2)
         }
       } catch (error) {
-        console.error('Error fetching manufacturing records:', error)
         // Fallback to original quantity if API call fails
         newFormData.fabricType = selectedRecord.fabricType
         newFormData.fabricColor = selectedRecord.fabricColor
@@ -243,7 +231,6 @@ export default function Manufacturing() {
         })
       }
     } catch (error) {
-      console.error('Error fetching manufacturing records:', error)
       // Fallback to original quantity if API call fails
       setFormData({
         ...formData,
@@ -477,7 +464,6 @@ export default function Manufacturing() {
         alert('❌ Error updating manufacturing order. Please try again.')
       }
     } catch (error) {
-      console.error('Error handling manufacturing order:', error)
       alert('❌ Error handling manufacturing order. Please try again.')
     } finally {
       setIsLoading(false)

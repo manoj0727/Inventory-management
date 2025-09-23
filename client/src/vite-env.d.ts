@@ -2,7 +2,6 @@
 
 interface ImportMetaEnv {
   readonly VITE_API_URL: string
-  readonly VITE_GRAPHQL_URL: string
   // Add more env variables as needed
 }
 

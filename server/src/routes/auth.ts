@@ -30,8 +30,7 @@ router.post('/login', async (req, res) => {
     const jwtSecret = process.env.JWT_SECRET
 
     if (!adminUsername || !adminPassword || !jwtSecret) {
-      console.error('Critical: Admin credentials or JWT secret not configured')
-      return res.status(500).json({ message: 'Server configuration error' })
+      return res.status(500).json({ message: 'Server configuration error. Please check environment variables.' })
     }
 
     // Timing-safe comparison for admin login
@@ -142,7 +141,6 @@ router.post('/login', async (req, res) => {
       }
     })
   } catch (error: any) {
-    console.error('Login error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -177,7 +175,6 @@ router.post('/register', async (req, res) => {
 
     const jwtSecret = process.env.JWT_SECRET
     if (!jwtSecret) {
-      console.error('JWT secret not configured')
       return res.status(500).json({ message: 'Server configuration error' })
     }
 
@@ -226,7 +223,6 @@ router.post('/register', async (req, res) => {
       }
     })
   } catch (error: any) {
-    console.error('Register error:', error)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -248,7 +244,6 @@ router.get('/verify', async (req, res) => {
 
     const jwtSecret = process.env.JWT_SECRET
     if (!jwtSecret) {
-      console.error('JWT secret not configured')
       return res.status(500).json({ valid: false, message: 'Server configuration error' })
     }
 
