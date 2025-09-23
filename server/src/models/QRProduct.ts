@@ -4,11 +4,12 @@ export interface IQRProduct extends Document {
   productId: string
   manufacturingId: string
   productName: string
+  fabricType?: string
   color: string
   size: string
   quantity: number
   tailorName: string
-  qrCodeData: string
+  qrCodeData?: string
   isGenerated: boolean
   generatedDate: string
   cuttingId?: string
@@ -34,6 +35,11 @@ const QRProductSchema: Schema = new Schema({
     required: true,
     trim: true
   },
+  fabricType: {
+    type: String,
+    trim: true,
+    default: 'N/A'
+  },
   color: {
     type: String,
     required: true,
@@ -56,7 +62,8 @@ const QRProductSchema: Schema = new Schema({
   },
   qrCodeData: {
     type: String,
-    required: true
+    required: false,
+    default: ''
   },
   isGenerated: {
     type: Boolean,

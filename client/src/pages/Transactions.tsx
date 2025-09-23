@@ -3,12 +3,13 @@ import '../styles/common.css'
 import { API_URL } from '@/config/api'
 
 interface Transaction {
-  id: string
+  _id?: string
+  id?: string
   timestamp: string
   itemType: 'FABRIC' | 'MANUFACTURING' | 'CUTTING' | 'QR_GENERATED' | 'UNKNOWN'
   itemId: string
   itemName: string
-  action: 'ADD' | 'REMOVE' | 'QR_GENERATED'
+  action: 'ADD' | 'REMOVE' | 'QR_GENERATED' | 'STOCK_IN' | 'STOCK_OUT'
   quantity: number
   previousStock: number
   newStock: number
@@ -35,7 +36,10 @@ export default function Transactions() {
       const response = await fetch(`${API_URL}/api/transactions`)
       if (response.ok) {
         const data = await response.json()
+        console.log('Loaded transactions:', data)
         setTransactions(data.transactions || data)
+      } else {
+        console.error('Failed to fetch transactions:', response.status)
       }
     } catch (error) {
       console.error('Error loading transactions:', error)
@@ -85,7 +89,9 @@ export default function Transactions() {
     if (filter !== 'all') {
       if (filter === 'qr_generated' && transaction.action !== 'QR_GENERATED') {
         return false
-      } else if (filter !== 'qr_generated' && transaction.action.toLowerCase() !== filter) {
+      } else if (filter === 'add' && transaction.action !== 'ADD' && transaction.action !== 'STOCK_IN') {
+        return false
+      } else if (filter === 'remove' && transaction.action !== 'REMOVE' && transaction.action !== 'STOCK_OUT') {
         return false
       }
     }
@@ -114,8 +120,10 @@ export default function Transactions() {
 
   const getActionBadgeClass = (action: string) => {
     switch(action) {
-      case 'ADD': return 'badge-success'
-      case 'REMOVE': return 'badge-danger'
+      case 'ADD':
+      case 'STOCK_IN': return 'badge-success'
+      case 'REMOVE':
+      case 'STOCK_OUT': return 'badge-danger'
       case 'QR_GENERATED': return 'badge-info'
       default: return 'badge-secondary'
     }
@@ -139,13 +147,15 @@ export default function Transactions() {
   // Calculate statistics
   const stats = {
     total: transactions.length,
-    additions: transactions.filter(t => t.action === 'ADD').length,
-    removals: transactions.filter(t => t.action === 'REMOVE').length,
+    stockIn: transactions.filter(t => t.action === 'ADD' || t.action === 'STOCK_IN').reduce((sum, t) => sum + t.quantity, 0),
+    stockOut: transactions.filter(t => t.action === 'REMOVE' || t.action === 'STOCK_OUT').reduce((sum, t) => sum + t.quantity, 0),
     qrGenerated: transactions.filter(t => t.action === 'QR_GENERATED').length,
     today: transactions.filter(t =>
       new Date(t.timestamp).toDateString() === new Date().toDateString()
     ).length
   }
+
+  const totalQuantity = stats.stockIn - stats.stockOut
 
   return (
     <div className="page-container">
@@ -164,43 +174,43 @@ export default function Transactions() {
         <div className="content-card" style={{
           background: 'white',
           padding: '20px',
-          border: '2px solid #667eea'
+          border: '2px solid #000'
         }}>
-          <h3 style={{ margin: 0, fontSize: '14px', color: '#667eea' }}>Total Transactions</h3>
-          <p style={{ margin: '8px 0 0 0', fontSize: '32px', fontWeight: 'bold', color: '#667eea' }}>{stats.total}</p>
+          <h3 style={{ margin: 0, fontSize: '14px', color: '#000' }}>Total Transactions</h3>
+          <p style={{ margin: '8px 0 0 0', fontSize: '32px', fontWeight: 'bold', color: '#000' }}>{stats.total}</p>
         </div>
 
         <div className="content-card" style={{
           background: 'white',
           padding: '20px',
-          border: '2px solid #10b981'
+          border: '2px solid #000'
         }}>
-          <h3 style={{ margin: 0, fontSize: '14px', color: '#10b981' }}>Stock Additions</h3>
-          <p style={{ margin: '8px 0 0 0', fontSize: '32px', fontWeight: 'bold', color: '#10b981' }}>{stats.additions}</p>
+          <h3 style={{ margin: 0, fontSize: '14px', color: '#10b981' }}>Stock In</h3>
+          <p style={{ margin: '8px 0 0 0', fontSize: '32px', fontWeight: 'bold', color: '#10b981' }}>{stats.stockIn}</p>
         </div>
 
         <div className="content-card" style={{
           background: 'white',
           padding: '20px',
-          border: '2px solid #ef4444'
+          border: '2px solid #000'
         }}>
-          <h3 style={{ margin: 0, fontSize: '14px', color: '#ef4444' }}>Stock Removals</h3>
-          <p style={{ margin: '8px 0 0 0', fontSize: '32px', fontWeight: 'bold', color: '#ef4444' }}>{stats.removals}</p>
+          <h3 style={{ margin: 0, fontSize: '14px', color: '#ef4444' }}>Stock Out</h3>
+          <p style={{ margin: '8px 0 0 0', fontSize: '32px', fontWeight: 'bold', color: '#ef4444' }}>{stats.stockOut}</p>
         </div>
 
         <div className="content-card" style={{
           background: 'white',
           padding: '20px',
-          border: '2px solid #8b5cf6'
+          border: '2px solid #000'
         }}>
-          <h3 style={{ margin: 0, fontSize: '14px', color: '#8b5cf6' }}>QR Generated</h3>
-          <p style={{ margin: '8px 0 0 0', fontSize: '32px', fontWeight: 'bold', color: '#8b5cf6' }}>{stats.qrGenerated}</p>
+          <h3 style={{ margin: 0, fontSize: '14px', color: '#8b5cf6' }}>Total Quantity</h3>
+          <p style={{ margin: '8px 0 0 0', fontSize: '32px', fontWeight: 'bold', color: '#8b5cf6' }}>{totalQuantity}</p>
         </div>
 
         <div className="content-card" style={{
           background: 'white',
           padding: '20px',
-          border: '2px solid #3b82f6'
+          border: '2px solid #000'
         }}>
           <h3 style={{ margin: 0, fontSize: '14px', color: '#3b82f6' }}>Today's Transactions</h3>
           <p style={{ margin: '8px 0 0 0', fontSize: '32px', fontWeight: 'bold', color: '#3b82f6' }}>{stats.today}</p>
@@ -247,7 +257,7 @@ export default function Transactions() {
           >
             <option value="all">All Types</option>
             <option value="FABRIC">Fabric</option>
-            <option value="MANUFACTURING">Manufacturing</option>
+            <option value="MANUFACTURING">MFG</option>
             <option value="CUTTING">Cutting</option>
             <option value="QR_GENERATED">QR Generated</option>
           </select>
@@ -286,65 +296,55 @@ export default function Transactions() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Date & Time</th>
-                <th>Item Type</th>
-                <th>Item Name</th>
-                <th>Item ID</th>
-                <th>Action</th>
-                <th>Quantity</th>
-                <th>Previous Stock</th>
-                <th>New Stock</th>
-                <th>Change</th>
-                <th>Source</th>
+                <th style={{ textAlign: 'center' }}>Date & Time</th>
+                <th style={{ textAlign: 'center' }}>Item Type</th>
+                <th style={{ textAlign: 'center' }}>Item Name</th>
+                <th style={{ textAlign: 'center' }}>Item ID</th>
+                <th style={{ textAlign: 'center' }}>Action</th>
+                <th style={{ textAlign: 'center' }}>Quantity</th>
+                <th style={{ textAlign: 'center' }}>Total Stock</th>
               </tr>
             </thead>
             <tbody>
               {filteredTransactions.length > 0 ? (
                 filteredTransactions.map((transaction) => (
-                  <tr key={transaction.id}>
-                    <td>{formatDate(transaction.timestamp)}</td>
-                    <td>
+                  <tr key={transaction._id || transaction.id || Math.random()}>
+                    <td style={{ textAlign: 'center' }}>{formatDate(transaction.timestamp)}</td>
+                    <td style={{ textAlign: 'center' }}>
                       <span className={`badge ${getTypeBadgeClass(transaction.itemType)}`}>
-                        {transaction.itemType}
+                        {transaction.itemType === 'MANUFACTURING' ? 'MFG' : transaction.itemType}
                       </span>
                     </td>
-                    <td style={{ fontWeight: '500' }}>{transaction.itemName}</td>
-                    <td style={{ fontSize: '12px', color: '#6b7280' }}>{transaction.itemId}</td>
-                    <td>
+                    <td style={{ fontWeight: '500', textAlign: 'center' }}>{transaction.itemName}</td>
+                    <td style={{ fontSize: '12px', color: '#6b7280', textAlign: 'center' }}>{transaction.itemId}</td>
+                    <td style={{ textAlign: 'center' }}>
                       <span className={`badge ${getActionBadgeClass(transaction.action)}`}>
-                        {transaction.action === 'ADD' ? '➕ ADD' :
-                         transaction.action === 'REMOVE' ? '➖ REMOVE' :
-                         '📱 QR GENERATED'}
+                        {transaction.action === 'ADD' || transaction.action === 'STOCK_IN' ? '↑ Stock In' :
+                         transaction.action === 'REMOVE' || transaction.action === 'STOCK_OUT' ? '↓ Stock Out' :
+                         '📱 QR Generated'}
                       </span>
                     </td>
-                    <td style={{ textAlign: 'center', fontWeight: '600' }}>{transaction.quantity}</td>
-                    <td style={{ textAlign: 'center' }}>{transaction.previousStock}</td>
                     <td style={{
                       textAlign: 'center',
                       fontWeight: '600',
-                      color: transaction.newStock > transaction.previousStock ? '#10b981' : '#ef4444'
+                      color: (transaction.action === 'ADD' || transaction.action === 'STOCK_IN') ? '#10b981' :
+                             (transaction.action === 'REMOVE' || transaction.action === 'STOCK_OUT') ? '#ef4444' : '#6b7280'
+                    }}>
+                      {(transaction.action === 'ADD' || transaction.action === 'STOCK_IN') ? '+' :
+                       (transaction.action === 'REMOVE' || transaction.action === 'STOCK_OUT') ? '-' : ''}{transaction.quantity}
+                    </td>
+                    <td style={{
+                      textAlign: 'center',
+                      fontWeight: '600',
+                      color: '#3b82f6'
                     }}>
                       {transaction.newStock}
-                    </td>
-                    <td style={{
-                      textAlign: 'center',
-                      fontWeight: '600',
-                      color: transaction.action === 'ADD' ? '#10b981' : '#ef4444'
-                    }}>
-                      {transaction.action === 'ADD' ? '+' : '-'}{transaction.quantity}
-                    </td>
-                    <td>
-                      <span className="badge badge-secondary">
-                        {transaction.source === 'QR_SCANNER' ? '📱 QR Scanner' :
-                         transaction.source === 'QR_GENERATION' ? '🏷️ QR Gen' :
-                         '✏️ Manual'}
-                      </span>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={10} className="empty-state">
+                  <td colSpan={7} className="empty-state">
                     <div className="empty-state-icon">📊</div>
                     <h3>No Transactions Found</h3>
                     <p>

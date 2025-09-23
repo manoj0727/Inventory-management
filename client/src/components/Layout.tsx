@@ -33,7 +33,7 @@ export default function Layout() {
     { path: '/cutting-inventory', name: 'Cutting Inventory', icon: ChartBarIcon },
     { path: '/manufacturing', name: 'Manufacturing', icon: ChartBarIcon },
     { path: '/manufacturing-inventory', name: 'Manufacturing Inventory', icon: ChartBarIcon },
-    { path: '/generate-qr', name: 'Generate QR', icon: QrCodeIcon },
+    { path: '/generate-qr', name: 'QR Inventory', icon: QrCodeIcon },
     { path: '/qr-scanner', name: 'QR Scanner', icon: QrCodeIcon },
     { path: '/transactions', name: 'Transactions', icon: DocumentTextIcon },
   ]

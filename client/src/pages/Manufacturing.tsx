@@ -8,7 +8,6 @@ interface ManufacturingOrder {
   fabricColor: string
   productName: string
   quantity: string
-  quantityReceive: string
   itemsReceived: string
   pricePerPiece: string
   totalPrice: string
@@ -58,7 +57,6 @@ export default function Manufacturing() {
     fabricColor: '',
     productName: '',
     quantity: '',
-    quantityReceive: '',
     itemsReceived: '',
     pricePerPiece: '',
     totalPrice: '0',
@@ -151,10 +149,10 @@ export default function Manufacturing() {
           console.log('Found existing records:', existingRecords)
 
           // Calculate total quantity already manufactured/assigned
-          // Use quantityReceive instead of quantity to get actually received pieces
+          // Use itemsReceived to get actually received pieces
           const totalReceived = existingRecords.reduce((sum: number, record: any) => {
-            const received = record.quantityReceive || 0
-            console.log(`Record ${record._id}: quantityReceive = ${received}`)
+            const received = record.itemsReceived || 0
+            console.log(`Record ${record._id}: itemsReceived = ${received}`)
             return sum + received
           }, 0)
 
@@ -179,12 +177,11 @@ export default function Manufacturing() {
           newFormData.fabricColor = selectedRecord.fabricColor
           newFormData.productName = selectedRecord.productName
           newFormData.quantity = finalQuantity.toString()
-          newFormData.quantityReceive = finalQuantity.toString()
           newFormData.tailorName = selectedRecord.cuttingGivenTo || ''
           newFormData.pricePerPiece = selectedRecord.tailorItemPerPiece?.toString() || ''
 
           // Auto-calculate total price if items received is set
-          const items = parseFloat(newFormData.itemsReceived) || parseFloat(newFormData.quantityReceive) || 0
+          const items = parseFloat(newFormData.itemsReceived) || 0
           const price = selectedRecord.tailorItemPerPiece || 0
           newFormData.totalPrice = (items * price).toFixed(2)
         }
@@ -195,12 +192,11 @@ export default function Manufacturing() {
         newFormData.fabricColor = selectedRecord.fabricColor
         newFormData.productName = selectedRecord.productName
         newFormData.quantity = selectedRecord.piecesCount.toString()
-        newFormData.quantityReceive = selectedRecord.piecesCount.toString()
         newFormData.tailorName = selectedRecord.cuttingGivenTo || ''
         newFormData.pricePerPiece = selectedRecord.tailorItemPerPiece?.toString() || ''
 
         // Auto-calculate total price if items received is set
-        const items = parseFloat(newFormData.itemsReceived) || selectedRecord.piecesCount || 0
+        const items = parseFloat(newFormData.itemsReceived) || 0
         const price = selectedRecord.tailorItemPerPiece || 0
         newFormData.totalPrice = (items * price).toFixed(2)
       }
@@ -221,7 +217,7 @@ export default function Manufacturing() {
 
         // Calculate total quantity already received (not assigned)
         const totalReceived = existingRecords.reduce((sum: number, mRecord: any) =>
-          sum + (mRecord.quantityReceive || 0), 0
+          sum + (mRecord.itemsReceived || 0), 0
         )
 
         // Calculate remaining quantity
@@ -240,7 +236,6 @@ export default function Manufacturing() {
           fabricColor: record.fabricColor,
           productName: record.productName,
           quantity: finalQuantity.toString(),
-          quantityReceive: finalQuantity.toString(),
           itemsReceived: '',
           pricePerPiece: record.tailorItemPerPiece?.toString() || '',
           totalPrice: '0',
@@ -257,7 +252,6 @@ export default function Manufacturing() {
         fabricColor: record.fabricColor,
         productName: record.productName,
         quantity: record.piecesCount.toString(),
-        quantityReceive: record.piecesCount.toString(),
         itemsReceived: '',
         pricePerPiece: record.tailorItemPerPiece?.toString() || '',
         totalPrice: '0',
@@ -285,6 +279,16 @@ export default function Manufacturing() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Validate items received doesn't exceed quantity
+    const itemsReceived = parseFloat(formData.itemsReceived) || 0
+    const maxQuantity = parseFloat(formData.quantity) || 0
+
+    if (itemsReceived > maxQuantity) {
+      alert(`❌ Items received (${itemsReceived}) cannot exceed quantity to manufacture (${maxQuantity})`)
+      setIsLoading(false)
+      return
+    }
+
     try {
       setIsLoading(true)
 
@@ -304,14 +308,13 @@ export default function Manufacturing() {
 
       if (existingRecord) {
         // Update existing record
-        const newQuantityReceive = (existingRecord.quantityReceive || 0) + parseInt(formData.quantityReceive)
-        const newQuantityRemaining = Math.max(0, existingRecord.quantity - newQuantityReceive)
+        const newItemsReceived = (existingRecord.itemsReceived || 0) + (parseFloat(formData.itemsReceived) || 0)
+        const newQuantityRemaining = Math.max(0, existingRecord.quantity - newItemsReceived)
         const newStatus = newQuantityRemaining <= 0 ? 'Completed' : 'Pending'
 
         const updateData = {
-          quantityReceive: newQuantityReceive,
+          itemsReceived: newItemsReceived,
           quantityRemaining: newQuantityRemaining,
-          itemsReceived: parseFloat(formData.itemsReceived) || 0,
           pricePerPiece: parseFloat(formData.pricePerPiece) || 0,
           totalPrice: parseFloat(formData.totalPrice) || 0,
           dateOfReceive: formData.dateOfReceive,
@@ -328,9 +331,9 @@ export default function Manufacturing() {
         successMessage = `✅ Manufacturing record updated successfully! Status: ${newStatus}`
       } else {
         // Create new record only if no existing record found
-        const quantityReceive = parseInt(formData.quantityReceive)
+        const itemsReceived = parseFloat(formData.itemsReceived) || 0
         const quantity = parseInt(formData.quantity)
-        const quantityRemaining = Math.max(0, quantity - quantityReceive)
+        const quantityRemaining = Math.max(0, quantity - itemsReceived)
         const status = quantityRemaining <= 0 ? 'Completed' : 'Pending'
 
         const manufacturingOrder = {
@@ -339,9 +342,8 @@ export default function Manufacturing() {
           fabricColor: formData.fabricColor,
           productName: formData.productName,
           quantity: quantity,
-          quantityReceive: quantityReceive,
           quantityRemaining: quantityRemaining,
-          itemsReceived: parseFloat(formData.itemsReceived) || 0,
+          itemsReceived: itemsReceived,
           pricePerPiece: parseFloat(formData.pricePerPiece) || 0,
           totalPrice: parseFloat(formData.totalPrice) || 0,
           dateOfReceive: formData.dateOfReceive,
@@ -361,7 +363,97 @@ export default function Manufacturing() {
       }
 
       if (response.ok) {
-        alert(successMessage)
+        // Auto-generate or update QR code for this manufacturing order
+        let manufacturingId
+
+        if (existingRecord) {
+          // For updates, use the existing manufacturing ID
+          manufacturingId = existingRecord.manufacturingId
+        } else {
+          // For new records, get the manufacturing ID from response
+          const responseData = await response.json()
+          const manufacturingRecord = responseData.manufacturingOrder || responseData
+          manufacturingId = manufacturingRecord.manufacturingId
+        }
+
+        const itemsReceived = parseFloat(formData.itemsReceived) || 0
+
+        if (itemsReceived > 0 && manufacturingId) {
+          // Check if QR already exists for this manufacturing ID
+          const qrCheckResponse = await fetch(`${API_URL}/api/qr-products`)
+          if (qrCheckResponse.ok) {
+            const qrProducts = await qrCheckResponse.json()
+            const existingQR = qrProducts.find((qr: any) =>
+              qr.manufacturingId === manufacturingId
+            )
+
+            if (existingQR) {
+              // Update existing QR with accumulated quantity
+              const updatedQuantity = (existingQR.quantity || 0) + itemsReceived
+
+              await fetch(`${API_URL}/api/qr-products/${existingQR._id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  quantity: updatedQuantity,
+                  generatedDate: new Date().toISOString().split('T')[0]
+                })
+              })
+            } else {
+              // Get size from cutting records if available
+              let size = 'N/A'
+              const cuttingRecord = cuttingRecords.find((c: CuttingRecord) => c.id === formData.cuttingId)
+              if (cuttingRecord) {
+                size = cuttingRecord.sizeType || 'N/A'
+              } else if (existingRecord?.size) {
+                size = existingRecord.size
+              }
+
+              // Create new QR product using manufacturing ID
+              const qrProductData = {
+                productId: manufacturingId,
+                manufacturingId: manufacturingId,
+                productName: formData.productName,
+                color: formData.fabricColor,
+                size: size,
+                quantity: itemsReceived,
+                tailorName: formData.tailorName,
+                generatedDate: formData.dateOfReceive,
+                cuttingId: formData.cuttingId,
+                notes: formData.notes || ''
+              }
+
+              await fetch(`${API_URL}/api/qr-products`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(qrProductData)
+              })
+            }
+          }
+
+            // Create transaction record for QR generation
+            const transactionData = {
+              type: 'QR_GENERATED',
+              itemType: 'QR_GENERATED',
+              itemName: formData.productName,
+              itemId: formData.cuttingId,
+              action: 'QR_GENERATED',
+              quantity: itemsReceived,
+              previousStock: 0,
+              newStock: 0,
+              performedBy: 'system',
+              source: 'QR_GENERATION',
+              timestamp: new Date().toISOString()
+            }
+
+            await fetch(`${API_URL}/api/transactions`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(transactionData)
+            })
+          }
+
+        alert(successMessage + '\n✅ QR code generated/updated automatically!')
 
         // Refresh manufacturing records
         fetchManufacturingRecords()
@@ -373,7 +465,6 @@ export default function Manufacturing() {
           fabricColor: '',
           productName: '',
           quantity: '',
-          quantityReceive: '',
           itemsReceived: '',
           pricePerPiece: '',
           totalPrice: '0',
@@ -531,30 +622,24 @@ export default function Manufacturing() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="quantityReceive">Qty Received *</label>
-              <input
-                type="number"
-                id="quantityReceive"
-                name="quantityReceive"
-                value={formData.quantityReceive}
-                onChange={handleChange}
-                placeholder="Quantity received from tailor"
-                min="0"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="itemsReceived">Items Received</label>
+              <label htmlFor="itemsReceived">Items Received *</label>
               <input
                 type="number"
                 id="itemsReceived"
                 name="itemsReceived"
                 value={formData.itemsReceived}
                 onChange={(e) => {
+                  const items = parseFloat(e.target.value) || 0
+                  const maxQty = parseFloat(formData.quantity) || 0
+
+                  // Validate that items received doesn't exceed quantity to manufacture
+                  if (items > maxQty) {
+                    alert(`Items received cannot exceed quantity to manufacture (${maxQty})`)
+                    return
+                  }
+
                   handleChange(e)
                   // Calculate total price
-                  const items = parseFloat(e.target.value) || parseFloat(formData.quantityReceive) || 0
                   const price = parseFloat(formData.pricePerPiece) || 0
                   setFormData(prev => ({
                     ...prev,
@@ -564,7 +649,14 @@ export default function Manufacturing() {
                 }}
                 placeholder="Number of items received"
                 min="0"
+                max={formData.quantity || undefined}
+                required
               />
+              {formData.quantity && (
+                <small style={{ color: '#6b7280' }}>
+                  Maximum: {formData.quantity} items
+                </small>
+              )}
             </div>
 
             <div className="form-group">
@@ -577,7 +669,7 @@ export default function Manufacturing() {
                 onChange={(e) => {
                   handleChange(e)
                   // Calculate total price
-                  const items = parseFloat(formData.itemsReceived) || parseFloat(formData.quantityReceive) || 0
+                  const items = parseFloat(formData.itemsReceived) || 0
                   const price = parseFloat(e.target.value) || 0
                   setFormData(prev => ({
                     ...prev,
@@ -645,7 +737,6 @@ export default function Manufacturing() {
                 fabricColor: '',
                 productName: '',
                 quantity: '',
-                quantityReceive: '',
                 itemsReceived: '',
                 pricePerPiece: '',
                 totalPrice: '0',
@@ -674,9 +765,8 @@ export default function Manufacturing() {
                 <th style={{ textAlign: 'center' }}>Product</th>
                 <th style={{ textAlign: 'center' }}>Qty</th>
                 <th style={{ textAlign: 'center' }}>Size</th>
-                <th style={{ textAlign: 'center' }}>Qty Received</th>
-                <th style={{ textAlign: 'center' }}>Qty Remaining</th>
                 <th style={{ textAlign: 'center' }}>Items Received</th>
+                <th style={{ textAlign: 'center' }}>Qty Remaining</th>
                 <th style={{ textAlign: 'center' }}>Price/Piece</th>
                 <th style={{ textAlign: 'center' }}>Total Price</th>
                 <th style={{ textAlign: 'center' }}>Tailor</th>
@@ -687,13 +777,13 @@ export default function Manufacturing() {
             <tbody>
               {isLoadingRecords ? (
                 <tr>
-                  <td colSpan={14} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={13} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     Loading manufacturing assignments...
                   </td>
                 </tr>
               ) : manufacturingRecords.length > 0 ? (
                 manufacturingRecords.map((record) => {
-                  const quantityRemaining = record.quantity - (record.quantityReceive || 0)
+                  const quantityRemaining = record.quantity - (record.itemsReceived || 0)
                   const status = quantityRemaining <= 0 ? 'Complete' : 'Pending'
 
                   return (
@@ -704,9 +794,8 @@ export default function Manufacturing() {
                       <td style={{ textAlign: 'center' }}>{record.productName}</td>
                       <td style={{ textAlign: 'center' }}>{record.quantity}</td>
                       <td style={{ textAlign: 'center' }}>{record.size || 'N/A'}</td>
-                      <td style={{ textAlign: 'center' }}>{record.quantityReceive || 0}</td>
-                      <td style={{ textAlign: 'center' }}>{quantityRemaining}</td>
                       <td style={{ textAlign: 'center' }}>{record.itemsReceived || 0}</td>
+                      <td style={{ textAlign: 'center' }}>{quantityRemaining}</td>
                       <td style={{ textAlign: 'center' }}>₹{record.pricePerPiece || 0}</td>
                       <td style={{ textAlign: 'center', fontWeight: 'bold' }}>₹{record.totalPrice || 0}</td>
                       <td style={{ textAlign: 'center' }}>{record.tailorName}</td>
@@ -723,7 +812,7 @@ export default function Manufacturing() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={14} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={13} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     No manufacturing assignments found
                   </td>
                 </tr>

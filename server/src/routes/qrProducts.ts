@@ -36,6 +36,7 @@ router.post('/', async (req, res) => {
       productId,
       manufacturingId,
       productName,
+      fabricType,
       color,
       size,
       quantity,
@@ -61,6 +62,7 @@ router.post('/', async (req, res) => {
       productId,
       manufacturingId,
       productName,
+      fabricType,
       color,
       size,
       quantity,
@@ -96,6 +98,42 @@ router.post('/', async (req, res) => {
   }
 })
 
+// PUT update QR product
+router.put('/:id', async (req, res) => {
+  try {
+    const qrProduct = await QRProduct.findById(req.params.id)
+    if (!qrProduct) {
+      return res.status(404).json({ message: 'QR product not found' })
+    }
+
+    // Update fields
+    if (req.body.quantity !== undefined) {
+      qrProduct.quantity = req.body.quantity
+    }
+    if (req.body.productName !== undefined) {
+      qrProduct.productName = req.body.productName
+    }
+    if (req.body.fabricType !== undefined) {
+      qrProduct.fabricType = req.body.fabricType
+    }
+    if (req.body.color !== undefined) {
+      qrProduct.color = req.body.color
+    }
+    if (req.body.size !== undefined) {
+      qrProduct.size = req.body.size
+    }
+    if (req.body.generatedDate !== undefined) {
+      qrProduct.generatedDate = req.body.generatedDate
+    }
+
+    await qrProduct.save()
+    res.json(qrProduct)
+  } catch (error: any) {
+    console.error('Update QR product error:', error)
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
 // PATCH update QR product quantity
 router.patch('/:id', async (req, res) => {
   try {
@@ -120,13 +158,18 @@ router.patch('/:id', async (req, res) => {
 // DELETE QR product
 router.delete('/:id', async (req, res) => {
   try {
+    console.log('Attempting to delete QR product with ID:', req.params.id)
+
     const qrProduct = await QRProduct.findById(req.params.id)
     if (!qrProduct) {
+      console.log('QR product not found with ID:', req.params.id)
       return res.status(404).json({ message: 'QR product not found' })
     }
 
-    // If it's a manufacturing ID, mark it as QR not generated
-    if (qrProduct.manufacturingId && qrProduct.manufacturingId !== 'MANUAL') {
+    console.log('Found QR product to delete:', qrProduct)
+
+    // If it's a manufacturing ID that's not manual, mark it as QR not generated
+    if (qrProduct.manufacturingId && !qrProduct.manufacturingId.startsWith('MFG') && qrProduct.cuttingId !== 'MANUAL') {
       try {
         await ManufacturingOrder.findOneAndUpdate(
           { manufacturingId: qrProduct.manufacturingId },
@@ -137,11 +180,14 @@ router.delete('/:id', async (req, res) => {
       }
     }
 
+    // Delete the QR product
     await QRProduct.findByIdAndDelete(req.params.id)
+    console.log('Successfully deleted QR product')
+
     res.json({ message: 'QR product deleted successfully' })
   } catch (error: any) {
     console.error('Delete QR product error:', error)
-    res.status(500).json({ message: 'Server error' })
+    res.status(500).json({ message: 'Server error', error: error.message })
   }
 })
 

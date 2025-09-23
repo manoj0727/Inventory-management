@@ -82,38 +82,54 @@ const FabricSchema: Schema = new Schema({
 FabricSchema.pre('save', async function(next) {
   if (this.isNew && (!this.productId || !this.fabricId)) {
     try {
-      const nameCode = (this.fabricType as string).substring(0, 3).toUpperCase()
-      const colorCode = (this.color as string).substring(0, 2).toUpperCase()
-      const quantityCode = Math.floor(this.quantity as number).toString().padStart(3, '0')
-      const baseProductId = `${nameCode}${colorCode}${quantityCode}`
-      
-      let productId = baseProductId
+      // Get first 3 letters of fabric type (uppercase)
+      const fabricTypeCode = (this.fabricType as string).substring(0, 3).toUpperCase().padEnd(3, 'X')
+
+      // Generate 5-character alphanumeric serial
+      const generateAlphanumericSerial = (): string => {
+        const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        let serial = ''
+        for (let i = 0; i < 5; i++) {
+          serial += chars.charAt(Math.floor(Math.random() * chars.length))
+        }
+        return serial
+      }
+
+      let productId = ''
       let isUnique = false
       let attempts = 0
       const maxAttempts = 10
-      
+
       while (!isUnique && attempts < maxAttempts) {
+        // Generate new 8-character ID: 3 letters from fabric type + 5 alphanumeric serial
+        const serial = generateAlphanumericSerial()
+        productId = `${fabricTypeCode}${serial}`
+
         // Check if this ID already exists
         const existingFabric = await (this.constructor as any).findOne({ productId })
         if (!existingFabric) {
           isUnique = true
         } else {
           attempts++
-          // Add attempt number to make it unique
-          productId = `${baseProductId}${attempts}`
         }
       }
-      
+
       // Fallback to timestamp-based ID if all attempts failed
       if (!isUnique) {
-        productId = `${nameCode}${colorCode}${String(Date.now()).slice(-3)}`
+        const timestamp = String(Date.now())
+        productId = `${fabricTypeCode}${timestamp.slice(-5).padStart(5, '0')}`
       }
-      
+
       this.productId = productId
       this.fabricId = productId // Use same ID for both fields
     } catch (error) {
       // Ultimate fallback ID generation
-      const fallbackId = `FAB${String(Date.now()).slice(-6)}`
+      const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+      let fallbackSerial = ''
+      for (let i = 0; i < 5; i++) {
+        fallbackSerial += chars.charAt(Math.floor(Math.random() * chars.length))
+      }
+      const fallbackId = `FAB${fallbackSerial}`
       this.productId = fallbackId
       this.fabricId = fallbackId
     }

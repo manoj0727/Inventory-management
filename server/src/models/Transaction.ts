@@ -3,15 +3,15 @@ import mongoose, { Document, Schema } from 'mongoose'
 export interface ITransaction extends Document {
   transactionId: string
   timestamp: Date
-  itemType: 'FABRIC' | 'MANUFACTURING' | 'CUTTING' | 'UNKNOWN'
+  itemType: 'FABRIC' | 'MANUFACTURING' | 'CUTTING' | 'QR_GENERATED' | 'UNKNOWN'
   itemId: string
   itemName: string
-  action: 'ADD' | 'REMOVE'
+  action: 'ADD' | 'REMOVE' | 'STOCK_IN' | 'STOCK_OUT' | 'QR_GENERATED'
   quantity: number
   previousStock: number
   newStock: number
   performedBy: string
-  source: 'QR_SCANNER' | 'MANUAL'
+  source: 'QR_SCANNER' | 'MANUAL' | 'QR_GENERATION'
   createdAt: Date
   updatedAt: Date
 }
@@ -29,7 +29,7 @@ const TransactionSchema: Schema = new Schema({
   itemType: {
     type: String,
     required: true,
-    enum: ['FABRIC', 'MANUFACTURING', 'CUTTING', 'UNKNOWN'],
+    enum: ['FABRIC', 'MANUFACTURING', 'CUTTING', 'QR_GENERATED', 'UNKNOWN'],
     default: 'UNKNOWN'
   },
   itemId: {
@@ -45,7 +45,7 @@ const TransactionSchema: Schema = new Schema({
   action: {
     type: String,
     required: true,
-    enum: ['ADD', 'REMOVE']
+    enum: ['ADD', 'REMOVE', 'STOCK_IN', 'STOCK_OUT', 'QR_GENERATED']
   },
   quantity: {
     type: Number,
@@ -70,7 +70,7 @@ const TransactionSchema: Schema = new Schema({
   source: {
     type: String,
     required: true,
-    enum: ['QR_SCANNER', 'MANUAL'],
+    enum: ['QR_SCANNER', 'MANUAL', 'QR_GENERATION'],
     default: 'MANUAL'
   }
 }, {
@@ -81,7 +81,14 @@ const TransactionSchema: Schema = new Schema({
 TransactionSchema.pre('save', async function(next) {
   if (this.isNew && !this.transactionId) {
     try {
-      const actionCode = this.action === 'ADD' ? 'A' : 'R'
+      let actionCode = 'T'
+      switch(this.action) {
+        case 'ADD': actionCode = 'A'; break
+        case 'REMOVE': actionCode = 'R'; break
+        case 'STOCK_IN': actionCode = 'I'; break
+        case 'STOCK_OUT': actionCode = 'O'; break
+        case 'QR_GENERATED': actionCode = 'Q'; break
+      }
       const typeCode = (this.itemType as string).charAt(0)
       const timestamp = Date.now().toString().slice(-6)
       const randomNumber = Math.floor(Math.random() * 999) + 1

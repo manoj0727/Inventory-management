@@ -231,12 +231,14 @@ export default function ManufacturingInventory() {
             <tbody>
               {filteredRecords.length > 0 ? (
                 filteredRecords.map((record) => {
-                  const quantityRemaining = record.quantity - (record.quantityReceive || 0)
+                  // Use itemsReceived for all calculations
+                  const itemsReceived = record.itemsReceived || 0
+                  const quantityRemaining = record.quantity - itemsReceived
                   const status = quantityRemaining <= 0 ? 'Complete' : 'Pending'
 
-                  // Auto-detect price from cutting record
+                  // Get price from record or price map
                   const pricePerPiece = record.pricePerPiece || priceMap[record.cuttingId] || 0
-                  const totalAmount = (record.quantityReceive || 0) * pricePerPiece
+                  const totalAmount = record.totalPrice || (itemsReceived * pricePerPiece)
 
                   return (
                     <tr key={record._id}>
@@ -246,10 +248,10 @@ export default function ManufacturingInventory() {
                       <td style={{ textAlign: 'center' }}>{record.productName}</td>
                       <td style={{ textAlign: 'center' }}>{record.quantity}</td>
                       <td style={{ textAlign: 'center' }}>{record.size || 'N/A'}</td>
-                      <td style={{ textAlign: 'center' }}>{record.quantityReceive || 0}</td>
+                      <td style={{ textAlign: 'center' }}>{itemsReceived}</td>
                       <td style={{ textAlign: 'center' }}>{quantityRemaining}</td>
-                      <td style={{ textAlign: 'center' }}>₹{pricePerPiece}</td>
-                      <td style={{ textAlign: 'center', fontWeight: '600' }}>₹{totalAmount}</td>
+                      <td style={{ textAlign: 'center' }}>₹{pricePerPiece.toFixed(2)}</td>
+                      <td style={{ textAlign: 'center', fontWeight: '600' }}>₹{totalAmount.toFixed(2)}</td>
                       <td style={{ textAlign: 'center' }}>{record.tailorName}</td>
                       <td style={{ textAlign: 'center' }}>{formatDate(record.dateOfReceive)}</td>
                       <td style={{ textAlign: 'center' }}>
@@ -307,8 +309,12 @@ export default function ManufacturingInventory() {
             <form onSubmit={(e) => {
               e.preventDefault()
               const formData = new FormData(e.target as HTMLFormElement)
+              const itemsReceived = parseInt(formData.get('itemsReceived') as string) || 0
+              const pricePerPiece = parseFloat(formData.get('pricePerPiece') as string) || 0
               const updatedRecord = {
-                quantityReceive: parseInt(formData.get('quantityReceive') as string),
+                itemsReceived: itemsReceived,
+                pricePerPiece: pricePerPiece,
+                totalPrice: itemsReceived * pricePerPiece,
                 tailorName: formData.get('tailorName') as string,
                 dateOfReceive: formData.get('dateOfReceive') as string,
                 status: formData.get('status') as string
@@ -316,12 +322,12 @@ export default function ManufacturingInventory() {
               handleSaveEdit(updatedRecord)
             }}>
               <div className="form-group">
-                <label htmlFor="quantityReceive">Qty Received *</label>
+                <label htmlFor="itemsReceived">Items Received *</label>
                 <input
                   type="number"
-                  id="quantityReceive"
-                  name="quantityReceive"
-                  defaultValue={editingRecord.quantityReceive}
+                  id="itemsReceived"
+                  name="itemsReceived"
+                  defaultValue={editingRecord.itemsReceived || 0}
                   min="0"
                   max={editingRecord.quantity}
                   required
@@ -329,6 +335,18 @@ export default function ManufacturingInventory() {
                 <small style={{ color: '#6b7280' }}>
                   Maximum: {editingRecord.quantity} (Total ordered)
                 </small>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="pricePerPiece">Price Per Piece (₹)</label>
+                <input
+                  type="number"
+                  id="pricePerPiece"
+                  name="pricePerPiece"
+                  defaultValue={editingRecord.pricePerPiece || priceMap[editingRecord.cuttingId] || 0}
+                  min="0"
+                  step="0.01"
+                />
               </div>
 
               <div className="form-group">

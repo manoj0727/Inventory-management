@@ -179,12 +179,6 @@ export default function EmployeePortal() {
       {/* Welcome Section */}
       <div className="flex items-center justify-center min-h-screen px-4">
         <div className="text-center animate-fade-in">
-          {/* Wave Animation */}
-          <div className="mb-8">
-            <div className="inline-block animate-bounce">
-              <span className="text-6xl">👋</span>
-            </div>
-          </div>
 
           {/* Welcome Message - Exactly as original */}
           <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">

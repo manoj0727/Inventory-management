@@ -17,7 +17,7 @@ import CuttingInventory from './pages/CuttingInventory'
 import Manufacturing from './pages/Manufacturing'
 import ManufacturingInventory from './pages/ManufacturingInventory'
 import Employees from './pages/Employees'
-import GenerateQR from './pages/GenerateQR'
+import QRInventory from './pages/QRInventory'
 import Transactions from './pages/Transactions'
 import QRScanner from './pages/QRScanner'
 import MarkAttendance from './pages/MarkAttendance'
@@ -43,7 +43,7 @@ function App() {
           <Route path="/cutting-inventory" element={<CuttingInventory />} />
           <Route path="/manufacturing" element={<Manufacturing />} />
           <Route path="/manufacturing-inventory" element={<ManufacturingInventory />} />
-          <Route path="/generate-qr" element={<GenerateQR />} />
+          <Route path="/generate-qr" element={<QRInventory />} />
           <Route path="/employees" element={<Employees />} />
           <Route path="/qr-scanner" element={<QRScanner />} />
           <Route path="/transactions" element={<Transactions />} />

@@ -26,10 +26,17 @@ export default function Inventory() {
   const [showEditModal, setShowEditModal] = useState(false)
 
   const generateProductId = (name: string, color: string, quantity: number) => {
-    const nameCode = name.substring(0, 2).toUpperCase()
-    const colorCode = color.substring(0, 1).toUpperCase()
-    const randomNumber = Math.floor(Math.random() * 900) + 100 // 3-digit random number
-    return `${nameCode}${colorCode}${randomNumber}` // Total 6 characters
+    // Get first 3 letters of fabric type (uppercase)
+    const fabricTypeCode = name.substring(0, 3).toUpperCase().padEnd(3, 'X')
+
+    // Generate 5-character alphanumeric serial
+    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    let serial = ''
+    for (let i = 0; i < 5; i++) {
+      serial += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+
+    return `${fabricTypeCode}${serial}` // Total 8 characters
   }
 
   const formatDate = (dateString: string) => {

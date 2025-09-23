@@ -60,17 +60,33 @@ export default function Cutting() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   
   const generateCuttingId = (productName: string, color: string) => {
-    const productCode = productName.substring(0, 2).toUpperCase()
-    const colorCode = color.substring(0, 1).toUpperCase()
-    const randomNumber = Math.floor(Math.random() * 900) + 100 // 3-digit random number
-    return `${productCode}${colorCode}${randomNumber}` // Total 6 characters
+    // Get first 3 letters of product name (uppercase)
+    const productCode = productName.substring(0, 3).toUpperCase().padEnd(3, 'X')
+    // Get first 2 letters of color (uppercase)
+    const colorCode = color.substring(0, 2).toUpperCase().padEnd(2, 'X')
+
+    // Generate 3-character alphanumeric random string
+    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    let randomString = ''
+    for (let i = 0; i < 3; i++) {
+      randomString += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+
+    return `${productCode}${colorCode}${randomString}` // Total 8 characters
   }
 
   const generateProductId = (name: string, color: string, quantity: number) => {
-    const nameCode = name.substring(0, 2).toUpperCase()
-    const colorCode = color.substring(0, 1).toUpperCase()
-    const quantityCode = Math.floor(Math.random() * 900) + 100 // 3-digit random number
-    return `${nameCode}${colorCode}${quantityCode}` // Total 6 characters
+    // Get first 3 letters of fabric type (uppercase)
+    const fabricTypeCode = name.substring(0, 3).toUpperCase().padEnd(3, 'X')
+
+    // Generate 5-character alphanumeric serial
+    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    let serial = ''
+    for (let i = 0; i < 5; i++) {
+      serial += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+
+    return `${fabricTypeCode}${serial}` // Total 8 characters
   }
 
   const formatDate = (dateString: string) => {

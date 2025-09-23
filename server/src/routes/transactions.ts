@@ -117,8 +117,8 @@ router.post('/', async (req, res) => {
     }
 
     // Validate enum values
-    if (!['ADD', 'REMOVE'].includes(action)) {
-      return res.status(400).json({ message: 'Action must be either ADD or REMOVE' })
+    if (!['ADD', 'REMOVE', 'STOCK_IN', 'STOCK_OUT', 'QR_GENERATED'].includes(action)) {
+      return res.status(400).json({ message: 'Action must be one of: ADD, REMOVE, STOCK_IN, STOCK_OUT, QR_GENERATED' })
     }
 
     if (itemType && !['FABRIC', 'MANUFACTURING', 'CUTTING', 'UNKNOWN'].includes(itemType)) {
@@ -192,8 +192,8 @@ router.delete('/', async (req, res) => {
 router.get('/stats/overview', async (req, res) => {
   try {
     const totalTransactions = await Transaction.countDocuments()
-    const addTransactions = await Transaction.countDocuments({ action: 'ADD' })
-    const removeTransactions = await Transaction.countDocuments({ action: 'REMOVE' })
+    const addTransactions = await Transaction.countDocuments({ $or: [{ action: 'ADD' }, { action: 'STOCK_IN' }] })
+    const removeTransactions = await Transaction.countDocuments({ $or: [{ action: 'REMOVE' }, { action: 'STOCK_OUT' }] })
 
     // Count by item type
     const typeStats = await Transaction.aggregate([
