@@ -16,6 +16,7 @@ interface QRProduct {
   cuttingId?: string
   isManual?: boolean
   createdAt?: string
+  completionDate?: string
 }
 
 interface ManufacturingRecord {
@@ -25,12 +26,12 @@ interface ManufacturingRecord {
   fabricType?: string
   fabricColor: string
   size: string
-  itemsReceived: number
-  dateOfReceive: string
+  quantity: number
   tailorName: string
   cuttingId: string
   status: string
   createdAt?: string
+  completionDate?: string
 }
 
 export default function QRInventory() {
@@ -39,8 +40,6 @@ export default function QRInventory() {
   const [isLoading, setIsLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [showManualForm, setShowManualForm] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<QRProduct | null>(null)
-  const [showEditModal, setShowEditModal] = useState(false)
   const [manualFormData, setManualFormData] = useState({
     productName: '',
     fabricType: '',
@@ -59,26 +58,51 @@ export default function QRInventory() {
       if (response.ok) {
         const records = await response.json()
 
-        // Filter only completed or records with items received
+        // Filter only completed manufacturing orders
+        // This excludes: Pending, QR Deleted, deleted
+        // So when a QR is deleted, it disappears from this list automatically
         const qrEligibleRecords = records.filter((record: ManufacturingRecord) =>
-          record.itemsReceived && record.itemsReceived > 0
+          record.status === 'Completed'
         )
 
-        // Convert to QR product format
-        const qrProductsList: QRProduct[] = qrEligibleRecords.map((record: ManufacturingRecord) => ({
-          _id: record._id,
-          manufacturingId: record.manufacturingId,
-          productName: record.productName,
-          fabricType: record.fabricType || 'N/A',
-          color: record.fabricColor,
-          size: record.size || 'N/A',
-          quantity: record.itemsReceived,
-          generatedDate: record.dateOfReceive,
-          tailorName: record.tailorName,
-          cuttingId: record.cuttingId,
-          createdAt: record.createdAt,
-          isManual: false
-        }))
+        // Group by manufacturingId and aggregate quantities
+        const groupedByManufacturingId = new Map<string, QRProduct>()
+
+        qrEligibleRecords.forEach((record: ManufacturingRecord) => {
+          const mfgId = record.manufacturingId
+
+          if (groupedByManufacturingId.has(mfgId)) {
+            // Manufacturing ID already exists, add to quantity
+            const existing = groupedByManufacturingId.get(mfgId)!
+            existing.quantity += record.quantity || 0
+            // Update completionDate to the latest one
+            if (record.completionDate && (!existing.completionDate || new Date(record.completionDate) > new Date(existing.completionDate))) {
+              existing.completionDate = record.completionDate
+              // Update generatedDate to match the latest completionDate
+              existing.generatedDate = record.completionDate
+            }
+          } else {
+            // Create new entry
+            groupedByManufacturingId.set(mfgId, {
+              _id: record._id,
+              manufacturingId: record.manufacturingId,
+              productName: record.productName,
+              fabricType: record.fabricType || 'N/A',
+              color: record.fabricColor,
+              size: record.size || 'N/A',
+              quantity: record.quantity || 0,
+              generatedDate: record.completionDate || record.createdAt || new Date().toISOString(),
+              tailorName: record.tailorName,
+              cuttingId: record.cuttingId,
+              createdAt: record.createdAt,
+              completionDate: record.completionDate,
+              isManual: false
+            })
+          }
+        })
+
+        // Convert map to array
+        const qrProductsList: QRProduct[] = Array.from(groupedByManufacturingId.values())
 
         // Fetch manual QR products if any
         const manualResponse = await fetch(`${API_URL}/api/qr-products`)
@@ -108,15 +132,19 @@ export default function QRInventory() {
           })
         }
 
-        // Sort by creation date - newest first
+        // Sort by completion date - newest completed first
         const sortedProducts = qrProductsList.sort((a, b) => {
           // Parse dates properly
           let dateA = 0
           let dateB = 0
 
           try {
-            // For manual products created just now
-            if (a.isManual && a.createdAt) {
+            // Priority 1: Use completionDate if available (when QR was generated)
+            // Priority 2: Use createdAt for manual products
+            // Priority 3: Use generatedDate
+            if (a.completionDate) {
+              dateA = new Date(a.completionDate).getTime()
+            } else if (a.isManual && a.createdAt) {
               dateA = new Date(a.createdAt).getTime()
             } else if (a.createdAt) {
               dateA = new Date(a.createdAt).getTime()
@@ -126,7 +154,9 @@ export default function QRInventory() {
               dateA = Date.now()
             }
 
-            if (b.isManual && b.createdAt) {
+            if (b.completionDate) {
+              dateB = new Date(b.completionDate).getTime()
+            } else if (b.isManual && b.createdAt) {
               dateB = new Date(b.createdAt).getTime()
             } else if (b.createdAt) {
               dateB = new Date(b.createdAt).getTime()
@@ -168,15 +198,16 @@ export default function QRInventory() {
           }
 
           try {
+            // Use high error correction to allow for logo overlay
             const qrCodeDataUrl = await QRCode.toDataURL(JSON.stringify(qrData), {
-              errorCorrectionLevel: 'M',
+              errorCorrectionLevel: 'H', // High error correction allows 30% of QR code to be covered
               type: 'image/png',
               margin: 1,
               color: {
                 dark: '#000000',
                 light: '#FFFFFF'
               },
-              width: 256
+              width: 400
             })
             setQrCodes(prev => new Map(prev).set(product.manufacturingId, qrCodeDataUrl))
           } catch (error) {
@@ -214,11 +245,47 @@ export default function QRInventory() {
     }
 
     try {
-      // Generate manufacturing-style ID for manual products
-      const productCode = manualFormData.productName.substring(0, 2).toUpperCase() || 'XX'
-      const colorCode = manualFormData.color.substring(0, 2).toUpperCase() || 'XX'
-      const randomNumber = Math.floor(Math.random() * 900) + 100
-      const manualId = `MFG${productCode}${colorCode}${randomNumber}`
+      // Generate MAN0001 style ID for manual products
+      let manualId = 'MAN0001'
+
+      try {
+        // Check both manufacturing-orders and qr-products for existing MAN IDs
+        const [mfgResponse, qrResponse] = await Promise.all([
+          fetch(`${API_URL}/api/manufacturing-orders`),
+          fetch(`${API_URL}/api/qr-products`)
+        ])
+
+        const manNumbers: number[] = []
+
+        if (mfgResponse.ok) {
+          const mfgRecords = await mfgResponse.json()
+          mfgRecords
+            .filter((r: any) => r.manufacturingId && r.manufacturingId.startsWith('MAN'))
+            .forEach((r: any) => {
+              const numPart = r.manufacturingId.replace('MAN', '')
+              const num = parseInt(numPart)
+              if (!isNaN(num)) manNumbers.push(num)
+            })
+        }
+
+        if (qrResponse.ok) {
+          const qrRecords = await qrResponse.json()
+          qrRecords
+            .filter((r: any) => r.manufacturingId && r.manufacturingId.startsWith('MAN'))
+            .forEach((r: any) => {
+              const numPart = r.manufacturingId.replace('MAN', '')
+              const num = parseInt(numPart)
+              if (!isNaN(num)) manNumbers.push(num)
+            })
+        }
+
+        const maxNum = manNumbers.length > 0 ? Math.max(...manNumbers) : 0
+        const nextNum = maxNum + 1
+        // Use at least 4 digits, but allow more if needed (supports beyond MAN9999)
+        manualId = `MAN${nextNum.toString().padStart(Math.max(4, nextNum.toString().length), '0')}`
+      } catch (error) {
+        console.error('Error generating manual ID:', error)
+      }
 
       const newQRProduct = {
         productId: manualId,
@@ -237,7 +304,7 @@ export default function QRInventory() {
       }
 
 
-      const response = await fetch(`${API_URL}/api/qr-products`, {
+      const createResponse = await fetch(`${API_URL}/api/qr-products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -245,9 +312,9 @@ export default function QRInventory() {
         body: JSON.stringify(newQRProduct)
       })
 
-      const data = await response.json()
+      const data = await createResponse.json()
 
-      if (response.ok) {
+      if (createResponse.ok) {
         alert('✅ Product added successfully!')
         setShowManualForm(false)
         setManualFormData({
@@ -269,82 +336,72 @@ export default function QRInventory() {
   }
 
   const handleDelete = async (product: QRProduct) => {
-    if (window.confirm(`Delete QR for ${product.productName}?`)) {
-      try {
-        // Check if it's a manual product
-        if (product.isManual || product.cuttingId === 'MANUAL') {
-          // First try to find in qr-products collection
-          const checkResponse = await fetch(`${API_URL}/api/qr-products`)
-          if (checkResponse.ok) {
-            const qrProducts = await checkResponse.json()
-            const qrProduct = qrProducts.find((qr: any) =>
-              qr.manufacturingId === product.manufacturingId
-            )
-
-            if (qrProduct) {
-              // Delete from qr-products collection
-              const response = await fetch(`${API_URL}/api/qr-products/${qrProduct._id}`, {
-                method: 'DELETE'
-              })
-              if (response.ok) {
-                alert('✅ Product deleted successfully!')
-                await fetchQRProducts()
-              } else {
-                alert('❌ Error deleting product')
-              }
-            } else {
-              alert('❌ Product not found in database')
-            }
-          }
-        } else {
-          alert('❌ Cannot delete manufacturing-based QR products. These are auto-generated from manufacturing orders.')
-        }
-      } catch (error) {
-        alert('❌ Error deleting product')
-      }
+    if (!window.confirm(`Delete QR for ${product.productName}?`)) {
+      return
     }
-  }
-
-  const handleEdit = (product: QRProduct) => {
-    setEditingProduct(product)
-    setShowEditModal(true)
-  }
-
-  const handleSaveEdit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!editingProduct) return
 
     try {
-      const formData = new FormData(e.target as HTMLFormElement)
-      const updatedData = {
-        productName: formData.get('productName') as string,
-        fabricType: formData.get('fabricType') as string,
-        color: formData.get('color') as string,
-        size: formData.get('size') as string,
-        quantity: parseInt(formData.get('quantity') as string)
-      }
+      // MANUAL PRODUCTS: Delete completely from qr-products collection
+      if (product.isManual || product.cuttingId === 'MANUAL') {
+        const qrProductsResponse = await fetch(`${API_URL}/api/qr-products`)
+        if (!qrProductsResponse.ok) {
+          alert('❌ Failed to fetch QR products')
+          return
+        }
 
-      if (editingProduct.isManual || editingProduct.cuttingId === 'MANUAL') {
-        const response = await fetch(`${API_URL}/api/qr-products/${editingProduct._id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedData)
+        const allQRProducts = await qrProductsResponse.json()
+        const manualProduct = allQRProducts.find((qr: any) =>
+          qr.manufacturingId === product.manufacturingId
+        )
+
+        if (!manualProduct) {
+          alert('❌ Manual product not found in database')
+          return
+        }
+
+        const deleteResponse = await fetch(`${API_URL}/api/qr-products/${manualProduct._id}`, {
+          method: 'DELETE'
         })
 
-        if (response.ok) {
-          alert('✅ Product updated successfully!')
-          setShowEditModal(false)
-          setEditingProduct(null)
-          fetchQRProducts()
+        if (deleteResponse.ok) {
+          alert('✅ Manual product deleted successfully!')
+          await fetchQRProducts()
+        } else {
+          alert('❌ Failed to delete manual product')
         }
-      } else {
-        alert('❌ Cannot edit manufacturing-based QR products')
-        setShowEditModal(false)
+        return
       }
+
+      // AUTO-GENERATED PRODUCTS:
+      // Update ALL manufacturing orders with same manufacturingId to "QR Deleted" status
+      // This will update all records (different tailors) with same manufacturing ID in one action
+
+      const updateResponse = await fetch(`${API_URL}/api/manufacturing-orders/bulk-status/${product.manufacturingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status: 'QR Deleted'
+        })
+      })
+
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json().catch(() => ({ message: 'Unknown error' }))
+        alert(`❌ Failed to update status: ${errorData.message}`)
+        return
+      }
+
+      const responseData = await updateResponse.json()
+      alert(`✅ QR deleted successfully!\n\nManufacturing ID: ${product.manufacturingId}\nUpdated ${responseData.updatedCount} record(s) to "QR Deleted" status\n\nAll tailors assigned to this item have been updated.`)
+      await fetchQRProducts()
+
     } catch (error) {
-      alert('❌ Error updating product')
+      console.error('Delete error:', error)
+      alert('❌ Error deleting product. Please try again.')
     }
   }
+
 
   const filteredProducts = qrProducts.filter(product =>
     product.manufacturingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -354,9 +411,11 @@ export default function QRInventory() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <h1>QR Inventory</h1>
-        <p>Manage QR codes for manufactured products</p>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h1>Garment Inventory</h1>
+          <p>Manage garment inventory and QR codes</p>
+        </div>
       </div>
 
       {/* Toolbar */}
@@ -400,7 +459,6 @@ export default function QRInventory() {
                 <th style={{ textAlign: 'center' }}>Fabric Type</th>
                 <th style={{ textAlign: 'center' }}>Color</th>
                 <th style={{ textAlign: 'center' }}>Size</th>
-                <th style={{ textAlign: 'center' }}>Quantity</th>
                 <th style={{ textAlign: 'center' }}>Generated Date</th>
                 <th style={{ textAlign: 'center' }}>QR Code</th>
                 <th style={{ textAlign: 'center' }}>Actions</th>
@@ -422,7 +480,6 @@ export default function QRInventory() {
                     <td style={{ textAlign: 'center' }}>{product.fabricType || 'N/A'}</td>
                     <td style={{ textAlign: 'center' }}>{product.color}</td>
                     <td style={{ textAlign: 'center' }}>{product.size}</td>
-                    <td style={{ textAlign: 'center' }}>{product.quantity}</td>
                     <td style={{ textAlign: 'center' }}>{formatDate(product.generatedDate)}</td>
                     <td style={{ textAlign: 'center' }}>
                       {qrCodes.get(product.manufacturingId) ? (
@@ -446,52 +503,117 @@ export default function QRInventory() {
                                   <head>
                                     <title>QR Label - ${product.productName}</title>
                                     <style>
-                                      @page { size: 2in 2in; margin: 0; }
+                                      @page { size: 3in 2.5in; margin: 0; }
                                       body {
                                         margin: 0;
                                         display: flex;
                                         justify-content: center;
                                         align-items: center;
                                         min-height: 100vh;
+                                        background: #f5f5f5;
                                       }
                                       .label {
-                                        width: 2in;
-                                        height: 2in;
-                                        border: 1px solid #000;
+                                        width: 3in;
+                                        height: 2.5in;
+                                        background: white;
                                         display: flex;
                                         flex-direction: column;
                                         align-items: center;
                                         justify-content: center;
-                                        padding: 0.1in;
+                                        padding: 0.2in;
+                                        box-sizing: border-box;
+                                        gap: 0.12in;
                                       }
-                                      .qr { width: 1.2in; height: 1.2in; }
-                                      .product-name {
-                                        font-size: 14px;
-                                        font-weight: bold;
-                                        margin-top: 8px;
-                                        text-align: center;
+                                      .qr-container {
+                                        position: relative;
+                                        width: 1.5in;
+                                        height: 1.5in;
                                       }
-                                      .size {
+                                      .qr {
+                                        width: 100%;
+                                        height: 100%;
+                                        display: block;
+                                      }
+                                      .logo {
+                                        position: absolute;
+                                        top: 50%;
+                                        left: 50%;
+                                        transform: translate(-50%, -50%);
+                                        width: 0.45in;
+                                        height: 0.45in;
                                         background: #000;
+                                        border: 3px solid #fff;
+                                        border-radius: 50%;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        font-weight: 900;
+                                        font-size: 22px;
+                                        font-family: 'Arial Black', Arial, sans-serif;
+                                        color: #fff;
+                                        box-shadow: 0 0 0 2px #000;
+                                        letter-spacing: 1px;
+                                      }
+                                      .info-section {
+                                        width: 100%;
+                                        display: flex;
+                                        flex-direction: column;
+                                        gap: 0.08in;
+                                      }
+                                      .product-name {
+                                        font-size: 16px;
+                                        font-weight: 900;
+                                        text-align: center;
+                                        margin: 0;
+                                        text-transform: uppercase;
+                                        letter-spacing: 0.5px;
+                                        color: #000;
+                                      }
+                                      .details {
+                                        display: flex;
+                                        justify-content: center;
+                                        align-items: center;
+                                        gap: 0.12in;
+                                        flex-wrap: wrap;
+                                      }
+                                      .detail-item {
+                                        background: linear-gradient(135deg, #000 0%, #333 100%);
                                         color: white;
-                                        padding: 4px 12px;
-                                        border-radius: 4px;
-                                        margin-top: 6px;
-                                        font-weight: bold;
+                                        padding: 0.06in 0.12in;
+                                        border-radius: 0.08in;
+                                        font-weight: 700;
+                                        font-size: 11px;
+                                        text-transform: uppercase;
+                                        letter-spacing: 0.5px;
+                                        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                                        white-space: nowrap;
                                       }
                                       @media print {
-                                        body { margin: 0; }
+                                        body {
+                                          margin: 0;
+                                          background: white;
+                                        }
                                         .no-print { display: none; }
                                       }
                                     </style>
                                   </head>
                                   <body>
                                     <div class="label">
-                                      <img src="${qrCodes.get(product.manufacturingId)}" class="qr" />
-                                      <div class="product-name">${product.productName}</div>
-                                      <div class="size">SIZE: ${product.size}</div>
+                                      <div class="qr-container">
+                                        <img src="${qrCodes.get(product.manufacturingId)}" class="qr" />
+                                        <div class="logo">W</div>
+                                      </div>
+
+                                      <div class="info-section">
+                                        <div class="product-name">${product.productName}</div>
+                                        <div class="details">
+                                          <div class="detail-item">${product.fabricType || 'N/A'}</div>
+                                          <div class="detail-item">${product.color}</div>
+                                          <div class="detail-item">Size ${product.size}</div>
+                                        </div>
+                                      </div>
                                     </div>
-                                    <button onclick="window.print()" class="no-print" style="position: fixed; top: 20px; right: 20px; padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">Print Label</button>
+                                    <button onclick="window.print()" class="no-print" style="position: fixed; top: 20px; right: 20px; padding: 12px 24px; background: #000; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">Print Label</button>
                                   </body>
                                 </html>
                               `)
@@ -505,22 +627,14 @@ export default function QRInventory() {
                     </td>
                     <td style={{ textAlign: 'center' }}>
                       <div className="action-buttons">
-                        {(product.isManual || product.cuttingId === 'MANUAL') && (
-                          <>
-                            <button className="action-btn edit" onClick={() => handleEdit(product)}>✏️</button>
-                            <button className="action-btn delete" onClick={() => handleDelete(product)}>🗑️</button>
-                          </>
-                        )}
-                        {!(product.isManual || product.cuttingId === 'MANUAL') && (
-                          <span style={{ color: '#9ca3af', fontSize: '12px' }}>Auto-generated</span>
-                        )}
+                        <button className="action-btn delete" onClick={() => handleDelete(product)}>🗑️</button>
                       </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     {isLoading ? 'Loading products...' : 'No products found'}
                   </td>
                 </tr>
@@ -657,110 +771,6 @@ export default function QRInventory() {
         </div>
       )}
 
-      {/* Edit Modal */}
-      {showEditModal && editingProduct && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '30px',
-            borderRadius: '10px',
-            width: '90%',
-            maxWidth: '500px'
-          }}>
-            <h2 style={{ marginBottom: '20px', color: '#374151' }}>Edit Product</h2>
-            <form onSubmit={handleSaveEdit}>
-              <div className="form-group">
-                <label htmlFor="productName">Product Name *</label>
-                <input
-                  type="text"
-                  name="productName"
-                  defaultValue={editingProduct.productName}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="fabricType">Fabric Type *</label>
-                <input
-                  type="text"
-                  name="fabricType"
-                  defaultValue={editingProduct.fabricType || 'N/A'}
-                  placeholder="Enter fabric type"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="color">Color *</label>
-                <input
-                  type="text"
-                  name="color"
-                  defaultValue={editingProduct.color}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="size">Size *</label>
-                <select
-                  name="size"
-                  defaultValue={editingProduct.size}
-                  required
-                >
-                  <option value="XXS">XXS</option>
-                  <option value="XS">XS</option>
-                  <option value="S">S</option>
-                  <option value="M">M</option>
-                  <option value="L">L</option>
-                  <option value="XL">XL</option>
-                  <option value="XXL">XXL</option>
-                  <option value="XXXL">XXXL</option>
-                  <option value="Free Size">Free Size</option>
-                  <option value="N/A">N/A</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="quantity">Quantity *</label>
-                <input
-                  type="number"
-                  name="quantity"
-                  defaultValue={editingProduct.quantity}
-                  min="1"
-                  required
-                />
-              </div>
-
-              <div className="btn-group">
-                <button type="submit" className="btn btn-primary">
-                  Save Changes
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    setShowEditModal(false)
-                    setEditingProduct(null)
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

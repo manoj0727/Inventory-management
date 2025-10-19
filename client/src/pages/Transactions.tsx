@@ -9,6 +9,7 @@ interface Transaction {
   itemType: 'FABRIC' | 'MANUFACTURING' | 'CUTTING' | 'QR_GENERATED' | 'UNKNOWN'
   itemId: string
   itemName: string
+  fabricType?: string
   action: 'ADD' | 'REMOVE' | 'QR_GENERATED' | 'STOCK_IN' | 'STOCK_OUT'
   quantity: number
   previousStock: number
@@ -18,18 +19,52 @@ interface Transaction {
   type?: string
   productInfo?: any
   generatedBy?: string
+  color?: string
+  size?: string
+}
+
+interface GarmentProduct {
+  _id: string
+  manufacturingId: string
+  productName: string
+  fabricType?: string
+  color: string
+  size: string
+  quantity: number
 }
 
 export default function Transactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [filter, setFilter] = useState<'all' | 'add' | 'remove' | 'qr_generated'>('all')
-  const [typeFilter, setTypeFilter] = useState<'all' | 'FABRIC' | 'MANUFACTURING' | 'CUTTING' | 'QR_GENERATED'>('all')
+  const [stockInFilter, setStockInFilter] = useState(false)
+  const [stockOutFilter, setStockOutFilter] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [dateFilter, setDateFilter] = useState('')
+  const [showAddStockModal, setShowAddStockModal] = useState(false)
+  const [garmentProducts, setGarmentProducts] = useState<GarmentProduct[]>([])
+  const [stockFormData, setStockFormData] = useState({
+    action: 'STOCK_IN' as 'STOCK_IN' | 'STOCK_OUT',
+    manufacturingId: '',
+    quantity: '',
+    performedBy: ''
+  })
 
   useEffect(() => {
     loadTransactions()
+    loadGarmentProducts()
   }, [])
+
+  const loadGarmentProducts = async () => {
+    try {
+      // Fetch from QR products (manual entries)
+      const qrResponse = await fetch(`${API_URL}/api/qr-products`)
+      if (qrResponse.ok) {
+        const qrProducts = await qrResponse.json()
+        setGarmentProducts(qrProducts)
+      }
+    } catch (error) {
+      console.error('Error loading garment products:', error)
+    }
+  }
 
   const loadTransactions = async () => {
     try {
@@ -68,6 +103,90 @@ export default function Transactions() {
     }
   }
 
+  const handleStockTransaction = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!stockFormData.manufacturingId || !stockFormData.quantity || !stockFormData.performedBy) {
+      alert('❌ Please fill in all required fields')
+      return
+    }
+
+    try {
+      // Find the selected product
+      const selectedProduct = garmentProducts.find(p => p.manufacturingId === stockFormData.manufacturingId)
+      if (!selectedProduct) {
+        alert('❌ Product not found')
+        return
+      }
+
+      const quantityChange = parseInt(stockFormData.quantity)
+      const previousStock = selectedProduct.quantity
+      let newStock = previousStock
+
+      if (stockFormData.action === 'STOCK_IN') {
+        newStock = previousStock + quantityChange
+      } else {
+        if (quantityChange > previousStock) {
+          alert(`❌ Cannot remove ${quantityChange} items. Only ${previousStock} available.`)
+          return
+        }
+        newStock = previousStock - quantityChange
+      }
+
+      // Update the QR product quantity
+      const updateResponse = await fetch(`${API_URL}/api/qr-products/${selectedProduct._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity: newStock })
+      })
+
+      if (!updateResponse.ok) {
+        alert('❌ Failed to update product quantity')
+        return
+      }
+
+      // Create transaction record
+      const transactionData = {
+        itemType: 'MANUFACTURING',
+        itemId: selectedProduct.manufacturingId,
+        itemName: selectedProduct.productName,
+        fabricType: selectedProduct.fabricType,
+        color: selectedProduct.color,
+        size: selectedProduct.size,
+        action: stockFormData.action,
+        quantity: quantityChange,
+        previousStock: previousStock,
+        newStock: newStock,
+        performedBy: stockFormData.performedBy,
+        source: 'MANUAL'
+      }
+
+      const transactionResponse = await fetch(`${API_URL}/api/transactions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(transactionData)
+      })
+
+      if (transactionResponse.ok) {
+        alert(`✅ ${stockFormData.action === 'STOCK_IN' ? 'Stock added' : 'Stock removed'} successfully!`)
+        setShowAddStockModal(false)
+        setStockFormData({
+          action: 'STOCK_IN',
+          manufacturingId: '',
+          quantity: '',
+          performedBy: ''
+        })
+        loadTransactions()
+        loadGarmentProducts()
+      } else {
+        alert('❌ Failed to create transaction record')
+      }
+    } catch (error) {
+      console.error('Error processing stock transaction:', error)
+      alert('❌ Error processing stock transaction')
+    }
+  }
+
   const exportTransactions = () => {
     const dataStr = JSON.stringify(transactions, null, 2)
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr)
@@ -81,20 +200,18 @@ export default function Transactions() {
   }
 
   const filteredTransactions = transactions.filter(transaction => {
-    // Filter by action
-    if (filter !== 'all') {
-      if (filter === 'qr_generated' && transaction.action !== 'QR_GENERATED') {
-        return false
-      } else if (filter === 'add' && transaction.action !== 'ADD' && transaction.action !== 'STOCK_IN') {
-        return false
-      } else if (filter === 'remove' && transaction.action !== 'REMOVE' && transaction.action !== 'STOCK_OUT') {
+    // Filter by Stock In (if enabled)
+    if (stockInFilter) {
+      if (transaction.action !== 'STOCK_IN' && transaction.action !== 'ADD') {
         return false
       }
     }
 
-    // Filter by type
-    if (typeFilter !== 'all' && transaction.itemType !== typeFilter) {
-      return false
+    // Filter by Stock Out (if enabled)
+    if (stockOutFilter) {
+      if (transaction.action !== 'STOCK_OUT' && transaction.action !== 'REMOVE') {
+        return false
+      }
     }
 
     // Filter by search term
@@ -222,7 +339,14 @@ export default function Transactions() {
             placeholder="Search by item name or ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ flex: 1, minWidth: '200px' }}
+            style={{
+              flex: 1,
+              minWidth: '200px',
+              border: '2px solid #000',
+              borderRadius: '12px',
+              padding: '10px 16px',
+              fontSize: '14px'
+            }}
           />
 
           {/* Date Filter */}
@@ -230,56 +354,85 @@ export default function Transactions() {
             type="date"
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
-            style={{ minWidth: '150px' }}
+            style={{
+              minWidth: '150px',
+              border: '2px solid #000',
+              borderRadius: '12px',
+              padding: '10px 16px',
+              fontSize: '14px'
+            }}
           />
 
-          {/* Action Filter */}
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value as any)}
-            style={{ minWidth: '120px' }}
+          {/* Stock In Filter */}
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 16px',
+              border: '2px solid #000',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              backgroundColor: stockInFilter ? '#10b981' : 'white',
+              color: stockInFilter ? 'white' : '#000',
+              fontWeight: '600',
+              fontSize: '14px',
+              transition: 'all 0.2s'
+            }}
           >
-            <option value="all">All Actions</option>
-            <option value="add">Additions</option>
-            <option value="remove">Removals</option>
-            <option value="qr_generated">QR Generated</option>
-          </select>
+            <input
+              type="checkbox"
+              checked={stockInFilter}
+              onChange={(e) => setStockInFilter(e.target.checked)}
+              style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+            />
+            Stock In
+          </label>
 
-          {/* Type Filter */}
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as any)}
-            style={{ minWidth: '120px' }}
+          {/* Stock Out Filter */}
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 16px',
+              border: '2px solid #000',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              backgroundColor: stockOutFilter ? '#ef4444' : 'white',
+              color: stockOutFilter ? 'white' : '#000',
+              fontWeight: '600',
+              fontSize: '14px',
+              transition: 'all 0.2s'
+            }}
           >
-            <option value="all">All Types</option>
-            <option value="FABRIC">Fabric</option>
-            <option value="MANUFACTURING">MFG</option>
-            <option value="CUTTING">Cutting</option>
-            <option value="QR_GENERATED">QR Generated</option>
-          </select>
+            <input
+              type="checkbox"
+              checked={stockOutFilter}
+              onChange={(e) => setStockOutFilter(e.target.checked)}
+              style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+            />
+            Stock Out
+          </label>
 
           {/* Action Buttons */}
           <button
             onClick={loadTransactions}
             className="btn btn-secondary"
+            style={{
+              borderRadius: '12px',
+              padding: '10px 20px',
+              border: '2px solid #000',
+              backgroundColor: '#f3f4f6',
+              color: '#000',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#e5e7eb'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
           >
             🔄 Refresh
-          </button>
-
-          <button
-            onClick={exportTransactions}
-            className="btn btn-primary"
-            disabled={transactions.length === 0}
-          >
-            📥 Export
-          </button>
-
-          <button
-            onClick={clearTransactions}
-            className="btn btn-danger"
-            disabled={transactions.length === 0}
-          >
-            🗑️ Clear All
           </button>
         </div>
       </div>
@@ -293,12 +446,15 @@ export default function Transactions() {
             <thead>
               <tr>
                 <th style={{ textAlign: 'center' }}>Date & Time</th>
-                <th style={{ textAlign: 'center' }}>Item Type</th>
-                <th style={{ textAlign: 'center' }}>Item Name</th>
                 <th style={{ textAlign: 'center' }}>Item ID</th>
+                <th style={{ textAlign: 'center' }}>Item Name</th>
+                <th style={{ textAlign: 'center' }}>Fabric Type</th>
+                <th style={{ textAlign: 'center' }}>Color</th>
+                <th style={{ textAlign: 'center' }}>Size</th>
                 <th style={{ textAlign: 'center' }}>Action</th>
                 <th style={{ textAlign: 'center' }}>Quantity</th>
                 <th style={{ textAlign: 'center' }}>Total Stock</th>
+                <th style={{ textAlign: 'center' }}>Performed By</th>
               </tr>
             </thead>
             <tbody>
@@ -306,13 +462,17 @@ export default function Transactions() {
                 filteredTransactions.map((transaction) => (
                   <tr key={transaction._id || transaction.id || Math.random()}>
                     <td style={{ textAlign: 'center' }}>{formatDate(transaction.timestamp)}</td>
-                    <td style={{ textAlign: 'center' }}>
-                      <span className={`badge ${getTypeBadgeClass(transaction.itemType)}`}>
-                        {transaction.itemType === 'MANUFACTURING' ? 'MFG' : transaction.itemType}
-                      </span>
-                    </td>
+                    <td style={{ fontSize: '12px', color: '#6b7280', textAlign: 'center', fontWeight: '500' }}>{transaction.itemId}</td>
                     <td style={{ fontWeight: '500', textAlign: 'center' }}>{transaction.itemName}</td>
-                    <td style={{ fontSize: '12px', color: '#6b7280', textAlign: 'center' }}>{transaction.itemId}</td>
+                    <td style={{ fontSize: '13px', color: '#374151', textAlign: 'center' }}>
+                      {transaction.fabricType || transaction.productInfo?.fabricType || '-'}
+                    </td>
+                    <td style={{ fontSize: '13px', color: '#374151', textAlign: 'center' }}>
+                      {transaction.color || transaction.productInfo?.color || '-'}
+                    </td>
+                    <td style={{ fontSize: '13px', color: '#374151', textAlign: 'center' }}>
+                      {transaction.size || transaction.productInfo?.size || '-'}
+                    </td>
                     <td style={{ textAlign: 'center' }}>
                       <span className={`badge ${getActionBadgeClass(transaction.action)}`}>
                         {transaction.action === 'ADD' || transaction.action === 'STOCK_IN' ? '↑ Stock In' :
@@ -336,15 +496,22 @@ export default function Transactions() {
                     }}>
                       {transaction.newStock}
                     </td>
+                    <td style={{
+                      textAlign: 'center',
+                      fontWeight: '500',
+                      color: '#374151'
+                    }}>
+                      {transaction.performedBy || 'Unknown'}
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="empty-state">
+                  <td colSpan={10} className="empty-state">
                     <div className="empty-state-icon">📊</div>
                     <h3>No Transactions Found</h3>
                     <p>
-                      {searchTerm || dateFilter || filter !== 'all' || typeFilter !== 'all'
+                      {searchTerm || dateFilter || stockInFilter || stockOutFilter
                         ? 'Try adjusting your filters'
                         : 'Transactions will appear here when you add or remove stock using QR scanner'}
                     </p>
@@ -355,6 +522,109 @@ export default function Transactions() {
           </table>
         </div>
       </div>
+
+      {/* Add/Remove Stock Modal */}
+      {showAddStockModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '30px',
+            borderRadius: '10px',
+            width: '90%',
+            maxWidth: '500px'
+          }}>
+            <h2 style={{ marginBottom: '20px', color: '#374151' }}>Add/Remove Garment Stock</h2>
+            <form onSubmit={handleStockTransaction}>
+              <div className="form-group">
+                <label htmlFor="action">Action *</label>
+                <select
+                  id="action"
+                  value={stockFormData.action}
+                  onChange={(e) => setStockFormData({...stockFormData, action: e.target.value as 'STOCK_IN' | 'STOCK_OUT'})}
+                  required
+                >
+                  <option value="STOCK_IN">Stock In (Add)</option>
+                  <option value="STOCK_OUT">Stock Out (Remove)</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="manufacturingId">Garment Product *</label>
+                <select
+                  id="manufacturingId"
+                  value={stockFormData.manufacturingId}
+                  onChange={(e) => setStockFormData({...stockFormData, manufacturingId: e.target.value})}
+                  required
+                >
+                  <option value="">Select Product</option>
+                  {garmentProducts.map((product) => (
+                    <option key={product._id} value={product.manufacturingId}>
+                      {product.manufacturingId} - {product.productName} ({product.size}) - Stock: {product.quantity}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="quantity">Quantity *</label>
+                <input
+                  type="number"
+                  id="quantity"
+                  value={stockFormData.quantity}
+                  onChange={(e) => setStockFormData({...stockFormData, quantity: e.target.value})}
+                  min="1"
+                  placeholder="Enter quantity"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="performedBy">Performed By *</label>
+                <input
+                  type="text"
+                  id="performedBy"
+                  value={stockFormData.performedBy}
+                  onChange={(e) => setStockFormData({...stockFormData, performedBy: e.target.value})}
+                  placeholder="Enter your name"
+                  required
+                />
+              </div>
+
+              <div className="btn-group">
+                <button type="submit" className="btn btn-primary">
+                  {stockFormData.action === 'STOCK_IN' ? 'Add Stock' : 'Remove Stock'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowAddStockModal(false)
+                    setStockFormData({
+                      action: 'STOCK_IN',
+                      manufacturingId: '',
+                      quantity: '',
+                      performedBy: ''
+                    })
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

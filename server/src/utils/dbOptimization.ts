@@ -1,40 +1,58 @@
 import mongoose from 'mongoose'
 import { logger } from './logger'
 
+// Helper function to create indexes safely
+async function createIndexesSafely(db: any, collectionName: string, indexSpecs: any[]) {
+  try {
+    await db.collection(collectionName).createIndexes(indexSpecs)
+  } catch (error: any) {
+    // If error is about index already existing with different options, ignore it
+    if (error.code === 85 || error.code === 86) {
+      logger.info(`Some indexes for ${collectionName} already exist, skipping...`)
+    } else {
+      logger.error(`Error creating indexes for ${collectionName}:`, error.message)
+      throw error
+    }
+  }
+}
+
 export async function setupMongoIndexes() {
   try {
     const db = mongoose.connection.db
-    
+
+    // Clean up any problematic indexes first
+    await cleanupProblematicIndexes(db)
+
     // Users collection indexes
-    await db.collection('users').createIndexes([
+    await createIndexesSafely(db, 'users', [
       { key: { email: 1 }, unique: true },
       { key: { role: 1, department: 1 } },
       { key: { isActive: 1, role: 1 } },
       { key: { createdAt: -1 } }
     ])
-    
+
     // Fabrics collection indexes
-    await db.collection('fabrics').createIndexes([
-      { key: { productId: 1 }, unique: true },
+    await createIndexesSafely(db, 'fabrics', [
+      { key: { fabricId: 1 }, unique: true, sparse: true, name: 'fabricId_1_sparse' },
       { key: { fabricType: 1, color: 1 } },
       { key: { status: 1 } },
       { key: { quantity: 1 } },
-      { key: { supplier: 1 } },
       { key: { createdAt: -1 } },
-      { key: { 'location': 'text', 'fabricType': 'text', 'color': 'text' } } // Text search index
+      { key: { 'fabricType': 'text', 'color': 'text' } } // Text search index
     ])
-    
+
+
     // Products collection indexes
-    await db.collection('products').createIndexes([
+    await createIndexesSafely(db, 'products', [
       { key: { productId: 1 }, unique: true },
       { key: { category: 1, status: 1 } },
       { key: { manufacturingDate: -1 } },
       { key: { price: 1 } },
       { key: { 'name': 'text', 'category': 'text', 'design': 'text' } }
     ])
-    
+
     // Employees collection indexes
-    await db.collection('employees').createIndexes([
+    await createIndexesSafely(db, 'employees', [
       { key: { employeeId: 1 }, unique: true },
       { key: { email: 1 }, unique: true },
       { key: { department: 1, status: 1 } },
@@ -42,26 +60,26 @@ export async function setupMongoIndexes() {
       { key: { joinDate: -1 } },
       { key: { 'name': 'text', 'position': 'text', 'department': 'text' } }
     ])
-    
+
     // Manufacturing collection indexes
-    await db.collection('manufacturings').createIndexes([
+    await createIndexesSafely(db, 'manufacturings', [
       { key: { orderId: 1 }, unique: true },
       { key: { productId: 1 } },
       { key: { status: 1, expectedCompletion: 1 } },
       { key: { assignedTo: 1 } },
       { key: { startDate: -1 } }
     ])
-    
+
     // Transactions collection indexes
-    await db.collection('transactions').createIndexes([
+    await createIndexesSafely(db, 'transactions', [
       { key: { type: 1, date: -1 } },
       { key: { userId: 1, date: -1 } },
       { key: { relatedId: 1 } },
       { key: { amount: 1 } }
     ])
-    
+
     // Attendance collection indexes
-    await db.collection('attendances').createIndexes([
+    await createIndexesSafely(db, 'attendances', [
       { key: { employeeId: 1, date: -1 } },
       { key: { status: 1, date: -1 } },
       { key: { date: -1 } }
@@ -169,6 +187,48 @@ export const optimizedAggregations = {
       }
     }
   ]
+}
+
+// Clean up problematic indexes
+async function cleanupProblematicIndexes(db: any) {
+  try {
+    // Check and remove the problematic productld_1 index from fabrics collection
+    const fabricsIndexes = await db.collection('fabrics').indexes()
+    const problematicIndex = fabricsIndexes.find((index: any) => index.name === 'productld_1')
+    
+    if (problematicIndex) {
+      logger.info('Found problematic index productld_1, removing it...')
+      await db.collection('fabrics').dropIndex('productld_1')
+      logger.info('Problematic index productld_1 removed successfully')
+    }
+    
+    // Also check for any other problematic indexes that might cause issues
+    // Remove any fabricId index that is not our desired sparse index
+    const fabricIdIndexes = fabricsIndexes.filter((index: any) =>
+      index.key && index.key.fabricId
+    )
+
+    for (const fabricIdIndex of fabricIdIndexes) {
+      // Keep only the fabricId_1_sparse index, remove all others
+      if (fabricIdIndex.name !== 'fabricId_1_sparse') {
+        try {
+          logger.info(`Found unwanted fabricId index: ${fabricIdIndex.name}, removing it...`)
+          await db.collection('fabrics').dropIndex(fabricIdIndex.name)
+          logger.info(`Unwanted fabricId index removed successfully`)
+        } catch (error: any) {
+          if (error.code !== 27) {
+            logger.warn(`Could not drop ${fabricIdIndex.name}:`, error.message)
+          }
+        }
+      }
+    }
+    
+  } catch (error: any) {
+    // Index might not exist, which is fine
+    if (error.code !== 27 && !error.message.includes('index not found')) {
+      logger.warn('Error during index cleanup:', error.message)
+    }
+  }
 }
 
 // Connection pool monitoring

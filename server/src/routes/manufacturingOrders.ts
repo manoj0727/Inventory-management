@@ -1,6 +1,5 @@
 import { Router } from 'express'
 import { ManufacturingOrder } from '../models/ManufacturingOrder'
-import { ManufacturingInventory } from '../models/ManufacturingInventory'
 import { CuttingRecord } from '../models/CuttingRecord'
 
 const router = Router()
@@ -32,100 +31,75 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const {
-      cuttingId,
-      fabricType,
-      fabricColor,
-      productName,
-      quantity,
-      quantityReceive,
-      itemsReceived,
-      pricePerPiece,
-      totalPrice,
-      dateOfReceive,
-      tailorName,
-      priority,
-      status,
-      notes
-    } = req.body
-
-    // Validate required fields
-    if (!cuttingId || !productName || !quantity || !dateOfReceive || !tailorName || !fabricType || !fabricColor) {
-      return res.status(400).json({ message: 'Missing required fields' })
-    }
-
-    // Get cutting record to get size and price information
-    const cuttingRecord = await CuttingRecord.findOne({ id: cuttingId })
-    if (!cuttingRecord) {
-      return res.status(404).json({ message: 'Cutting record not found' })
-    }
-
-    // Generate manufacturing ID
-    const productCode = productName.substring(0, 2).toUpperCase()
-    const tailorCode = tailorName.substring(0, 2).toUpperCase()
-    const randomNumber = Math.floor(Math.random() * 900) + 100
-    const manufacturingId = `MFG${productCode}${tailorCode}${randomNumber}`
-
-    const quantityReceiveNum = parseInt(quantityReceive) || 0
-    const quantityRemaining = parseInt(quantity) - quantityReceiveNum
-
-    // Auto-detect price from cutting record if not provided
-    const finalPricePerPiece = pricePerPiece !== undefined ? pricePerPiece : (cuttingRecord.tailorItemPerPiece || 0)
-    const finalItemsReceived = itemsReceived || quantityReceiveNum
-    const finalTotalPrice = totalPrice !== undefined ? totalPrice : (finalItemsReceived * finalPricePerPiece)
-
-    const manufacturingOrder = new ManufacturingOrder({
       manufacturingId,
       cuttingId,
       fabricType,
       fabricColor,
       productName,
-      quantity: parseInt(quantity),
-      size: cuttingRecord.sizeType || 'N/A',
-      quantityReceive: quantityReceiveNum,
-      quantityRemaining,
-      itemsReceived: finalItemsReceived,
-      pricePerPiece: finalPricePerPiece,
-      totalPrice: finalTotalPrice,
-      dateOfReceive,
+      quantity,
+      size,
       tailorName,
-      priority: priority || 'Normal',
-      status: status || 'Pending',
-      notes
+      pricePerPiece,
+      totalAmount,
+      status,
+      dateOfReceive
+    } = req.body
+
+    // Validate required fields
+    if (!cuttingId || !productName || !quantity || !size || !tailorName || !fabricType || !fabricColor) {
+      return res.status(400).json({ message: 'Missing required fields' })
+    }
+
+    // Validate that cutting record exists (for reference only, not for quantity checking)
+    const cuttingRecord = await CuttingRecord.findOne({ id: cuttingId })
+    if (!cuttingRecord) {
+      return res.status(404).json({ message: 'Cutting record not found' })
+    }
+
+    // Note: We do NOT check or update cutting record quantities
+    // Cutting inventory remains unchanged
+
+    // Use provided manufacturing ID or generate one
+    let finalManufacturingId = manufacturingId
+    if (!finalManufacturingId) {
+      const allOrders = await ManufacturingOrder.find()
+      const mfgIds = allOrders
+        .filter(o => o.manufacturingId && o.manufacturingId.startsWith('MFG'))
+        .map(o => {
+          const numPart = o.manufacturingId.replace('MFG', '')
+          return parseInt(numPart) || 0
+        })
+      const maxNum = mfgIds.length > 0 ? Math.max(...mfgIds) : 0
+      const nextNum = maxNum + 1
+      // Use at least 4 digits, but allow more if needed (supports beyond MFG9999)
+      finalManufacturingId = `MFG${nextNum.toString().padStart(Math.max(4, nextNum.toString().length), '0')}`
+    }
+
+    const manufacturingOrder = new ManufacturingOrder({
+      manufacturingId: finalManufacturingId,
+      cuttingId,
+      fabricType,
+      fabricColor,
+      productName,
+      quantity: parseInt(quantity),
+      size,
+      tailorName,
+      pricePerPiece: parseFloat(pricePerPiece) || 0,
+      totalAmount: parseFloat(totalAmount) || 0,
+      status: status || 'Pending'
     })
 
     await manufacturingOrder.save()
 
-    // Also create a manufacturing inventory record
-    try {
-      const productId = cuttingRecord?.productId || `PROD${Date.now()}`
-
-      const manufacturingInventory = new ManufacturingInventory({
-        id: manufacturingId,
-        productId,
-        productName,
-        cuttingId,
-        quantity: parseInt(quantity),
-        quantityProduced: quantityReceiveNum,
-        quantityRemaining,
-        tailorName,
-        startDate: new Date().toISOString().split('T')[0],
-        dueDate: dateOfReceive,
-        priority: priority || 'Normal',
-        status: status || 'Pending',
-        notes
-      })
-
-      await manufacturingInventory.save()
-    } catch (inventoryError) {
-      // Continue even if inventory creation fails
-    }
+    // Note: Cutting record quantities are NOT automatically updated
+    // They remain unchanged in the cutting inventory
 
     res.status(201).json({
       message: 'Manufacturing order created successfully',
       manufacturingOrder
     })
   } catch (error: any) {
-    res.status(500).json({ message: 'Server error' })
+    res.status(500).json({ message: 'Server error: ' + error.message })
   }
 })
 
@@ -140,61 +114,90 @@ router.put('/:id', async (req, res) => {
     const {
       fabricType,
       fabricColor,
+      productName,
       quantity,
-      quantityReceive,
-      quantityRemaining,
-      itemsReceived,
-      pricePerPiece,
-      totalPrice,
-      dateOfReceive,
+      size,
       tailorName,
-      priority,
-      status,
-      notes
+      pricePerPiece,
+      totalAmount,
+      status
     } = req.body
 
     // Update fields
     if (fabricType) manufacturingOrder.fabricType = fabricType
     if (fabricColor) manufacturingOrder.fabricColor = fabricColor
+    if (productName) manufacturingOrder.productName = productName
     if (quantity) manufacturingOrder.quantity = parseInt(quantity)
-    if (quantityReceive !== undefined) {
-      manufacturingOrder.quantityReceive = parseInt(quantityReceive)
-    }
-    if (quantityRemaining !== undefined) {
-      manufacturingOrder.quantityRemaining = parseInt(quantityRemaining)
-    }
-    if (itemsReceived !== undefined) {
-      manufacturingOrder.itemsReceived = itemsReceived
-    }
-    if (pricePerPiece !== undefined) {
-      manufacturingOrder.pricePerPiece = pricePerPiece
-    } else if (!manufacturingOrder.pricePerPiece) {
-      // If no price, try to get from cutting record
-      const cuttingRecord = await CuttingRecord.findOne({ id: manufacturingOrder.cuttingId })
-      if (cuttingRecord && cuttingRecord.tailorItemPerPiece) {
-        manufacturingOrder.pricePerPiece = cuttingRecord.tailorItemPerPiece
+    if (size) manufacturingOrder.size = size
+    if (tailorName) manufacturingOrder.tailorName = tailorName
+    if (pricePerPiece !== undefined) manufacturingOrder.pricePerPiece = parseFloat(pricePerPiece)
+    if (totalAmount !== undefined) manufacturingOrder.totalAmount = parseFloat(totalAmount)
+    if (status) {
+      manufacturingOrder.status = status
+
+      // Set completion date when status changes to Completed or QR Deleted
+      if (status === 'Completed' || status === 'QR Deleted') {
+        manufacturingOrder.completionDate = new Date()
+      }
+
+      // If status is changed to "QR Deleted", delete the associated QR product from QR inventory
+      if (status === 'QR Deleted') {
+        const QRProduct = require('../models/QRProduct').QRProduct
+        await QRProduct.deleteMany({ manufacturingId: manufacturingOrder.manufacturingId })
       }
     }
-    if (totalPrice !== undefined) {
-      manufacturingOrder.totalPrice = totalPrice
-    } else {
-      // Auto-calculate total price
-      const items = manufacturingOrder.itemsReceived || manufacturingOrder.quantityReceive || 0
-      manufacturingOrder.totalPrice = items * (manufacturingOrder.pricePerPiece || 0)
-    }
-    if (dateOfReceive) manufacturingOrder.dateOfReceive = dateOfReceive
-    if (tailorName) manufacturingOrder.tailorName = tailorName
-    if (priority) manufacturingOrder.priority = priority
-    if (status) manufacturingOrder.status = status
-    if (notes !== undefined) manufacturingOrder.notes = notes
 
     await manufacturingOrder.save()
+
     res.json({
       message: 'Manufacturing order updated successfully',
       manufacturingOrder
     })
   } catch (error: any) {
-    res.status(500).json({ message: 'Server error' })
+    res.status(500).json({ message: 'Server error: ' + error.message })
+  }
+})
+
+// PUT update all manufacturing orders with same manufacturingId to "QR Deleted"
+router.put('/bulk-status/:manufacturingId', async (req, res) => {
+  try {
+    const { manufacturingId } = req.params
+    const { status } = req.body
+
+    // Find all manufacturing orders with this manufacturingId
+    const manufacturingOrders = await ManufacturingOrder.find({ manufacturingId })
+
+    if (!manufacturingOrders || manufacturingOrders.length === 0) {
+      return res.status(404).json({ message: 'No manufacturing orders found with this ID' })
+    }
+
+    // Prepare update object
+    const updateData: any = { status }
+
+    // Set completion date when status changes to Completed or QR Deleted
+    if (status === 'Completed' || status === 'QR Deleted') {
+      updateData.completionDate = new Date()
+    }
+
+    // Update all records to the new status
+    const updateResult = await ManufacturingOrder.updateMany(
+      { manufacturingId },
+      { $set: updateData }
+    )
+
+    // If status is "QR Deleted", also delete the associated QR products
+    if (status === 'QR Deleted') {
+      const QRProduct = require('../models/QRProduct').QRProduct
+      await QRProduct.deleteMany({ manufacturingId })
+    }
+
+    res.json({
+      message: `Successfully updated ${updateResult.modifiedCount} manufacturing order(s) to status: ${status}`,
+      updatedCount: updateResult.modifiedCount,
+      manufacturingId
+    })
+  } catch (error: any) {
+    res.status(500).json({ message: 'Server error: ' + error.message })
   }
 })
 
@@ -206,10 +209,35 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Manufacturing order not found' })
     }
 
+    const manufacturingId = manufacturingOrder.manufacturingId
+
+    // Check if there are OTHER records with the same manufacturingId
+    const remainingRecords = await ManufacturingOrder.find({
+      manufacturingId: manufacturingId,
+      _id: { $ne: req.params.id } // Exclude the one being deleted
+    })
+
+    // Delete the manufacturing order first
     await ManufacturingOrder.findByIdAndDelete(req.params.id)
-    res.json({ message: 'Manufacturing order deleted successfully' })
+
+    // Only delete QR products and transactions if NO other records exist with this manufacturingId
+    if (remainingRecords.length === 0) {
+      // This is the LAST record with this manufacturingId
+      // Safe to delete QR products and transactions
+      const QRProduct = require('../models/QRProduct').QRProduct
+      await QRProduct.deleteMany({ manufacturingId: manufacturingId })
+
+      const Transaction = require('../models/Transaction').Transaction
+      await Transaction.deleteMany({ itemId: manufacturingId })
+
+      res.json({ message: 'Manufacturing order, QR codes, and transactions deleted successfully (last record)' })
+    } else {
+      // Other records still exist with this manufacturingId
+      // Keep QR products and transactions
+      res.json({ message: 'Manufacturing order deleted successfully (other records with same ID remain)' })
+    }
   } catch (error: any) {
-    res.status(500).json({ message: 'Server error' })
+    res.status(500).json({ message: 'Server error: ' + error.message })
   }
 })
 

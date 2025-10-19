@@ -10,11 +10,19 @@ interface InventoryItem {
   quantity: number
   status: string
   length: number
-  width: number
-  supplier: string
   purchasePrice: number
+  totalPrice: number
   notes: string
   dateRegistered: string
+}
+
+interface FabricForm {
+  fabricType: string
+  color: string
+  length: string
+  purchasePrice: string
+  totalPrice: string
+  notes: string
 }
 
 export default function Inventory() {
@@ -24,19 +32,37 @@ export default function Inventory() {
   const [isLoading, setIsLoading] = useState(false)
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [formData, setFormData] = useState<FabricForm>({
+    fabricType: '',
+    color: '',
+    length: '',
+    purchasePrice: '',
+    totalPrice: '0',
+    notes: ''
+  })
 
-  const generateProductId = (name: string, color: string, quantity: number) => {
-    // Get first 3 letters of fabric type (uppercase)
-    const fabricTypeCode = name.substring(0, 3).toUpperCase().padEnd(3, 'X')
-
-    // Generate 5-character alphanumeric serial
-    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    let serial = ''
-    for (let i = 0; i < 5; i++) {
-      serial += chars.charAt(Math.floor(Math.random() * chars.length))
+  const generateFabricId = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/fabrics`)
+      if (response.ok) {
+        const fabrics = await response.json()
+        const fabRecords = fabrics
+          .filter((f: any) => f.fabricId && f.fabricId.startsWith('FAB'))
+          .map((f: any) => {
+            const numPart = f.fabricId.replace('FAB', '')
+            return parseInt(numPart) || 0
+          })
+        const maxNum = fabRecords.length > 0 ? Math.max(...fabRecords) : 0
+        const nextNum = maxNum + 1
+        // Use at least 4 digits, but allow more if needed (supports beyond FAB9999)
+        return `FAB${nextNum.toString().padStart(Math.max(4, nextNum.toString().length), '0')}`
+      }
+      return 'FAB0001'
+    } catch (error) {
+      console.error('Error generating fabric ID:', error)
+      return 'FAB0001'
     }
-
-    return `${fabricTypeCode}${serial}` // Total 8 characters
   }
 
   const formatDate = (dateString: string) => {
@@ -54,19 +80,25 @@ export default function Inventory() {
       const response = await fetch(`${API_URL}/api/fabrics`)
       if (response.ok) {
         const fabrics = await response.json()
-        const inventoryItems = fabrics.map((fabric: any) => ({
-          id: fabric.productId || generateProductId(fabric.fabricType, fabric.color, Math.floor(fabric.quantity)),
-          fabricType: fabric.fabricType,
-          color: fabric.color,
-          quantity: fabric.quantity,
-          status: fabric.status,
-          length: fabric.length,
-          width: fabric.width,
-          supplier: fabric.supplier,
-          purchasePrice: fabric.purchasePrice || 0,
-          notes: fabric.notes || '',
-          dateRegistered: fabric.dateReceived || fabric.createdAt || new Date().toISOString()
-        }))
+        const inventoryItems = fabrics.map((fabric: any) => {
+          // Calculate totalPrice if not present in database
+          const purchasePrice = fabric.purchasePrice || 0
+          const length = fabric.length || 0
+          const calculatedTotal = fabric.totalPrice || (length * purchasePrice)
+
+          return {
+            id: fabric.fabricId || 'N/A',
+            fabricType: fabric.fabricType,
+            color: fabric.color,
+            quantity: fabric.quantity,
+            status: fabric.status,
+            length: fabric.length,
+            purchasePrice: purchasePrice,
+            totalPrice: calculatedTotal,
+            notes: fabric.notes || '',
+            dateRegistered: fabric.dateReceived || fabric.createdAt || new Date().toISOString()
+          }
+        })
         setInventoryItems(inventoryItems)
       }
     } catch (error) {
@@ -129,7 +161,7 @@ export default function Inventory() {
         const fabricToUpdate = fabrics.find((fabric: any) =>
           fabric.fabricType === editingItem?.fabricType && fabric.color === editingItem?.color
         )
-        
+
         if (fabricToUpdate) {
           const updateResponse = await fetch(`${API_URL}/api/fabrics/${fabricToUpdate._id}`, {
             method: 'PUT',
@@ -140,13 +172,11 @@ export default function Inventory() {
               fabricType: updatedItem.fabricType,
               color: updatedItem.color,
               length: updatedItem.length,
-              width: updatedItem.width,
-              supplier: updatedItem.supplier,
               purchasePrice: updatedItem.purchasePrice,
               notes: updatedItem.notes
             })
           })
-          
+
           if (updateResponse.ok) {
             alert('✅ Item updated successfully!')
             setShowEditModal(false)
@@ -160,6 +190,79 @@ export default function Inventory() {
     } catch (error) {
       alert('❌ Error updating item. Please try again.')
     }
+  }
+
+  const handleAddFabric = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    try {
+      const fabricId = await generateFabricId()
+
+      const fabricData = {
+        fabricType: formData.fabricType,
+        color: formData.color,
+        length: parseFloat(formData.length),
+        purchasePrice: parseFloat(formData.purchasePrice) || 0,
+        totalPrice: parseFloat(formData.totalPrice) || 0,
+        notes: formData.notes,
+        fabricId: fabricId
+      }
+
+      const response = await fetch(`${API_URL}/api/fabrics`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(fabricData)
+      })
+
+      if (response.ok) {
+        await response.json()
+        alert(`✅ Fabric added successfully! ID: ${fabricId}`)
+
+        // Reset form
+        setFormData({
+          fabricType: '',
+          color: '',
+          length: '',
+          purchasePrice: '',
+          totalPrice: '0',
+          notes: ''
+        })
+
+        // Close modal
+        setShowAddModal(false)
+
+        // Refresh inventory list
+        fetchInventoryItems()
+      } else {
+        const errorData = await response.json()
+        console.error('Fabric registration error:', errorData)
+        alert(`❌ Error adding fabric: ${errorData.message || 'Please try again.'}`)
+      }
+    } catch (error) {
+      console.error('Fabric registration error:', error)
+      alert(`❌ Error adding fabric: ${error instanceof Error ? error.message : 'Please try again.'}`)
+    }
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    const newFormData = { ...formData, [name]: value }
+
+    // Auto-calculate total price when length or purchasePrice changes
+    if (name === 'length' || name === 'purchasePrice') {
+      const length = name === 'length' ? parseFloat(value) : parseFloat(newFormData.length)
+      const price = name === 'purchasePrice' ? parseFloat(value) : parseFloat(newFormData.purchasePrice)
+
+      if (!isNaN(length) && !isNaN(price)) {
+        newFormData.totalPrice = (length * price).toFixed(2)
+      } else {
+        newFormData.totalPrice = '0'
+      }
+    }
+
+    setFormData(newFormData)
   }
 
   return (
@@ -180,18 +283,18 @@ export default function Inventory() {
             />
           </div>
           <div className="filter-group">
-            <button 
+            <button
               className="btn btn-secondary"
               onClick={fetchInventoryItems}
               disabled={isLoading}
             >
               {isLoading ? 'Refreshing...' : 'Refresh'}
             </button>
-            <button 
+            <button
               className="btn btn-primary"
-              onClick={() => navigate('/fabric-registration')}
+              onClick={() => setShowAddModal(true)}
             >
-              Add Product
+              Add Fabric
             </button>
           </div>
         </div>
@@ -205,6 +308,7 @@ export default function Inventory() {
                 <th style={{ textAlign: 'center' }}>Color</th>
                 <th style={{ textAlign: 'center' }}>Quantity</th>
                 <th style={{ textAlign: 'center' }}>Price/m</th>
+                <th style={{ textAlign: 'center' }}>Total Price</th>
                 <th style={{ textAlign: 'center' }}>Date Registered</th>
                 <th style={{ textAlign: 'center' }}>Status</th>
                 <th style={{ textAlign: 'center' }}>Actions</th>
@@ -217,8 +321,9 @@ export default function Inventory() {
                     <td style={{ fontWeight: '500', textAlign: 'center' }}>{item.id}</td>
                     <td style={{ textAlign: 'center' }}>{item.fabricType}</td>
                     <td style={{ textAlign: 'center' }}>{item.color}</td>
-                    <td style={{ textAlign: 'center' }}>{item.quantity} sq.m</td>
+                    <td style={{ textAlign: 'center' }}>{item.quantity} m</td>
                     <td style={{ textAlign: 'center' }}>₹{item.purchasePrice > 0 ? item.purchasePrice.toFixed(2) : 'N/A'}</td>
+                    <td style={{ textAlign: 'center', fontWeight: '600', color: '#059669' }}>₹{item.totalPrice > 0 ? item.totalPrice.toFixed(2) : '0.00'}</td>
                     <td style={{ textAlign: 'center' }}>{formatDate(item.dateRegistered)}</td>
                     <td style={{ textAlign: 'center' }}>
                       <span className={`badge ${
@@ -238,7 +343,7 @@ export default function Inventory() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     {isLoading ? 'Loading inventory...' : 'No inventory items found'}
                   </td>
                 </tr>
@@ -280,8 +385,6 @@ export default function Inventory() {
                 fabricType: formData.get('fabricType') as string,
                 color: formData.get('color') as string,
                 length: parseFloat(formData.get('length') as string),
-                width: parseFloat(formData.get('width') as string),
-                supplier: formData.get('supplier') as string,
                 purchasePrice: parseFloat(formData.get('purchasePrice') as string) || 0,
                 notes: formData.get('notes') as string
               }
@@ -323,29 +426,6 @@ export default function Inventory() {
                   />
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="width">Width (meters) *</label>
-                  <input
-                    type="number"
-                    id="width"
-                    name="width"
-                    defaultValue={editingItem.width}
-                    min="0.1"
-                    step="0.1"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="supplier">Supplier *</label>
-                  <input
-                    type="text"
-                    id="supplier"
-                    name="supplier"
-                    defaultValue={editingItem.supplier}
-                    required
-                  />
-                </div>
 
                 <div className="form-group">
                   <label htmlFor="purchasePrice">Purchase Price (per meter)</label>
@@ -382,6 +462,170 @@ export default function Inventory() {
                   onClick={() => {
                     setShowEditModal(false)
                     setEditingItem(null)
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Fabric Modal */}
+      {showAddModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setShowAddModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '8px',
+              padding: '24px',
+              maxWidth: '600px',
+              width: '90%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ margin: 0, color: '#374151', fontSize: '20px', fontWeight: 'bold' }}>Add New Fabric</h2>
+              <button
+                onClick={() => setShowAddModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280',
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleAddFabric}>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label htmlFor="modal-fabricType">Fabric Type *</label>
+                  <input
+                    type="text"
+                    id="modal-fabricType"
+                    name="fabricType"
+                    value={formData.fabricType}
+                    onChange={handleChange}
+                    placeholder="e.g., Cotton, Silk, Denim"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="modal-color">Color *</label>
+                  <input
+                    type="text"
+                    id="modal-color"
+                    name="color"
+                    value={formData.color}
+                    onChange={handleChange}
+                    placeholder="e.g., Red, Blue, White"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="modal-length">Length (meters) *</label>
+                  <input
+                    type="number"
+                    id="modal-length"
+                    name="length"
+                    value={formData.length}
+                    onChange={handleChange}
+                    placeholder="Enter length in meters"
+                    min="0.1"
+                    step="0.1"
+                    required
+                  />
+                </div>
+
+
+
+                <div className="form-group">
+                  <label htmlFor="modal-purchasePrice">Purchase Price (per meter)</label>
+                  <input
+                    type="number"
+                    id="modal-purchasePrice"
+                    name="purchasePrice"
+                    value={formData.purchasePrice}
+                    onChange={handleChange}
+                    placeholder="Enter price per meter"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="modal-totalPrice">Total Price (₹)</label>
+                  <input
+                    type="text"
+                    id="modal-totalPrice"
+                    name="totalPrice"
+                    value={formData.totalPrice}
+                    readOnly
+                    style={{
+                      backgroundColor: '#f3f4f6',
+                      cursor: 'not-allowed',
+                      fontWeight: 'bold',
+                      color: '#059669'
+                    }}
+                  />
+                </div>
+
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="modal-notes">Additional Notes</label>
+                <textarea
+                  id="modal-notes"
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleChange}
+                  placeholder="Any additional information about the fabric"
+                  rows={3}
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+
+              <div className="btn-group" style={{ marginTop: '20px' }}>
+                <button type="submit" className="btn btn-primary">
+                  Add Fabric
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowAddModal(false)
+                    setFormData({
+                      fabricType: '',
+                      color: '',
+                      length: '',
+                      purchasePrice: '',
+                      totalPrice: '0',
+                      notes: ''
+                    })
                   }}
                 >
                   Cancel

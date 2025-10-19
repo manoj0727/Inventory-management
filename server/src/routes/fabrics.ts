@@ -30,34 +30,39 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const {
+      fabricId,
       fabricType,
       color,
       length,
-      width,
       quantity,
-      supplier,
       purchasePrice,
       notes
     } = req.body
 
     // Validate required fields
-    if (!fabricType || !color || !length || !width || !quantity || !supplier) {
+    if (!fabricType || !color || !length) {
       return res.status(400).json({ message: 'Missing required fields' })
     }
 
-    // Use provided quantity or calculate from dimensions
-    const finalQuantity = quantity ? parseFloat(quantity) : parseFloat(length) * parseFloat(width)
+    // Calculate quantity from length (assuming 1 meter width for square meters)
+    const finalQuantity = parseFloat(length)
 
-    const fabric = new Fabric({
+    // Only include fabricId if it's provided and not empty
+    const fabricData: any = {
       fabricType,
       color,
       length: parseFloat(length),
-      width: parseFloat(width),
       quantity: finalQuantity,
-      supplier,
       purchasePrice: purchasePrice ? parseFloat(purchasePrice) : undefined,
       notes
-    })
+    }
+    
+    // Only add fabricId if it's a non-empty string
+    if (fabricId && typeof fabricId === 'string' && fabricId.trim().length > 0) {
+      fabricData.fabricId = fabricId.trim()
+    }
+    
+    const fabric = new Fabric(fabricData)
 
     await fabric.save()
     res.status(201).json({
@@ -65,7 +70,16 @@ router.post('/', async (req, res) => {
       fabric
     })
   } catch (error: any) {
-    res.status(500).json({ message: 'Server error' })
+    
+    // Handle duplicate key errors specifically
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0] || 'field'
+      return res.status(400).json({ 
+        message: `Duplicate ${field}: A fabric with this ${field} already exists` 
+      })
+    }
+    
+    res.status(500).json({ message: 'Server error: ' + error.message })
   }
 })
 
@@ -107,9 +121,7 @@ router.put('/:id', async (req, res) => {
       fabricType,
       color,
       length,
-      width,
       quantity,
-      supplier,
       purchasePrice,
       notes
     } = req.body
@@ -118,14 +130,12 @@ router.put('/:id', async (req, res) => {
     fabric.fabricType = fabricType || fabric.fabricType
     fabric.color = color || fabric.color
     fabric.length = length ? parseFloat(length) : fabric.length
-    fabric.width = width ? parseFloat(width) : fabric.width
     fabric.quantity = quantity !== undefined ? quantity : fabric.quantity
-    fabric.supplier = supplier || fabric.supplier
     fabric.purchasePrice = purchasePrice ? parseFloat(purchasePrice) : fabric.purchasePrice
     fabric.notes = notes || fabric.notes
 
-    // Recalculate quantity automatically (length × width)
-    fabric.quantity = fabric.length * fabric.width
+    // Recalculate quantity automatically (length in square meters)
+    fabric.quantity = fabric.length
 
     // Update status based on quantity
     if (fabric.quantity === 0) {
@@ -154,8 +164,18 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Fabric not found' })
     }
 
+    const fabricId = fabric.fabricId
+
+    // Delete the fabric
     await Fabric.findByIdAndDelete(req.params.id)
-    res.json({ message: 'Fabric deleted successfully' })
+
+    // Also delete related transactions for this fabric
+    if (fabricId) {
+      const Transaction = require('../models/Transaction').Transaction
+      await Transaction.deleteMany({ itemId: fabricId })
+    }
+
+    res.json({ message: 'Fabric and related transactions deleted successfully' })
   } catch (error: any) {
     res.status(500).json({ message: 'Server error' })
   }

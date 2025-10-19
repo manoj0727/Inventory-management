@@ -32,156 +32,53 @@ router.post('/', async (req, res) => {
   try {
     const {
       id,
-      productId,
       fabricType,
       fabricColor,
       productName,
       piecesCount,
-      pieceLength,
-      pieceWidth,
-      totalSquareMetersUsed,
+      totalLengthUsed,
       sizeType,
       cuttingMaster,
-      cuttingGivenTo,
-      tailorItemPerPiece,
-      date,
-      time,
-      notes
+      cuttingPricePerPiece,
+      date
     } = req.body
 
     // Validate required fields
-    if (!id || !productId || !fabricType || !fabricColor || !productName ||
-        !piecesCount || !pieceLength || !pieceWidth || !totalSquareMetersUsed ||
-        !sizeType || !cuttingMaster || !cuttingGivenTo || !date || !time) {
+    if (!id || !fabricType || !fabricColor || !productName ||
+        !piecesCount || !totalLengthUsed || !cuttingMaster || !date) {
       return res.status(400).json({ message: 'Missing required fields' })
-    }
-
-    // Check if fabric exists and has enough quantity
-    const fabric = await Fabric.findOne({ 
-      $or: [
-        { productId: productId },
-        { fabricId: productId }
-      ]
-    })
-    
-    if (!fabric) {
-      return res.status(404).json({ message: 'Fabric not found with the given product ID' })
-    }
-    
-    // Calculate area to decrease (length × width × pieces count)
-    const areaToDecrease = parseFloat(totalSquareMetersUsed)
-    
-    if (fabric.quantity < areaToDecrease) {
-      return res.status(400).json({ 
-        message: `Insufficient fabric quantity. Available: ${fabric.quantity} sq.m, Required: ${areaToDecrease} sq.m` 
-      })
     }
 
     const cuttingRecord = new CuttingRecord({
       id,
-      productId,
       fabricType,
       fabricColor,
       productName,
       piecesCount: parseInt(piecesCount),
-      piecesRemaining: parseInt(piecesCount), // Initialize with full count
-      piecesManufactured: 0,
-      pieceLength: parseFloat(pieceLength),
-      pieceWidth: parseFloat(pieceWidth),
-      totalSquareMetersUsed: parseFloat(totalSquareMetersUsed),
-      sizeType,
+      totalLengthUsed: parseFloat(totalLengthUsed),
+      sizeType: sizeType || 'Mixed',
+      sizeBreakdown: req.body.sizeBreakdown || [],
       cuttingMaster,
-      cuttingGivenTo,
-      tailorItemPerPiece: parseFloat(tailorItemPerPiece) || 0,
-      date,
-      time,
-      notes
+      cuttingPricePerPiece: parseFloat(cuttingPricePerPiece) || 0,
+      date
     })
 
-    // Save cutting record first
+    // Save cutting record (no automatic fabric quantity update)
     await cuttingRecord.save()
-    
-    // Update fabric quantity (subtract the area used)
-    fabric.quantity -= areaToDecrease
-    await fabric.save()
-    
+
     res.status(201).json({
-      message: 'Cutting record created successfully and fabric quantity updated',
-      cuttingRecord,
-      fabricRemainingQuantity: fabric.quantity
+      message: 'Cutting record created successfully.',
+      cuttingRecord
     })
   } catch (error: any) {
     if (error.code === 11000) {
       res.status(400).json({ message: 'Cutting record with this ID already exists' })
+    } else if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map((err: any) => err.message).join(', ')
+      res.status(400).json({ message: `Validation error: ${messages}` })
     } else {
-      res.status(500).json({ message: 'Server error' })
+      res.status(500).json({ message: `Server error: ${error.message}` })
     }
-  }
-})
-
-// PATCH update cutting record (partial update)
-router.patch('/:id', async (req, res) => {
-  try {
-    const cuttingRecord = await CuttingRecord.findById(req.params.id)
-    if (!cuttingRecord) {
-      return res.status(404).json({ message: 'Cutting record not found' })
-    }
-
-    // Update only the fields provided
-    Object.keys(req.body).forEach(key => {
-      if (req.body[key] !== undefined && key !== '_id') {
-        (cuttingRecord as any)[key] = req.body[key]
-      }
-    })
-
-    await cuttingRecord.save()
-    res.json(cuttingRecord)
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' })
-  }
-})
-
-// PUT update cutting record
-router.put('/:id', async (req, res) => {
-  try {
-    const cuttingRecord = await CuttingRecord.findById(req.params.id)
-    if (!cuttingRecord) {
-      return res.status(404).json({ message: 'Cutting record not found' })
-    }
-
-    const {
-      productName,
-      piecesCount,
-      pieceLength,
-      pieceWidth,
-      sizeType,
-      cuttingMaster,
-      cuttingGivenTo,
-      tailorItemPerPiece,
-      notes
-    } = req.body
-
-    // Update fields
-    if (productName) cuttingRecord.productName = productName
-    if (piecesCount) cuttingRecord.piecesCount = parseInt(piecesCount)
-    if (pieceLength) cuttingRecord.pieceLength = parseFloat(pieceLength)
-    if (pieceWidth) cuttingRecord.pieceWidth = parseFloat(pieceWidth)
-    if (sizeType) cuttingRecord.sizeType = sizeType
-    if (cuttingMaster) cuttingRecord.cuttingMaster = cuttingMaster
-    if (cuttingGivenTo) cuttingRecord.cuttingGivenTo = cuttingGivenTo
-    if (tailorItemPerPiece !== undefined) cuttingRecord.tailorItemPerPiece = parseFloat(tailorItemPerPiece) || 0
-    if (notes !== undefined) cuttingRecord.notes = notes
-
-    // Recalculate total square meters used
-    cuttingRecord.totalSquareMetersUsed = cuttingRecord.piecesCount * cuttingRecord.pieceLength * cuttingRecord.pieceWidth
-
-    await cuttingRecord.save()
-    res.json({
-      message: 'Cutting record updated successfully',
-      cuttingRecord
-    })
-  } catch (error: any) {
-    res.status(500).json({ message: 'Server error' })
   }
 })
 
@@ -193,10 +90,61 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Cutting record not found' })
     }
 
+    const cuttingId = cuttingRecord.id
+
+    // Find all manufacturing orders linked to this cutting ID
+    const ManufacturingOrder = require('../models/ManufacturingOrder').ManufacturingOrder
+    const manufacturingOrders = await ManufacturingOrder.find({ cuttingId })
+
+    // Collect all unique manufacturing IDs from these orders
+    const manufacturingIds = [...new Set(manufacturingOrders.map((order: any) => order.manufacturingId))]
+
+    // Delete the cutting record first
     await CuttingRecord.findByIdAndDelete(req.params.id)
-    res.json({ message: 'Cutting record deleted successfully' })
+
+    // Delete all manufacturing orders linked to this cutting ID
+    let deletedManufacturingCount = 0
+    if (manufacturingOrders.length > 0) {
+      const deleteResult = await ManufacturingOrder.deleteMany({ cuttingId })
+      deletedManufacturingCount = deleteResult.deletedCount || 0
+    }
+
+    // Delete all QR products for the manufacturing IDs
+    let deletedQRProductsCount = 0
+    if (manufacturingIds.length > 0) {
+      const QRProduct = require('../models/QRProduct').QRProduct
+      const qrDeleteResult = await QRProduct.deleteMany({
+        manufacturingId: { $in: manufacturingIds }
+      })
+      deletedQRProductsCount = qrDeleteResult.deletedCount || 0
+    }
+
+    // Delete all transactions related to:
+    // 1. The cutting record itself (itemId = cuttingId)
+    // 2. All manufacturing orders (itemId in manufacturingIds)
+    const Transaction = require('../models/Transaction').Transaction
+    let deletedTransactionsCount = 0
+
+    const transactionDeleteResult = await Transaction.deleteMany({
+      $or: [
+        { itemId: cuttingId }, // Transactions for cutting record
+        { itemId: { $in: manufacturingIds } } // Transactions for manufacturing orders
+      ]
+    })
+    deletedTransactionsCount = transactionDeleteResult.deletedCount || 0
+
+    res.json({
+      message: 'Cutting record and all related data deleted successfully',
+      details: {
+        cuttingId,
+        deletedManufacturingOrders: deletedManufacturingCount,
+        deletedQRProducts: deletedQRProductsCount,
+        deletedTransactions: deletedTransactionsCount
+      }
+    })
   } catch (error: any) {
-    res.status(500).json({ message: 'Server error' })
+    console.error('Error deleting cutting record:', error)
+    res.status(500).json({ message: 'Server error: ' + error.message })
   }
 })
 
