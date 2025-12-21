@@ -1,5 +1,7 @@
 # Westo India - Inventory Management System
 
+**LIVE DEMO**  https://drive.google.com/file/d/16JG0rBfavWiajTlOyKRMBAlyDgWalI6w/view?usp=drive_link
+
 A simple and efficient inventory management system for garment manufacturing. Track fabrics, manage production, and handle stock with QR codes.
 
 ## Login Credentials
