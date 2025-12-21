@@ -15,6 +15,7 @@ interface ManufacturingRecord {
   totalAmount: number
   tailorName: string
   status: 'Pending' | 'Completed' | 'QR Deleted' | 'deleted'
+  paymentStatus: 'Paid' | 'Unpaid'
   createdAt: string
   completionDate?: string
 }
@@ -32,6 +33,10 @@ interface EditPriceForm {
 
 export default function ManufacturingInventory() {
   const [searchTerm, setSearchTerm] = useState('')
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<'All' | 'Paid' | 'Unpaid'>('All')
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Pending' | 'Completed'>('All')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [manufacturingRecords, setManufacturingRecords] = useState<ManufacturingRecord[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [editingRecord, setEditingRecord] = useState<EditPriceForm | null>(null)
@@ -40,7 +45,24 @@ export default function ManufacturingInventory() {
   const fetchManufacturingRecords = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`${API_URL}/api/manufacturing-orders`)
+      let url = `${API_URL}/api/manufacturing-orders`
+      const params = new URLSearchParams()
+
+      // Add date range filters only (payment status will be filtered client-side)
+      if (startDate) {
+        params.append('startDate', startDate)
+      }
+      if (endDate) {
+        params.append('endDate', endDate)
+      }
+
+      // Add params to URL if any exist
+      const queryString = params.toString()
+      if (queryString) {
+        url += `?${queryString}`
+      }
+
+      const response = await fetch(url)
       if (response.ok) {
         const records = await response.json()
         setManufacturingRecords(records)
@@ -56,7 +78,15 @@ export default function ManufacturingInventory() {
 
   useEffect(() => {
     fetchManufacturingRecords()
-  }, [])
+  }, [startDate, endDate])
+
+  const handleClearFilters = () => {
+    setPaymentStatusFilter('All')
+    setStatusFilter('All')
+    setStartDate('')
+    setEndDate('')
+    setSearchTerm('')
+  }
 
   const formatDate = (dateString: string) => {
     if (!dateString) return ''
@@ -149,6 +179,25 @@ export default function ManufacturingInventory() {
     }
   }
 
+  const handlePaymentStatusChange = async (record: ManufacturingRecord, newPaymentStatus: 'Paid' | 'Unpaid') => {
+    try {
+      const response = await fetch(`${API_URL}/api/manufacturing-orders/${record._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentStatus: newPaymentStatus })
+      })
+
+      if (response.ok) {
+        alert(`✅ Payment status updated to ${newPaymentStatus}`)
+        fetchManufacturingRecords()
+      } else {
+        alert('❌ Error updating payment status')
+      }
+    } catch (error) {
+      alert('❌ Error updating payment status')
+    }
+  }
+
   const handleStatusChange = async (record: ManufacturingRecord, newStatus: 'Pending' | 'Completed' | 'QR Deleted') => {
     if (newStatus === 'Completed') {
       if (!window.confirm(`Mark ${record.manufacturingId} as completed and generate QR code?`)) {
@@ -221,11 +270,21 @@ export default function ManufacturingInventory() {
       return false
     }
 
+    // Apply search filter
     const matchesSearch = (record.manufacturingId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (record.tailorName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (record.fabricColor || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (record.fabricType || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (record.productName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (record.tailorName || '').toLowerCase().includes(searchTerm.toLowerCase())
+                          (record.size || '').toLowerCase().includes(searchTerm.toLowerCase())
 
-    return matchesSearch
+    // Apply payment status filter
+    const matchesPaymentStatus = paymentStatusFilter === 'All' || record.paymentStatus === paymentStatusFilter
+
+    // Apply status filter (Pending/Completed)
+    const matchesStatus = statusFilter === 'All' || record.status === statusFilter
+
+    return matchesSearch && matchesPaymentStatus && matchesStatus
   })
 
 
@@ -239,24 +298,99 @@ export default function ManufacturingInventory() {
 
       {/* Filters */}
       <div className="content-card">
-        <div className="toolbar">
-          <div className="search-box">
+        <div className="toolbar" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="search-box" style={{ flex: '1 1 200px', minWidth: '200px' }}>
             <input
               type="text"
-              placeholder="Search by ID, product, cutting ID, or tailor..."
+              placeholder="Search by Tailor, Product, Color, Fabric, Size, ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ width: '100%' }}
             />
           </div>
-          <div className="filter-group">
-            <button
-              className="btn btn-secondary"
-              onClick={fetchManufacturingRecords}
-              disabled={isLoading}
-            >
-              {isLoading ? 'Refreshing...' : 'Refresh'}
-            </button>
-          </div>
+
+          <select
+            id="paymentStatusFilter"
+            value={paymentStatusFilter}
+            onChange={(e) => setPaymentStatusFilter(e.target.value as 'All' | 'Paid' | 'Unpaid')}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '4px',
+              border: '1px solid #d1d5db',
+              fontSize: '14px',
+              cursor: 'pointer',
+              backgroundColor: 'white'
+            }}
+          >
+            <option value="All">All Payment</option>
+            <option value="Paid">Paid</option>
+            <option value="Unpaid">Unpaid</option>
+          </select>
+
+          <select
+            id="statusFilter"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as 'All' | 'Pending' | 'Completed')}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '4px',
+              border: '1px solid #d1d5db',
+              fontSize: '14px',
+              cursor: 'pointer',
+              backgroundColor: 'white'
+            }}
+          >
+            <option value="All">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Completed">Completed</option>
+          </select>
+
+          <input
+            type="date"
+            id="startDate"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            placeholder="From Date"
+            style={{
+              padding: '8px 12px',
+              borderRadius: '4px',
+              border: '1px solid #d1d5db',
+              fontSize: '14px',
+              cursor: 'pointer'
+            }}
+          />
+
+          <input
+            type="date"
+            id="endDate"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            placeholder="To Date"
+            style={{
+              padding: '8px 12px',
+              borderRadius: '4px',
+              border: '1px solid #d1d5db',
+              fontSize: '14px',
+              cursor: 'pointer'
+            }}
+          />
+
+          <button
+            className="btn btn-secondary"
+            onClick={handleClearFilters}
+            style={{ whiteSpace: 'nowrap', padding: '8px 16px' }}
+          >
+            Clear
+          </button>
+
+          <button
+            className="btn btn-secondary"
+            onClick={fetchManufacturingRecords}
+            disabled={isLoading}
+            style={{ whiteSpace: 'nowrap', padding: '8px 16px' }}
+          >
+            {isLoading ? 'Refreshing...' : 'Refresh'}
+          </button>
         </div>
       </div>
 
@@ -278,6 +412,7 @@ export default function ManufacturingInventory() {
                 <th style={{ textAlign: 'center' }}>Assigned Date</th>
                 <th style={{ textAlign: 'center' }}>Completion Date</th>
                 <th style={{ textAlign: 'center' }}>Status</th>
+                <th style={{ textAlign: 'center' }}>Payment Status</th>
                 <th style={{ textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
@@ -326,6 +461,26 @@ export default function ManufacturingInventory() {
                       </select>
                     </td>
                     <td style={{ textAlign: 'center' }}>
+                      <select
+                        value={record.paymentStatus || 'Unpaid'}
+                        onChange={(e) => handlePaymentStatusChange(record, e.target.value as 'Paid' | 'Unpaid')}
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          border: '1px solid #d1d5db',
+                          backgroundColor:
+                            record.paymentStatus === 'Paid' ? '#dcfce7' : '#fee2e2',
+                          color:
+                            record.paymentStatus === 'Paid' ? '#059669' : '#dc2626',
+                          fontWeight: '500',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <option value="Paid">Paid</option>
+                        <option value="Unpaid">Unpaid</option>
+                      </select>
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
                       <div className="action-buttons" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                         <button
                           onClick={() => handleEditClick(record)}
@@ -370,7 +525,7 @@ export default function ManufacturingInventory() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={13} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={14} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                     {isLoading ? 'Loading manufacturing inventory...' : 'No manufacturing inventory records found'}
                   </td>
                 </tr>

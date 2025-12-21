@@ -7,7 +7,29 @@ const router = Router()
 // GET all manufacturing orders
 router.get('/', async (req, res) => {
   try {
-    const manufacturingOrders = await ManufacturingOrder.find().sort({ createdAt: -1 })
+    const { paymentStatus, startDate, endDate } = req.query
+
+    // Build filter object
+    const filter: any = {}
+    if (paymentStatus && (paymentStatus === 'Paid' || paymentStatus === 'Unpaid')) {
+      filter.paymentStatus = paymentStatus
+    }
+
+    // Add date range filter
+    if (startDate || endDate) {
+      filter.createdAt = {}
+      if (startDate) {
+        filter.createdAt.$gte = new Date(startDate as string)
+      }
+      if (endDate) {
+        // Set end date to end of day (23:59:59.999)
+        const endDateTime = new Date(endDate as string)
+        endDateTime.setHours(23, 59, 59, 999)
+        filter.createdAt.$lte = endDateTime
+      }
+    }
+
+    const manufacturingOrders = await ManufacturingOrder.find(filter).sort({ createdAt: -1 })
     res.json(manufacturingOrders)
   } catch (error: any) {
     res.status(500).json({ message: 'Server error' })
@@ -120,7 +142,8 @@ router.put('/:id', async (req, res) => {
       tailorName,
       pricePerPiece,
       totalAmount,
-      status
+      status,
+      paymentStatus
     } = req.body
 
     // Update fields
@@ -132,6 +155,7 @@ router.put('/:id', async (req, res) => {
     if (tailorName) manufacturingOrder.tailorName = tailorName
     if (pricePerPiece !== undefined) manufacturingOrder.pricePerPiece = parseFloat(pricePerPiece)
     if (totalAmount !== undefined) manufacturingOrder.totalAmount = parseFloat(totalAmount)
+    if (paymentStatus) manufacturingOrder.paymentStatus = paymentStatus
     if (status) {
       manufacturingOrder.status = status
 
