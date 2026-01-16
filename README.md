@@ -5,8 +5,8 @@ A simple and efficient inventory management system for garment manufacturing. Tr
 ## Login Credentials
 
 **Admin Portal:**
-- Username: `westoindia`
-- Password: `xxxxxxxxx`
+- Username: `admin`
+- Password: `admin`
 
 **Employee Portal:**
 - Contact your admin for employee credentials
