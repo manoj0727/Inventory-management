@@ -24,4 +24,9 @@ router.get('/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() })
 })
 
+// Keep-alive endpoint for external monitoring (UptimeRobot, Cron-job.org, etc.)
+router.get('/pleasedontsleep', (req, res) => {
+  res.status(200).send('OK')
+})
+
 export default router
