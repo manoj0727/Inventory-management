@@ -153,6 +153,8 @@ export default function Login() {
         <div className="mt-8 text-center space-y-2">
           <p className="text-xs text-gray-600 italic">
            username : admin
+          </p>
+          <p className="text-xs text-gray-600 italic">
            password : admin
           </p>
           <p className="text-xs text-gray-500">
