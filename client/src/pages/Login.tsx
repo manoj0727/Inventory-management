@@ -152,10 +152,11 @@ export default function Login() {
         {/* Footer */}
         <div className="mt-8 text-center space-y-2">
           <p className="text-xs text-gray-600 italic">
-            Note: If you forgot your password, please contact admin
+           username : admin
+           password : admin
           </p>
           <p className="text-xs text-gray-500">
-            © 2025 All rights reserved
+            © 2026 All rights reserved
           </p>
         </div>
       </div>
